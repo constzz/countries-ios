@@ -16,6 +16,9 @@
 
 --import-grouping testable-last
 
+# Tests keep display names that start with their acceptance criterion: @Test("AC-1.5 …").
+--test-case-name-format preserve
+
 # No per-file header comments.
 --header strip
 
