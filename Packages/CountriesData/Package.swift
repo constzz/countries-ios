@@ -22,6 +22,8 @@ let package = Package(
         .product(name: "Apollo", package: "apollo-ios"),
         .product(name: "ApolloAPI", package: "apollo-ios"),
       ],
+      // Codegen inputs (schema and operations); the generated Swift is in Generated/.
+      exclude: ["GraphQL"],
       swiftSettings: swiftSettings
     ),
     .testTarget(name: "CountriesDataTests", dependencies: ["CountriesData"], swiftSettings: swiftSettings),
