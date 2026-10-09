@@ -68,7 +68,8 @@ run_tests() {
     -scheme "$SCHEME" -testPlan "$SCHEME" \
     -destination "$destination" \
     -derivedDataPath "$WORK_DIR/$label-DerivedData" \
-    -resultBundlePath "$result" ${skip[@]+"${skip[@]}"} >"$log" 2>&1 || fail "tests failed on $row" "$log"
+    -resultBundlePath "$result" -collect-test-diagnostics never \
+    ${skip[@]+"${skip[@]}"} >"$log" 2>&1 || fail "tests failed on $row" "$log"
 
   local summary
   summary=$(DEVELOPER_DIR="$xcode/Contents/Developer" xcrun xcresulttool get test-results summary --path "$result")

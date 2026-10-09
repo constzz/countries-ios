@@ -11,13 +11,15 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 | Task | Command |
 |---|---|
 | Build and run | open `CountriesApp.xcodeproj`, then ⌘R |
-| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'` |
+| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
 | Package tests on macOS | `swift test --package-path Packages/CountriesData` (also `CountriesDomain`) |
 | Lint | `scripts/lint.sh` |
 | Format, then lint | `scripts/lint.sh --fix` |
 | Test matrix | `scripts/test-matrix.sh` |
 | Record snapshots | see [Snapshot tests](#snapshot-tests) |
 | Codegen | see [Codegen](#codegen) |
+
+`-collect-test-diagnostics never` stops `xcodebuild` from collecting a sysdiagnose from the simulator after a failing test, which can take 10 minutes.
 
 ## Rules
 - **Layers:** `UI → Domain ← Data`; no layer is skipped. Apollo and generated types never leave CountriesData.
@@ -84,7 +86,20 @@ Snapshot tests live in the `CountriesUISnapshotTests` target. Reference images a
 - **On a mismatch:** the failure message has the path of the new image in the temporary directory. Compare it with the reference; if the change is intended, record again.
 
 ## Codegen
-The GraphQL schema, the operations (`*.graphql`) and the generated Swift live in `Packages/CountriesData/Sources/CountriesData/`. Generated code is committed, so building never needs codegen. To change an operation, edit its `.graphql` file and regenerate; commit the generated changes with it. Details are added when codegen is set up.
+Apollo's inputs live in `Packages/CountriesData/Sources/CountriesData/GraphQL/`: the downloaded `schema.graphqls` and the operations (`*.graphql`). The generated Swift goes to `Generated/` next to it, `internal` to CountriesData. Both are committed, so building never needs codegen. Settings are in `apollo-codegen-config.json`.
+
+1. Install the CLI once, at the repo root (it's gitignored). Its version must match Apollo's in `Package.resolved`; the CLI refuses a mismatch.
+   ```sh
+   curl -L https://github.com/apollographql/apollo-ios/releases/download/2.4.0/apollo-ios-cli.tar.gz | tar -xz
+   ```
+2. After editing a `.graphql` file, regenerate and commit the operation and the generated Swift together:
+   ```sh
+   ./apollo-ios-cli generate --path ./apollo-codegen-config.json
+   ```
+3. Only when the API itself changes, download the schema again first:
+   ```sh
+   ./apollo-ios-cli fetch-schema --path ./apollo-codegen-config.json
+   ```
 
 ## Adding a language
 1. Add the language to the app project's localizations (Project → Info → Localizations). iOS loads a package's translations only for languages the app declares.
