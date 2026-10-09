@@ -6,7 +6,7 @@
 - `CountriesApp.xcodeproj` with an app target and three local packages under `Packages/`: `CountriesDomain`, `CountriesData` (Apollo iOS) and `CountriesUI`, wired as `UI → Domain ← Data`, with the app composing all three.
 - A placeholder root screen in `CountriesUI` whose title comes from the String Catalog.
 - Swift 6 language mode and strict concurrency everywhere, iOS 17.0 deployment target, zero warnings on Xcode 26.0.1 and Xcode 27.1.
-- One test plan (`CountriesApp.xctestplan`) that runs every package test target, a snapshot test target with its own helper, and localization tests.
+- One test plan (`CountriesApp.xctestplan`) that runs every package test target, an app-hosted snapshot test target with its own helper, and localization tests.
 - SwiftLint and SwiftFormat configs, `scripts/lint.sh`, `scripts/test-matrix.sh` and a CI workflow.
 - Apollo iOS 2.4.0 with the codegen config, the downloaded schema and the generated code committed.
 - App identity: display name, bundle ID, launch screen and app icon.
@@ -51,11 +51,9 @@
 - **Reference simulator: iPhone 17 Pro on iOS 27.0.** Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; the iOS 27.1 runtime supports only iPhone Duo. Snapshot images are recorded and compared on iOS 27.0, and the iPhone Duo presets use measurements from its iOS 27.1 simulator.
 - **Lint and format run from Homebrew via `scripts/lint.sh` and CI.** Rejected: Xcode build-tool plugins, which ask every reviewer to trust and enable them.
 - **Generated Apollo code is committed and `internal` to `CountriesData`.** Reviewers never run codegen, and the compiler keeps generated types inside the data package. Rejected: generating at build time.
-- **Snapshot tests use a small helper written for this repo.** A SwiftUI view is hosted in an off-screen window with a fixed size, safe area and traits, rendered to PNG and compared byte for byte with a committed reference image. Rejected: a third-party snapshot library, which would be the only test dependency.
+- **Snapshot tests use a small helper written for this repo, in a test target hosted by the app** (`CountriesUISnapshotTests`). A SwiftUI view is hosted in a window that joins the test host's window scene, with a fixed size, safe area and traits; it is rendered with `drawHierarchy` to an sRGB PNG and compared byte for byte with a committed reference image. Rejected: a test target in the CountriesUI package, which has no host app and so no window scene: Liquid Glass then renders without its material. Rejected: a third-party snapshot library, which would be the only test dependency and needs a host app for glass too.
+- **Device presets come from the simulators.** Safe areas and size classes were read from running iPhone 17 Pro, iPad (A16) and iPhone Duo simulators. The iPhone Duo opens its inner screen at 951 × 669 pt, so that is the unfolded preset; its rotated and folded-landscape postures are left for later.
 - **String Catalog from the start.** All copy lives in `CountriesUI/Resources/Localizable.xcstrings` and is looked up with `bundle: .module`. The app ships in English, and adding a language needs no code changes.
 
 ## Open until settled in this story
-- How the snapshot helper gets a window scene in a package test target, and whether `layer.render(in:)` captures navigation and search bars on iOS 27.
-- Safe-area insets, layout margins and size classes for each device preset, read from the running simulators.
-- The exact Apollo codegen config keys for embedded, internal schema types.
 - Which Xcode versions and simulator runtimes the GitHub macOS runner image provides.
