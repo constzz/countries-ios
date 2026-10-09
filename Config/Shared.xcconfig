@@ -1,0 +1,20 @@
+// Build settings shared by every target in CountriesApp.xcodeproj.
+// The local packages under Packages/ declare the same choices in their Package.swift.
+
+// App identity. The app's bundle ID is $(BUNDLE_ID_PREFIX).countries.
+BUNDLE_ID_PREFIX =
+
+// iOS 17 is the first release with the Observation framework (@Observable).
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+
+// Swift 6 language mode, which checks concurrency completely.
+// Isolation is explicit, as in the packages: no default actor isolation and no
+// approachable-concurrency upcoming features.
+SWIFT_VERSION = 6.0
+SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated
+SWIFT_APPROACHABLE_CONCURRENCY = NO
+
+// Zero warnings: every warning in the app target fails the build. The local packages set
+// the same with .treatAllWarnings(as: .error). Remote packages (Apollo) are unaffected.
+SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
