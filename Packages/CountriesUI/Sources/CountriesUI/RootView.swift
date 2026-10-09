@@ -8,14 +8,20 @@ public struct RootView: View {
     NavigationStack {
       ContentUnavailableView {
         Label {
-          Text(verbatim: "Countries")
+          Text("Countries", bundle: .module, comment: "The app's name, shown as the root screen's title.")
         } icon: {
           Image(systemName: "globe")
         }
       } description: {
-        Text(verbatim: "Browse every country in the world.")
+        Text(
+          "Browse every country in the world.",
+          bundle: .module,
+          comment: "Placeholder description under the app name on the root screen."
+        )
       }
-      .navigationTitle(Text(verbatim: "Countries"))
+      .navigationTitle(
+        Text("Countries", bundle: .module, comment: "The app's name, shown as the root screen's title.")
+      )
     }
   }
 }

@@ -1,0 +1,12 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Browse every country in the world." : {
+      "comment" : "Placeholder description under the app name on the root screen."
+    },
+    "Countries" : {
+      "comment" : "The app's name, shown as the root screen's title."
+    }
+  },
+  "version" : "1.0"
+}
