@@ -2,7 +2,7 @@
 // The local packages under Packages/ declare the same choices in their Package.swift.
 
 // App identity. The app's bundle ID is $(BUNDLE_ID_PREFIX).countries.
-BUNDLE_ID_PREFIX =
+BUNDLE_ID_PREFIX = kostiantyn.bezzemelnyi
 
 // iOS 17 is the first release with the Observation framework (@Observable).
 IPHONEOS_DEPLOYMENT_TARGET = 17.0
@@ -18,3 +18,7 @@ SWIFT_APPROACHABLE_CONCURRENCY = NO
 // the same with .treatAllWarnings(as: .error). Remote packages (Apollo) are unaffected.
 SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
 GCC_TREAT_WARNINGS_AS_ERRORS = YES
+
+// Signing for device builds, kept out of the repo: put DEVELOPMENT_TEAM = <your team ID> in
+// Config/Local.xcconfig (gitignored). Simulator builds need no team.
+#include? "Local.xcconfig"
