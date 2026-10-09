@@ -3,9 +3,7 @@
     {
       "id" : "5B1E2C3D-4F60-4A7B-8C9D-0E1F2A3B4C5D",
       "name" : "Default",
-      "options" : {
-
-      }
+      "options" : {}
     }
   ],
   "defaultOptions" : {
@@ -32,6 +30,13 @@
         "containerPath" : "container:Packages\/CountriesUI",
         "identifier" : "CountriesUITests",
         "name" : "CountriesUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:CountriesApp.xcodeproj",
+        "identifier" : "C0A100000000000000000062",
+        "name" : "CountriesUISnapshotTests"
       }
     }
   ],

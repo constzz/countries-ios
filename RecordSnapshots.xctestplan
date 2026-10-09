@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "8E2B7C1A-3D4F-4E5A-9B6C-7D8E9F0A1B2C",
+      "name" : "Record",
+      "options" : {}
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "SNAPSHOT_RECORD",
+        "value" : "1"
+      }
+    ],
+    "language" : "en",
+    "region" : "US"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:CountriesApp.xcodeproj",
+        "identifier" : "C0A100000000000000000062",
+        "name" : "CountriesUISnapshotTests"
+      }
+    }
+  ],
+  "version" : 1
+}
