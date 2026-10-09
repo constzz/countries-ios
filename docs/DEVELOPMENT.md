@@ -11,7 +11,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 | Task | Command |
 |---|---|
 | Build and run | open `CountriesApp.xcodeproj`, then ⌘R |
-| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.1'` |
+| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'` |
 | Package tests on macOS | `swift test --package-path Packages/CountriesData` (also `CountriesDomain`) |
 | Lint | `scripts/lint.sh` |
 | Format, then lint | `scripts/lint.sh --fix` |
@@ -21,8 +21,8 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 
 ## Rules
 - **Layers:** `UI → Domain ← Data`; no layer is skipped. Apollo and generated types never leave CountriesData.
-- **Zero warnings.** CI and the test matrix build with warnings as errors.
-- **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project format stays "Xcode 26.0-compatible"; check it after every project-file change.
+- **Zero warnings.** Every warning in our code is a build error: `SWIFT_TREAT_WARNINGS_AS_ERRORS` in `Config/Shared.xcconfig` for the app, `.treatAllWarnings(as: .error)` in each `Package.swift`. Don't pass `SWIFT_TREAT_WARNINGS_AS_ERRORS` on the `xcodebuild` command line: it also reaches Apollo, whose warnings Xcode suppresses, and the two flags conflict.
+- **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project file stays in the "Xcode 16.0" format (`objectVersion = 77` in `project.pbxproj`; Project → File inspector → Project Format), because Xcode 26.0.1 knows no format newer than "Xcode 16.3". Check it after every project-file change.
 - **Concurrency:** async/await everywhere. Combine only in the search input pipe.
 - **Logging:** `os.Logger`, never `print`.
 - **UI:** every user-facing string goes through the String Catalog with `bundle: .module`, layouts use leading/trailing only, and every UI change ships snapshot tests ([UI guidelines](UI_GUIDELINES.md)).
@@ -69,16 +69,16 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 - The README requirements map and decisions are up to date.
 
 ## Test matrix
-`scripts/test-matrix.sh` builds with warnings as errors and runs the test plan on each row. It selects Xcode per run with `DEVELOPER_DIR` and never changes `xcode-select`. Override the Xcode paths with `XCODE_27_PATH` and `XCODE_26_PATH`.
+`scripts/test-matrix.sh` runs a clean build and the test plan on each row, and fails if the build reports any warning. It selects Xcode per run with `DEVELOPER_DIR` and never changes `xcode-select`. Override the Xcode paths with `XCODE_27_PATH` and `XCODE_26_PATH`.
 
 | Xcode | Simulator | Runs |
 |---|---|---|
-| 27.1 | iPhone 17 Pro, iOS 27.1 | build + full test plan, including snapshots (reference row) |
+| 27.1 | iPhone 17 Pro, iOS 27.0 | build + full test plan, including snapshots (reference row) |
 | 27.1 | iPhone 15 Pro, iOS 17.0 | test plan without snapshots (deployment-target floor) |
 | 26.0.1 | iPhone 17 Pro, iOS 26.0 | build + test plan without snapshots |
 
 ## Snapshot tests
-Snapshot tests live in the `CountriesUISnapshotTests` target. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.1 simulator.
+Snapshot tests live in the `CountriesUISnapshotTests` target. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
 - **Record:** run the `RecordSnapshots` test plan. It sets `SNAPSHOT_RECORD=1`, writes the reference PNGs next to the test files, and fails every snapshot test on purpose, so a recording run can never pass in CI.
 - **Review:** open every new or changed PNG before committing. Pull requests show image diffs.
 - **On a mismatch:** the failure message has the path of the new image in the temporary directory. Compare it with the reference; if the change is intended, record again.

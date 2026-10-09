@@ -96,5 +96,5 @@ Every UI change ships snapshot tests for each state it affects, recorded and ins
 - iPhone 17 Pro also gets the largest accessibility text size, in light. Loaded states also get a right-to-left image on iPhone 17 Pro in light.
 - Snapshots render inner views fed a fixed state, never views that load data. The locale is `en_US`.
 - File names follow `<SCREEN>_<STATE>_<preset>_<light|dark>[_<variant>]`, e.g. `COUNTRY_LIST_EMPTY_iPhoneDuoUnfolded_dark.png`. Reference images live in a `snapshots/` folder next to the test file.
-- Images are recorded and compared only on Xcode 27.1 with the iOS 27.1 simulator, because rendering differs between OS versions. Elsewhere the tests are skipped with a reason.
+- Images are recorded and compared only on Xcode 27.1 with the iOS 27.0 simulator, because rendering differs between OS versions. Elsewhere the tests are skipped with a reason.
 - Recording and reviewing: [development guide](DEVELOPMENT.md#snapshot-tests).

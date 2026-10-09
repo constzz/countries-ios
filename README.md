@@ -7,19 +7,19 @@ A SwiftUI app for browsing the world's countries, backed by the public [Countrie
 
 Open `CountriesApp.xcodeproj` and press ⌘R. Nothing else needs installing: the generated GraphQL code is committed, and Apollo iOS is the only package dependency.
 
-Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.1 simulator.
+Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 
 ### Tested with
 | Xcode | Simulator | Local | CI |
 |---|---|---|---|
-| 27.1 | iPhone 17 Pro, iOS 27.1 | | |
+| 27.1 | iPhone 17 Pro, iOS 27.0 | | |
 | 27.1 | iPhone 15 Pro, iOS 17.0 | | |
 | 26.0.1 | iPhone 17 Pro, iOS 26.0 | | |
 
 ### Commands
 | Task | Command |
 |---|---|
-| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.1'` |
+| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0'` |
 | Test matrix (Xcode 26 and 27) | `scripts/test-matrix.sh` |
 | Lint | `scripts/lint.sh` (needs `brew install swiftlint swiftformat`) |
 | Record snapshots | the `RecordSnapshots` test plan ([details](docs/DEVELOPMENT.md#snapshot-tests)) |
