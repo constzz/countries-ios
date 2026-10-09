@@ -49,7 +49,7 @@ Implements the repository with Apollo iOS.
 ### CountriesUI
 SwiftUI screens and their view models. It imports only CountriesDomain, never Apollo.
 - `CountryList/` and `CountryDetail/`, one folder per feature.
-- `DesignSystem/`: state views, the `.loadState(_:retry:)` modifier, the `\.countriesRepository` environment entry, and spacing and radius tokens.
+- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views, the `.loadState(_:retry:)` modifier and the `\.countriesRepository` environment entry.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp

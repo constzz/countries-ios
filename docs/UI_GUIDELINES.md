@@ -2,20 +2,45 @@
 
 Apple's [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) are the design reference. There is no custom design: system components, system colors and system text styles come first. When a HIG section drives a decision, the commit or pull request names it.
 
+## Design tokens
+Screens never name a system color or text style directly. They use semantic tokens defined once in `CountriesUI/DesignSystem/`, named after their role:
+
+```swift
+// DesignSystem/Colors.swift
+extension ShapeStyle where Self == HierarchicalShapeStyle {
+  static var secondaryText: HierarchicalShapeStyle { .secondary }
+}
+
+// DesignSystem/Typography.swift
+extension Font {
+  static var rowTitle: Font { .body }
+}
+
+// In a screen
+Text(country.name).font(.rowTitle)
+```
+
+- Tokens are static members, the same shape as SwiftUI's own `.tint` or `.headline`. There's no theme object in the environment: light and dark mode come from the system, and there is no runtime theme switching.
+- A token's value is always a system semantic color or a system text style, so dark mode, increased contrast and Dynamic Type keep working with no extra code.
+- Restyling a role is a one-line change in one file.
+- System components keep their own styling: `List`, `LabeledContent`, `ContentUnavailableView`, navigation and search bars get no tokens. Tokens cover only what the app styles itself.
+- Lint enforces this: the `design_tokens_only` rule rejects system colors and text styles in CountriesUI outside `DesignSystem/`.
+
 ## Colors
-- System semantic colors only: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
-- No theme object and no `preferredColorScheme`.
-- A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed through `extension ShapeStyle where Self == Color`.
-- Lint rejects hard-coded colors in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
+- Color tokens map to system semantic colors: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
+- Text colors are `HierarchicalShapeStyle` tokens (`.secondary`), not `Color` tokens. Hierarchical styles resolve against their context, so secondary text stays readable inside a selected sidebar row.
+- No `preferredColorScheme`.
+- A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed as a token.
+- Lint rejects hard-coded colors anywhere in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
 
 ## Typography and Dynamic Type
-- System text styles (`.body`, `.headline`, `.caption`…), never fixed point sizes. Sizes that must scale use `@ScaledMetric`.
+- Font tokens map to system text styles (`.body`, `.headline`, `.caption`…), never fixed point sizes. Sizes that must scale use `@ScaledMetric`.
 - The flag emoji scales with a text style.
 - Layouts that run out of room at accessibility sizes switch axis or use `ViewThatFits` instead of truncating.
 - Detail rows are `LabeledContent` inside a `List`, which handles Dynamic Type and dark mode natively.
 
 ## Spacing
-Small token enums in `DesignSystem/`, e.g. `Spacing.small`, `Radius.card`. Standard list and form layouts use the system's own insets and need no tokens.
+Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Spacing.small`, `Radius.card`. Standard list and form layouts use the system's own insets and need no tokens.
 
 ## Screen states
 - Every screen has explicit states: loading, loaded, empty and failed.
