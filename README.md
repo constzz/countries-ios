@@ -58,7 +58,7 @@ Each requirement of the task traces to an acceptance criterion and the test that
 | SwiftLint and SwiftFormat | US-0 / AC-0.4 | `scripts/lint.sh` |
 
 ## How to see each state
-- Snapshot images: every screen state on every device, in light and dark, under `snapshots/` next to the snapshot tests.
+- Snapshot images: every screen state on every device, in light and dark, in [`CountriesUISnapshotTests/snapshots`](CountriesUISnapshotTests/snapshots).
 - SwiftUI previews for each screen.
 
 ## Key decisions

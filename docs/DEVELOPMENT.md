@@ -80,8 +80,11 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 | 26.0.1 | iPhone 17 Pro, iOS 26.0 | build + test plan without snapshots |
 
 ## Snapshot tests
-Snapshot tests live in the `CountriesUISnapshotTests` target. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
-- **Record:** run the `RecordSnapshots` test plan. It sets `SNAPSHOT_RECORD=1`, writes the reference PNGs next to the test files, and fails every snapshot test on purpose, so a recording run can never pass in CI.
+Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xcode project hosted by the app (a package test target has no window scene, so Liquid Glass wouldn't render). Its helpers are in `Helpers/`, and reference images in `snapshots/` next to the test files. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
+- **Record:** run the `RecordSnapshots` test plan. It sets `SNAPSHOT_RECORD=1`, writes the reference PNGs, and fails every snapshot test on purpose, so a recording run can never pass in CI. From the command line:
+  ```sh
+  xcodebuild test -scheme CountriesApp -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
+  ```
 - **Review:** open every new or changed PNG before committing. Pull requests show image diffs.
 - **On a mismatch:** the failure message has the path of the new image in the temporary directory. Compare it with the reference; if the change is intended, record again.
 
