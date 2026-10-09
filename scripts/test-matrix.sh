@@ -1,17 +1,18 @@
 #!/bin/bash
-# Builds and tests the app on every supported Xcode and simulator.
+# Builds and tests the app on every supported Xcode and simulator. Rows:
 #
-#   Xcode 27.1    iPhone 17 Pro, iOS 27.0   clean build + full test plan, including snapshots
-#   Xcode 27.1    iPhone 15 Pro, iOS 17.0   test plan without snapshots (deployment-target floor)
-#   Xcode 26.0.1  iPhone 17 Pro, iOS 26.0   clean build + test plan without snapshots
+#   xcode27-ios27  Xcode 27.1    iPhone 17 Pro, iOS 27.0   full test plan, including snapshots
+#   xcode27-ios17  Xcode 27.1    iPhone 15 Pro, iOS 17.0   test plan without snapshots (deployment-target floor)
+#   xcode26-ios26  Xcode 26.0.1  iPhone 17 Pro, iOS 26.0   test plan without snapshots
 #
 # Each Xcode gets a clean build, which fails if it reports any warning. Xcode is selected per
 # run with DEVELOPER_DIR; xcode-select is never changed.
 #
-# Usage: scripts/test-matrix.sh
+# Usage: scripts/test-matrix.sh [row ...]   (default: every row)
 # Environment:
-#   XCODE_27_PATH  Xcode 27.1   (default: "/Applications/Xcode 27.1.app")
-#   XCODE_26_PATH  Xcode 26.0.1 (default: "/Applications/Xcode.app")
+#   XCODE_27_PATH      Xcode 27.1   (default: "/Applications/Xcode 27.1.app")
+#   XCODE_26_PATH      Xcode 26.0.1 (default: "/Applications/Xcode.app")
+#   MATRIX_OUTPUT_DIR  where logs and result bundles go (default: a new temporary folder)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -21,7 +22,8 @@ XCODE_26_PATH="${XCODE_26_PATH:-/Applications/Xcode.app}"
 SCHEME="CountriesApp"
 SNAPSHOT_TARGET="CountriesUISnapshotTests"
 
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/countries-test-matrix.XXXXXX")"
+WORK_DIR="${MATRIX_OUTPUT_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/countries-test-matrix.XXXXXX")}"
+mkdir -p "$WORK_DIR"
 echo "Logs and result bundles: $WORK_DIR"
 
 fail() {
@@ -77,13 +79,27 @@ run_tests() {
     "$(echo "$summary" | plutil -extract skippedTests raw -o - -- -) skipped"
 }
 
-build xcode27 "$XCODE_27_PATH"
-run_tests xcode27 "$XCODE_27_PATH" "platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0" yes
-run_tests xcode27 "$XCODE_27_PATH" "platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0" no
+rows=("$@")
+[ ${#rows[@]} -gt 0 ] || rows=(xcode27-ios27 xcode27-ios17 xcode26-ios26)
 
-build xcode26 "$XCODE_26_PATH"
-run_tests xcode26 "$XCODE_26_PATH" "platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0.1" no
+built=""
+for row in "${rows[@]}"; do
+  case "$row" in
+    xcode27-ios27) label=xcode27 xcode=$XCODE_27_PATH snapshots=yes
+      destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0" ;;
+    xcode27-ios17) label=xcode27 xcode=$XCODE_27_PATH snapshots=no
+      destination="platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0" ;;
+    xcode26-ios26) label=xcode26 xcode=$XCODE_26_PATH snapshots=no
+      destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0.1" ;;
+    *) fail "unknown row '$row' (rows: xcode27-ios27 xcode27-ios17 xcode26-ios26)" ;;
+  esac
+  case " $built " in
+    *" $label "*) ;;
+    *) build "$label" "$xcode" && built="$built $label" ;;
+  esac
+  run_tests "$label" "$xcode" "$destination" "$snapshots"
+done
 
 # Keep logs and result bundles; drop the DerivedData folders (several hundred MB each).
 rm -rf "$WORK_DIR"/*-DerivedData
-echo "All rows passed."
+echo "Passed: ${rows[*]}"
