@@ -1,0 +1,22 @@
+# SwiftFormat owns layout; SwiftLint (.swiftlint.yml) owns code smells.
+# Tool defaults apply unless listed here.
+
+# Xcode 26.0.1 is the oldest supported toolchain.
+--swift-version 6.2
+--language-mode 6
+
+--indent 2
+--max-width 120
+
+# SwiftLint's trailing_comma rule enforces the same thing.
+--trailing-commas collections-only
+
+--enable markTypes
+--mark-types always
+
+--import-grouping testable-last
+
+# No per-file header comments.
+--header strip
+
+--exclude **/Generated,**/.build,DerivedData
