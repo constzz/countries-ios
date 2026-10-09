@@ -15,16 +15,16 @@
 **Non-goals:** domain models, feature queries and feature UI (US-1 and US-2).
 
 ## Acceptance criteria
-- [ ] **AC-0.1** A fresh clone builds and launches on the iPhone 17 Pro / iOS 27.0 simulator with ⌘R, without running codegen or installing any tool.
-- [ ] **AC-0.2** The app and all local package targets build with zero warnings, and any new warning fails the build.
-- [ ] **AC-0.3** One `xcodebuild test` command with the `CountriesApp` test plan runs every package test target, and `swift test` runs the `CountriesDomain` and `CountriesData` tests on macOS.
-- [ ] **AC-0.4** `scripts/lint.sh` passes (SwiftLint strict, SwiftFormat lint), with generated code excluded.
-- [ ] **AC-0.5** The documented codegen command regenerates the committed Swift files with no diff.
-- [ ] **AC-0.6** `CountriesUI` has no dependency on Apollo, and no public API of `CountriesData` exposes a generated type.
+- [x] **AC-0.1** A fresh clone builds and launches on the iPhone 17 Pro / iOS 27.0 simulator with ⌘R, without running codegen or installing any tool.
+- [x] **AC-0.2** The app and all local package targets build with zero warnings, and any new warning fails the build.
+- [x] **AC-0.3** One `xcodebuild test` command with the `CountriesApp` test plan runs every package test target, and `swift test` runs the `CountriesDomain` and `CountriesData` tests on macOS.
+- [x] **AC-0.4** `scripts/lint.sh` passes (SwiftLint strict, SwiftFormat lint), with generated code excluded.
+- [x] **AC-0.5** The documented codegen command regenerates the committed Swift files with no diff.
+- [x] **AC-0.6** `CountriesUI` has no dependency on Apollo, and no public API of `CountriesData` exposes a generated type.
 - [ ] **AC-0.7** CI runs lint, build and tests on the pull request and passes.
 - [ ] **AC-0.8** `scripts/test-matrix.sh` passes on every row: Xcode 27.1 on iOS 27.0 and on iOS 17.0, and Xcode 26.0.1 on iOS 26.0, with warnings as errors. The project still opens in Xcode 26.0.1 after being saved in Xcode 27.1.
-- [ ] **AC-0.9** Snapshots of the placeholder screen pass on every device preset (iPhone 17 Pro, iPhone Duo folded and unfolded, iPad 11-inch portrait and landscape) in light and dark, plus accessibility XXXL on iPhone 17 Pro. They run only on Xcode 27.1 with the iOS 27.0 simulator and are skipped elsewhere with a visible reason. Two consecutive recordings produce byte-identical PNGs.
-- [ ] **AC-0.10** The placeholder title comes from `Localizable.xcstrings`, and its right-to-left snapshot is mirrored. The localization tests pass, and a `Text("…")` without `bundle:` in `CountriesUI` fails lint.
+- [x] **AC-0.9** Snapshots of the placeholder screen pass on every device preset (iPhone 17 Pro, iPhone Duo folded and unfolded, iPad 11-inch portrait and landscape) in light and dark, plus accessibility XXXL on iPhone 17 Pro. They run only on Xcode 27.1 with the iOS 27.0 simulator and are skipped elsewhere with a visible reason. Two consecutive recordings produce byte-identical PNGs.
+- [x] **AC-0.10** The placeholder title comes from `Localizable.xcstrings`, and its right-to-left snapshot is mirrored. The localization tests pass, and a `Text("…")` without `bundle:` in `CountriesUI` fails lint.
 - [ ] **AC-0.11** The app installs as "Countries" with the bundle ID `$(BUNDLE_ID_PREFIX).countries`, an app icon with light, dark and tinted variants, and a system-background launch screen. Every commit is authored as Kostiantyn Bezzemelnyi.
 
 ## Verification
@@ -53,7 +53,8 @@
 - **Generated Apollo code is committed and `internal` to `CountriesData`.** Reviewers never run codegen, and the compiler keeps generated types inside the data package. Rejected: generating at build time.
 - **Snapshot tests use a small helper written for this repo, in a test target hosted by the app** (`CountriesUISnapshotTests`). A SwiftUI view is hosted in a window that joins the test host's window scene, with a fixed size, safe area and traits; it is rendered with `drawHierarchy` to an sRGB PNG and compared byte for byte with a committed reference image. Rejected: a test target in the CountriesUI package, which has no host app and so no window scene: Liquid Glass then renders without its material. Rejected: a third-party snapshot library, which would be the only test dependency and needs a host app for glass too.
 - **Device presets come from the simulators.** Safe areas and size classes were read from running iPhone 17 Pro, iPad (A16) and iPhone Duo simulators. The iPhone Duo opens its inner screen at 951 × 669 pt, so that is the unfolded preset; its rotated and folded-landscape postures are left for later.
+- **CI runs on pull requests, one Xcode while the repository is private.** Xcode 26.0.1 on the `macos-15` image (the only one with the iOS 26.0 runtime) lints, builds with zero warnings and runs the test plan. The Xcode 27.1 row, snapshots included, runs on the `xcode-27` image once the repository is public. Rejected: every row in CI, because no image has the iOS 17.0 runtime and private macOS minutes are limited; `scripts/test-matrix.sh` covers every row locally.
 - **String Catalog from the start.** All copy lives in `CountriesUI/Resources/Localizable.xcstrings` and is looked up with `bundle: .module`. The app ships in English, and adding a language needs no code changes.
 
 ## Open until settled in this story
-- Which Xcode versions and simulator runtimes the GitHub macOS runner image provides.
+- Whether reference images recorded locally match on GitHub's `xcode-27` image. Settled when the repository is public and the Xcode 27.1 job first runs.
