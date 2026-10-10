@@ -1,11 +1,17 @@
 import Observation
 
 /// The base of every screen's view model. A subclass overrides `reduce(_:_:)`; views use only
-/// `state`, `send(_:)` and `effects`.
+/// `state`, `send(_:)` and `effects()`.
 @MainActor
 @Observable
 class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   private(set) var state: State
+
+  /// The work launched by the `reduce` call in progress, so `send` can await it.
+  @ObservationIgnored private var launchedWork: [Task<Void, Never>] = []
+  @ObservationIgnored private var subscribers: [AsyncStream<Effect>.Continuation] = []
+  /// Effects emitted while no one subscribed, for the next subscriber.
+  @ObservationIgnored private var undelivered: [Effect] = []
 
   init(initialState: State) {
     state = initialState
@@ -21,21 +27,53 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   /// Applies `action`. The returned task finishes when the work it launched has, so
   /// `.refreshable` and tests can await it.
   @discardableResult
-  final func send(_: Action) -> Task<Void, Never> {
-    Task {}
+  final func send(_ action: Action) -> Task<Void, Never> {
+    let outerWork = launchedWork
+    launchedWork = []
+    let newState = reduce(state, action)
+    let work = launchedWork
+    launchedWork = outerWork
+    if newState != state {
+      state = newState
+    }
+    return Task {
+      for task in work {
+        await task.value
+      }
+    }
   }
 
   /// Starts `work` on the main actor and returns its task, so the subclass can cancel it.
   @discardableResult
-  final func launchEffect(_: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
-    Task {}
+  final func launchEffect(_ work: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
+    let task = Task(operation: work)
+    launchedWork.append(task)
+    return task
   }
 
-  /// Sends a one-time UI event to the view.
-  final func emit(_: Effect) {}
+  /// Sends a one-time UI event to every subscriber, or keeps it for the next one if there's none.
+  final func emit(_ effect: Effect) {
+    subscribers.removeAll { subscriber in
+      if case .terminated = subscriber.yield(effect) {
+        return true
+      }
+      return false
+    }
+    if subscribers.isEmpty {
+      undelivered.append(effect)
+    }
+  }
 
-  /// The effects the view handles, one stream per subscriber.
-  var effects: AsyncStream<Effect> {
-    AsyncStream { $0.finish() }
+  /// Subscribes to the effects the view handles. The stream starts with the effects emitted while
+  /// no one subscribed. Iterate it in `.task`: a cancelled iteration ends the stream, and the next
+  /// `.task` subscribes again.
+  func effects() -> AsyncStream<Effect> {
+    let (stream, continuation) = AsyncStream.makeStream(of: Effect.self)
+    for effect in undelivered {
+      continuation.yield(effect)
+    }
+    undelivered = []
+    subscribers.append(continuation)
+    return stream
   }
 }

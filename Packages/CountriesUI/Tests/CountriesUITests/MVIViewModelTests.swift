@@ -53,7 +53,7 @@ struct MVIViewModelTests {
   @Test("an emitted effect reaches the subscriber")
   func emittedEffectReachesSubscriber() async {
     let viewModel = CounterViewModel()
-    let effects = viewModel.effects
+    let effects = viewModel.effects()
 
     viewModel.send(.pingRequested(1))
 
@@ -67,21 +67,21 @@ struct MVIViewModelTests {
     viewModel.send(.pingRequested(1))
     viewModel.send(.pingRequested(2))
 
-    #expect(await first(2, of: viewModel.effects) == [.pinged(1), .pinged(2)])
+    #expect(await first(2, of: viewModel.effects()) == [.pinged(1), .pinged(2)])
   }
 
   @Test("a new subscriber after a cancelled one still gets effects")
   func newSubscriberAfterCancelledOne() async {
     let viewModel = CounterViewModel()
     let firstSubscriber = Task {
-      for await _ in viewModel.effects {}
+      for await _ in viewModel.effects() {}
     }
     firstSubscriber.cancel()
     await firstSubscriber.value
 
     viewModel.send(.pingRequested(3))
 
-    #expect(await first(1, of: viewModel.effects) == [.pinged(3)])
+    #expect(await first(1, of: viewModel.effects()) == [.pinged(3)])
   }
 
   // MARK: Helpers
