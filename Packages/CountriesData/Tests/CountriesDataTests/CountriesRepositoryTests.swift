@@ -34,7 +34,7 @@ struct CountriesRepositoryTests {
 
   @Test("AC-1.3 a blank term sends no filter")
   func blankTermSendsNoFilter() async throws {
-    let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("countries")))
     let repository = CountriesRepositoryImpl(client: client)
 
     _ = try await repository.countries(matching: "  ", forceRefresh: false)
@@ -45,13 +45,41 @@ struct CountriesRepositoryTests {
 
   @Test("AC-1.8 force refresh fetches network-only, otherwise the cache comes first")
   func forceRefreshFetchesNetworkOnly() async throws {
-    let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("countries")))
     let repository = CountriesRepositoryImpl(client: client)
 
     _ = try await repository.countries(matching: "", forceRefresh: false)
     _ = try await repository.countries(matching: "", forceRefresh: true)
 
     #expect(await client.cachePolicies == [.cacheFirst, .networkOnly])
+  }
+
+  @Test("AC-1.6 a blank term with no countries refetches from the network")
+  func blankTermWithNoCountriesRefetches() async throws {
+    let client = try FakeGraphQLClient(results: [
+      .success(JSONFixture.object(#"{ "countries": [] }"#)),
+      .success(JSONFixture.responseData("countries")),
+    ])
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let countries = try await repository.countries(matching: "", forceRefresh: false)
+
+    #expect(countries.count == 250)
+    #expect(await client.cachePolicies == [.cacheFirst, .networkOnly])
+  }
+
+  @Test("AC-1.6 a blank term with no countries from the network is a server error")
+  func blankTermWithNoCountriesIsAServerError() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    await #expect(throws: CountriesError.server) {
+      try await repository.countries(matching: " ", forceRefresh: false)
+    }
+    await #expect(throws: CountriesError.server) {
+      try await repository.countries(matching: "", forceRefresh: true)
+    }
+    #expect(await client.cachePolicies == [.cacheFirst, .networkOnly, .networkOnly])
   }
 
   @Test("AC-1.6 errors reach the caller unchanged")
