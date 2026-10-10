@@ -42,6 +42,8 @@ func assertSnapshots(
 enum SnapshotError: Error {
   case noWindowScene
   case pngEncodingFailed
+  /// Ten captures in a row differed.
+  case unstable
 }
 
 /// Hosts the view in a window with the preset's size, safe area and traits, and renders it to PNG.
@@ -51,6 +53,8 @@ enum SnapshotError: Error {
 /// window in a scene. The image is forced to sRGB so it doesn't depend on the Mac's display.
 @MainActor
 private func render(_ view: some View, on preset: SnapshotPreset, _ variant: SnapshotVariant) async throws -> Data {
+  await RenderGate.shared.enter()
+  defer { RenderGate.shared.leave() }
   let scene = try await hostScene()
   let controller = UIHostingController(
     rootView: view
@@ -69,18 +73,41 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
   window.traitOverrides.userInterfaceStyle = variant.style
   window.traitOverrides.preferredContentSizeCategory = variant.contentSize
   window.traitOverrides.layoutDirection = variant.layoutDirection
+
+  // SwiftUI's transaction doesn't reach UIKit: with animations on, the search field's clear
+  // button is captured mid-fade. Off, views take their final state at once. Core Animation
+  // animations that UIKit adds itself, like a spinner's rotation, still run, so the window's layer
+  // time is frozen before any view is added and each one renders its first frame.
+  UIView.setAnimationsEnabled(false)
+  defer { UIView.setAnimationsEnabled(true) }
+  window.layer.speed = 0
+
   window.rootViewController = controller
   window.isHidden = false
   defer { window.isHidden = true }
 
-  // Give SwiftUI a few run-loop turns to settle its layout.
-  for _ in 0 ..< 3 {
+  // Some views settle a moment after layout (the search field shows its clear button late), so
+  // capture until two images taken a short while apart match.
+  var previous = Data()
+  for _ in 0 ..< 10 {
     controller.view.layoutIfNeeded()
-    await Task.yield()
+    try await Task.sleep(for: .milliseconds(50))
+    let png = try capture(window)
+    if png == previous {
+      return png
+    }
+    previous = png
   }
+  throw SnapshotError.unstable
+}
 
+/// Draws the window as the render server shows it, at @1x. The window keeps the device's display
+/// scale, so layout matches the device; only the image is smaller, which keeps the reference images
+/// a reviewable size.
+@MainActor
+private func capture(_ window: UIWindow) throws -> Data {
   let format = UIGraphicsImageRendererFormat()
-  format.scale = preset.scale
+  format.scale = 1
   format.opaque = true
   format.preferredRange = .standard
   let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
@@ -130,7 +157,7 @@ private func compare(_ png: Data, with reference: URL, sourceLocation: SourceLoc
     )
     return
   }
-  guard stored != png else { return }
+  guard !matches(png, stored) else { return }
 
   Attachment.record(png, named: name, sourceLocation: sourceLocation)
   Issue.record(
@@ -156,5 +183,79 @@ private final class SnapshotWindow: UIWindow {
 
   override var safeAreaInsets: UIEdgeInsets {
     fixedSafeArea
+  }
+}
+
+/// Lets one render run at a time. Swift Testing runs tests in parallel, and every snapshot window
+/// joins the same scene: with two on screen, Liquid Glass in one picks up the other's content.
+@MainActor
+private final class RenderGate {
+  static let shared = RenderGate()
+
+  private var isBusy = false
+  private var waiting: [CheckedContinuation<Void, Never>] = []
+
+  func enter() async {
+    if isBusy {
+      await withCheckedContinuation { waiting.append($0) }
+    } else {
+      isBusy = true
+    }
+  }
+
+  /// Hands the gate to the next render in line, or opens it.
+  func leave() {
+    if waiting.isEmpty {
+      isBusy = false
+    } else {
+      waiting.removeFirst().resume()
+    }
+  }
+}
+
+/// Whether two PNGs show the same image. Each channel may differ by up to 2 of 255: Liquid Glass
+/// over a search field holding text renders with that much noise from one run to the next. Any
+/// change to layout, text or color differs by far more.
+private func matches(_ png: Data, _ reference: Data, tolerance: Int = 2) -> Bool {
+  if png == reference {
+    return true
+  }
+  guard let lhs = RGBAImage(png), let rhs = RGBAImage(reference), lhs.size == rhs.size else {
+    return false
+  }
+  return zip(lhs.bytes, rhs.bytes).allSatisfy { abs(Int($0) - Int($1)) <= tolerance }
+}
+
+/// A PNG decoded to 8-bit sRGB RGBA bytes.
+private struct RGBAImage {
+  let size: CGSize
+  let bytes: [UInt8]
+
+  init?(_ png: Data) {
+    guard let image = UIImage(data: png)?.cgImage, let space = CGColorSpace(name: CGColorSpace.sRGB) else {
+      return nil
+    }
+    let (width, height) = (image.width, image.height)
+    var bytes = [UInt8](repeating: 0, count: width * height * 4)
+    let drawn = bytes.withUnsafeMutableBytes { buffer -> Bool in
+      guard let context = CGContext(
+        data: buffer.baseAddress,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: width * 4,
+        space: space,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+      ) else {
+        return false
+      }
+      context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+      return true
+    }
+    guard drawn else {
+      return nil
+    }
+    size = CGSize(width: width, height: height)
+    self.bytes = bytes
   }
 }
