@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  # The Xcode 26.0.1 row of scripts/test-matrix.sh, plus lint. macos-15 is the image that has
-  # Xcode 26.0.1 together with the iOS 26.0 simulator runtime.
+  # The Xcode 26.0.1 row of scripts/test-matrix.sh, plus lint and the codegen check. macos-15 is
+  # the image that has Xcode 26.0.1 together with the iOS 26.0 simulator runtime.
   xcode26:
     name: Lint, build and test (Xcode 26.0.1, iOS 26.0)
     runs-on: macos-15
@@ -41,6 +41,18 @@ jobs:
 
       - name: Lint
         run: scripts/lint.sh
+
+      - name: Install the Apollo iOS CLI 2.4.0
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o apollo-ios-cli.tar.gz https://github.com/apollographql/apollo-ios/releases/download/2.4.0/apollo-ios-cli.tar.gz
+          echo "c48b2137144bfc823c1b4f219d5b1d7f4f36a059744150e7f2505aa971f0b1fc  apollo-ios-cli.tar.gz" | shasum -a 256 -c -
+          tar -xzf apollo-ios-cli.tar.gz -C bin apollo-ios-cli
+
+      - name: Check the generated code is current
+        run: scripts/check-codegen.sh
+        env:
+          APOLLO_CLI: ${{ runner.temp }}/bin/apollo-ios-cli
 
       - name: Build with zero warnings and run the test plan
         run: scripts/test-matrix.sh xcode26-ios26

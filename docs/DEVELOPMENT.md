@@ -18,6 +18,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 | Test matrix | `scripts/test-matrix.sh` |
 | Record snapshots | see [Snapshot tests](#snapshot-tests) |
 | Codegen | see [Codegen](#codegen) |
+| Check the generated code is current | `scripts/check-codegen.sh` |
 
 `-collect-test-diagnostics never` stops `xcodebuild` from collecting a sysdiagnose from the simulator after a failing test, which can take 10 minutes.
 
@@ -102,6 +103,7 @@ Generated code is never edited by hand or by a formatter: SwiftLint and SwiftFor
    ```sh
    ./apollo-ios-cli generate --path ./apollo-codegen-config.json
    ```
+   CI runs `scripts/check-codegen.sh`, which regenerates and fails if the committed files differ.
 3. Only when the API itself changes, download the schema again first:
    ```sh
    ./apollo-ios-cli fetch-schema --path ./apollo-codegen-config.json

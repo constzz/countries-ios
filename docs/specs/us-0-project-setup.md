@@ -34,7 +34,7 @@
 | 0.2 | A clean `xcodebuild build` on each Xcode; the result bundle reports zero warnings (`xcrun xcresulttool get build-results`) |
 | 0.3 | The test command from the README; the result bundle lists every package test target; `swift test --package-path Packages/<name>` |
 | 0.4 | `scripts/lint.sh` exits 0 |
-| 0.5 | Run the codegen command, then `git diff --exit-code` |
+| 0.5 | `scripts/check-codegen.sh` regenerates and fails on any change to the committed files; CI runs it on every pull request |
 | 0.6 | `CountriesUI/Package.swift` declares only `CountriesDomain`; generated types are `internal`, so exposing one publicly fails to compile; a lint rule rejects `import Apollo` in `CountriesUI` |
 | 0.7 | `gh pr checks` on PR #1 is green |
 | 0.8 | `scripts/test-matrix.sh` exits 0; after a save in Xcode 27.1, `project.pbxproj` still has `objectVersion = 77` and the Xcode 26.0.1 row still builds it |
