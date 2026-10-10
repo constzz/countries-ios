@@ -27,11 +27,23 @@
     "Browse every country in the world." : {
       "comment" : "Placeholder description under the app name on the root screen."
     },
+    "Connect to the internet and try again." : {
+      "comment" : "Message of the error state when the device has no internet connection."
+    },
+    "Couldn’t Load Countries" : {
+      "comment" : "Title of the error state when the country list failed to load for any reason but being offline."
+    },
     "Countries" : {
       "comment" : "The app's name, shown as the root screen's title."
     },
     "No countries found" : {
       "comment" : "VoiceOver announcement after a search that matched no country."
+    },
+    "Something went wrong. Try again in a moment." : {
+      "comment" : "Message of the error state when the country list failed to load for any reason but being offline."
+    },
+    "You’re Offline" : {
+      "comment" : "Title of the error state when the device has no internet connection."
     }
   },
   "version" : "1.0"
