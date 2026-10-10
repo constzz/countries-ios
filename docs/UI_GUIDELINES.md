@@ -30,6 +30,7 @@ Text(country.name).font(.rowTitle)
 - Color tokens map to system semantic colors: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
 - Text colors are `HierarchicalShapeStyle` tokens (`.secondary`), not `Color` tokens. Hierarchical styles resolve against their context, so secondary text stays readable inside a selected sidebar row.
 - No `preferredColorScheme`.
+- A grouped list keeps the `groupedBackground` token behind it in every state (`.scrollContentBackground(.hidden)`), because an empty `List` draws a plain background and the color would change when its rows arrive.
 - A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed as a token.
 - Lint rejects hard-coded colors anywhere in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
 
@@ -57,8 +58,9 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Navigation
 - `NavigationSplitView`: the country list in the sidebar, the selected country in the detail column. On compact width (iPhone, folded iPhone Duo) it collapses into a push stack by itself.
-- The sidebar is a `List(selection:)` keyed by the country `code`, with `.searchable` and `.refreshable`.
-- Selection lives in the root view, not in either view model:
+- The sidebar is a `List(selection:)` keyed by the country `code`, each row a `NavigationLink(value:)`, with `.searchable` and `.refreshable`.
+- The detail column shows `CountryDetailView(code:).id(code)`: a new view and view model for each country.
+- Selection lives in the root view as `@SceneStorage`, not in either view model:
   - on regular width the selected row stays highlighted, and before any selection the detail column shows a "Select a country" placeholder;
   - if a search filters out the selected country, its detail stays visible, and refresh keeps the selection;
   - going back on compact width clears the selection;
