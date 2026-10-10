@@ -7,6 +7,7 @@ import Foundation
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
   private let debounceInterval: DispatchQueue.SchedulerTimeType.Stride
+  private let searchProgressDelay: Duration
   /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
   /// view, so `init` only stores dependencies.
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
@@ -15,10 +16,12 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
 
   init(
     repository: any CountriesRepository,
-    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300)
+    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300),
+    searchProgressDelay: Duration = .milliseconds(500)
   ) {
     self.repository = repository
     self.debounceInterval = debounceInterval
+    self.searchProgressDelay = searchProgressDelay
     super.init(initialState: CountryListState())
   }
 
@@ -42,6 +45,8 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       handleSearchTextChanged(current, text)
     case let .searchSettled(term):
       handleSearchSettled(current, term)
+    case .searchProgressDue:
+      current
     case .refreshRequested:
       handleRefreshRequested(current)
     case .retryTapped:

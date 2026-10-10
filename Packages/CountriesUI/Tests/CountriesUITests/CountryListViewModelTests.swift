@@ -8,6 +8,8 @@ import Testing
 @MainActor
 struct CountryListViewModelTests {
   private let rows = Array(CountrySummary.samples.prefix(4))
+  /// Stands in for the 0.5 s before "Searching…" shows, to keep the tests fast.
+  private let progressDelay = Duration.milliseconds(20)
 
   // MARK: Loading
 
@@ -57,7 +59,7 @@ struct CountryListViewModelTests {
 
   // MARK: Searching
 
-  @Test("AC-1.4 a search keeps rows visible while searching")
+  @Test("AC-1.4 a search keeps rows visible and shows Searching after 0.5 s")
   func searchKeepsRowsVisible() async {
     let repository = SuspendingCountriesRepository()
     let viewModel = await loadedViewModel(repository)
@@ -65,10 +67,42 @@ struct CountryListViewModelTests {
     viewModel.send(.searchSettled("ger"))
 
     #expect(viewModel.state.content == .loaded(rows))
-    #expect(viewModel.state.isSearching)
+    #expect(!viewModel.state.isSearching)
     #expect(viewModel.state.query == "ger")
     let isRequested = await eventually { await repository.calls.last == .init(term: "ger", forceRefresh: false) }
     #expect(isRequested)
+    let isShown = await eventually { viewModel.state.isSearching }
+    #expect(isShown)
+    #expect(viewModel.state.content == .loaded(rows))
+  }
+
+  @Test("AC-1.4 a quick search never shows Searching")
+  func quickSearchNeverShowsSearching() async {
+    let viewModel = CountryListViewModel(
+      repository: MockCountriesRepository(result: .success(rows)),
+      searchProgressDelay: progressDelay
+    )
+    await viewModel.send(.appeared).value
+
+    let search = viewModel.send(.searchSettled("ger"))
+    #expect(!viewModel.state.isSearching)
+    await search.value
+    try? await Task.sleep(for: progressDelay * 3)
+
+    #expect(!viewModel.state.isSearching)
+  }
+
+  @Test("AC-1.4 Searching stays up when a newer search replaces a running one")
+  func searchingStaysUpAcrossSearches() async {
+    let repository = SuspendingCountriesRepository()
+    let viewModel = await loadedViewModel(repository)
+    viewModel.send(.searchSettled("a"))
+    let isShown = await eventually { viewModel.state.isSearching }
+    #expect(isShown)
+
+    viewModel.send(.searchSettled("ab"))
+
+    #expect(viewModel.state.isSearching)
   }
 
   @Test("AC-1.4 a search with nothing on screen shows loading")
@@ -262,7 +296,7 @@ struct CountryListViewModelTests {
 
   /// A view model whose first load returned `rows` from `repository`.
   private func loadedViewModel(_ repository: SuspendingCountriesRepository) async -> CountryListViewModel {
-    let viewModel = CountryListViewModel(repository: repository)
+    let viewModel = CountryListViewModel(repository: repository, searchProgressDelay: progressDelay)
     let load = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedTerms == [""] }
     await repository.respond(to: "", with: rows)
