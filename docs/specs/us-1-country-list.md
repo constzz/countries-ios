@@ -136,6 +136,8 @@ public protocol CountriesRepository: Sendable {
 - **Retry repeats the last request with its cache policy,** so a failed refresh retries from the network. Rejected: retry always reading through the cache, which could bring back the data the refresh meant to replace.
 - **A failure replaces the rows with the error state.** One state at a time keeps the screen contract small. Rejected: stale rows under an error banner, a sixth state for a rare case.
 - **VoiceOver announces after searches only,** not after the first load or a refresh, where the content the user asked for is already on screen.
+- **Snapshot images are drawn at @1x and match within 2 of 255 per color channel,** revising US-0's byte-for-byte comparison at native scale. With text in the search field, Liquid Glass renders with noise of 1–2 per channel from one run to the next, which byte comparison can't pass; layout, text and color changes differ by far more. At native scale the list's images alone were 27 MB, mostly the iPad sidebar material, and @1x brings them to under 7 MB. Rejected: byte comparison with the searching and empty states shown without search text, which isn't what users see; and @2x, which leaves the iPad images, already @2x, unchanged.
+- **The snapshot helper renders one image at a time, with UIKit animations off and layer time frozen.** Swift Testing runs tests in parallel, and Liquid Glass in one snapshot window picked up another window's rows; the search field's clear button was caught mid-fade; and the spinner was caught at a different angle each run.
 - **AC-1.13 and AC-1.14 are checked by hand.** Testing them automatically needs a stalled network transport and UI tests; both are listed under "With more time".
 
 Settled during the story:
