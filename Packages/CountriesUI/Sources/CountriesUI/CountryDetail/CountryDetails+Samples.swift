@@ -2,6 +2,15 @@
   import CountriesDomain
 
   extension CountryDetails {
+    /// Every row filled, with two currencies and three languages. Its row is near the top of the
+    /// list, so the selection shows on every iPad preset.
+    static let bolivia = sample(
+      "BO",
+      capital: "Sucre",
+      currencies: ["BOB", "BOV"],
+      languages: [("es", "Spanish"), ("ay", "Aymara"), ("qu", "Quechua")]
+    )
+
     /// Every row filled, with three currencies and three languages.
     static let switzerland = sample(
       "CH",

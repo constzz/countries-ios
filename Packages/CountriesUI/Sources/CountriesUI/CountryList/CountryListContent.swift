@@ -5,11 +5,15 @@ import SwiftUI
 /// snapshots can show any state.
 struct CountryListContent: View {
   let state: CountryListState
+  /// The selected country's code, owned by the root view.
+  @Binding var selection: String?
   let send: (CountryListAction) -> Task<Void, Never>
 
   var body: some View {
-    List(rows) { country in
-      CountryRow(country: country)
+    List(rows, selection: $selection) { country in
+      NavigationLink(value: country.code) {
+        CountryRow(country: country)
+      }
     }
     .navigationTitle(Text("Countries", bundle: .module, comment: "The app's name, shown as the root screen's title."))
     .searchable(

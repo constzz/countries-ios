@@ -24,6 +24,17 @@
         }
       }
     },
+    "Capital" : {
+      "comment" : "Label of the row with a country's capital city.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capital"
+          }
+        }
+      }
+    },
     "Connect to the internet and try again." : {
       "comment" : "Message of the error state when the device has no internet connection.",
       "localizations" : {
@@ -31,6 +42,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connect to the internet and try again."
+          }
+        }
+      }
+    },
+    "Continent" : {
+      "comment" : "Label of the row with the continent a country is on.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continent"
           }
         }
       }
@@ -79,6 +101,28 @@
         }
       }
     },
+    "Currencies" : {
+      "comment" : "Label of the row with the currencies a country uses.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currencies"
+          }
+        }
+      }
+    },
+    "Languages" : {
+      "comment" : "Label of the row with the languages spoken in a country.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Languages"
+          }
+        }
+      }
+    },
     "Loading Countries…" : {
       "comment" : "Label under the progress indicator while the country list loads.",
       "localizations" : {
@@ -86,6 +130,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Loading Countries…"
+          }
+        }
+      }
+    },
+    "Loading Country…" : {
+      "comment" : "Label under the progress indicator while a country's details load.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Country…"
           }
         }
       }
