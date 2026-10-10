@@ -48,6 +48,7 @@ Implements the repository with Apollo iOS.
 
 ### CountriesUI
 SwiftUI screens and their view models. It imports only CountriesDomain, never Apollo.
+- `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
 - `CountryList/` and `CountryDetail/`, one folder per feature.
 - `DesignSystem/`: semantic color, font, spacing and radius tokens, state views, the `.loadState(_:retry:)` modifier and the `\.countriesRepository` environment entry.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
@@ -68,18 +69,23 @@ The `@main` App and `AppContainer`, the composition root. It creates the reposit
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
-MVI with one-way data flow: view → action → reducer → new state and effects → view.
-- Each screen has an outer view that owns its view model with `@State`, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
-- A screen's state is one value. Its actions are one enum of everything that can happen, named after what happened: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
-- A pure reducer, `reduce(state, action) -> (state, effects)`, is the only place the state changes. Effects describe work to do: fetch, debounce, announce.
-- The view model is `@MainActor @Observable`. It exposes only `state` and `send(_:)`, and runs the effects the reducer returns. Its `init` has no side effects: work starts when the view sends `.appeared` from `.task`, because SwiftUI may create a view's initial `@State` value more than once.
-- One request at a time per screen: a new fetch cancels the one in flight, and the reducer ignores any response that doesn't answer the latest request.
-- Identity is stable: a country's `code` is its `id` across reloads and filtering.
-- No effects framework: effects are a small enum the view model switches over.
+MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in `CountriesUI/Architecture/`; there's no third-party framework.
+- **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Effect>`.
+- **One type per file.** Every top-level type has its own file, named after it, in its feature folder. That includes helper values such as `CountriesRequest`.
+- **State** is one value with everything the screen shows.
+- **Actions** are one enum of everything that can happen, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
+- **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
+- **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. Effects emitted before the view subscribes wait for it.
+- **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
+- **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
+- **No work in `init`.** A view model's `init` stores its dependencies and wires pipes; work starts when the view sends `.appeared` from `.task`, because SwiftUI may create a view's initial `@State` value more than once.
+- **One request at a time** per screen: a new fetch cancels the one in flight, and `reduce` ignores any response that doesn't answer the latest request.
+- **Stable identity:** a country's `code` is its `id` across reloads and filtering.
+- **Tests** drive a view model through `send`, await `send(_:).value`, replace its dependencies with test doubles, and check the state, the calls the doubles recorded and the effects. `MVIViewModelTests` covers the base on a toy view model.
 
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
-- No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, and view-model tests use `MockCountriesRepository`. Test doubles live in test targets.
+- No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, and view-model tests use `MockCountriesRepository` and `SuspendingCountriesRepository`. Test doubles live in test targets.
 - Snapshot tests render each screen state on every device preset in light and dark ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `CountriesUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
 - `CountriesApp.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 
