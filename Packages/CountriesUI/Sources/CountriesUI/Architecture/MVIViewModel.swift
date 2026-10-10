@@ -10,8 +10,6 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   /// The work launched by the `reduce` call in progress, so `send` can await it.
   @ObservationIgnored private var launchedWork: [Task<Void, Never>] = []
   @ObservationIgnored private var subscribers: [AsyncStream<Effect>.Continuation] = []
-  /// Effects emitted while no one subscribed, for the next subscriber.
-  @ObservationIgnored private var undelivered: [Effect] = []
 
   init(initialState: State) {
     state = initialState
@@ -51,7 +49,8 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
     return task
   }
 
-  /// Sends a one-time UI event to every subscriber, or keeps it for the next one if there's none.
+  /// Sends a one-time UI event to every subscriber. With none, it's dropped: no screen is on
+  /// display to handle it, and delivering it later would show a stale event.
   final func emit(_ effect: Effect) {
     subscribers.removeAll { subscriber in
       if case .terminated = subscriber.yield(effect) {
@@ -59,20 +58,13 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
       }
       return false
     }
-    if subscribers.isEmpty {
-      undelivered.append(effect)
-    }
   }
 
-  /// Subscribes to the effects the view handles. The stream starts with the effects emitted while
-  /// no one subscribed. Iterate it in `.task`: a cancelled iteration ends the stream, and the next
-  /// `.task` subscribes again.
+  /// Subscribes to the effects the view handles, from now on. Iterate it in `.task`, and subscribe
+  /// before sending the action that starts work: a cancelled iteration ends the stream, and the
+  /// next `.task` subscribes again.
   func effects() -> AsyncStream<Effect> {
     let (stream, continuation) = AsyncStream.makeStream(of: Effect.self)
-    for effect in undelivered {
-      continuation.yield(effect)
-    }
-    undelivered = []
     subscribers.append(continuation)
     return stream
   }
