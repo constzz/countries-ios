@@ -98,8 +98,8 @@ jobs:
 
   # The deployment-target floor: Xcode 27.1 building for and testing on iOS 17.0, without
   # snapshots. Public repositories only, like the row above. The xcode-27 image has no iOS 17
-  # runtime, so the job downloads it (several GB) and creates an iPhone 15 Pro simulator. iOS 17
-  # has no arm64-only runtime, so the download is the universal one.
+  # runtime, and Xcode 27.1's own downloader no longer offers it, so the job installs it with the
+  # image's xcodes (several GB) and creates an iPhone 15 Pro simulator.
   xcode27-ios17:
     name: Build and test on the iOS 17.0 floor (Xcode 27.1)
     if: ${{ !github.event.repository.private }}
@@ -115,7 +115,7 @@ jobs:
       - name: Install the iOS 17.0 runtime and create the iPhone 15 Pro simulator
         run: |
           xcrun simctl list runtimes | grep -q "iOS 17.0 " ||
-            xcodebuild -downloadPlatform iOS -buildVersion 17.0
+            xcodes runtimes install "iOS 17.0"
           xcrun simctl list devices "iOS 17.0" | grep -q "iPhone 15 Pro (" ||
             xcrun simctl create "iPhone 15 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro com.apple.CoreSimulator.SimRuntime.iOS-17-0
 
