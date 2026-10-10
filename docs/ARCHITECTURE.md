@@ -39,7 +39,7 @@ Foundation only. It defines what the app works with, independent of where the da
 Implements the repository with Apollo iOS.
 - Operations `CountriesQuery($filter:)` and `CountryQuery($code:)`, both built on the fragment `CountryBasics { code name emoji continent { code name } }`. Each screen has its own query, so the detail screen can gain fields without touching the list.
 - Apollo's generated code is embedded in this target with `internal` access. No public API can expose a generated type: the compiler rejects it.
-- `CountriesRepositoryImpl` is internal and created through one public factory.
+- `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout.
 - Internal pieces, each unit-tested:
   - mappers, one per GraphQL shape: `CountrySummary(fragment:)`, reused by the detail mapper;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
@@ -54,7 +54,7 @@ SwiftUI screens and their view models. It imports only CountriesDomain, never Ap
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp
-The `@main` App and `AppContainer`, the composition root. It creates the repository through CountriesData's public factory, with a 15 s request timeout, and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests it injects nothing, so no test run touches the network. Startup does nothing else.
+The `@main` App and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests it creates no repository and its window shows no screen, so no test run touches the network. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
@@ -75,10 +75,10 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **State** is one value with everything the screen shows.
 - **Actions** are one enum of everything that can happen, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
 - **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
-- **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. Effects emitted before the view subscribes wait for it.
+- **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. An effect emitted while no view subscribes is dropped, so the view subscribes before it sends `.appeared`.
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
 - **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
-- **No work in `init`.** A view model's `init` stores its dependencies and wires pipes; work starts when the view sends `.appeared` from `.task`, because SwiftUI may create a view's initial `@State` value more than once.
+- **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.task`.
 - **One request at a time** per screen: a new fetch cancels the one in flight, and `reduce` ignores any response that doesn't answer the latest request.
 - **Stable identity:** a country's `code` is its `id` across reloads and filtering.
 - **Tests** drive a view model through `send`, await `send(_:).value`, replace its dependencies with test doubles, and check the state, the calls the doubles recorded and the effects. `MVIViewModelTests` covers the base on a toy view model.
