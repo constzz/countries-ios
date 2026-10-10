@@ -2,7 +2,12 @@ import CountriesDomain
 
 extension CountrySummary {
   /// Maps the fields every country screen selects.
-  init(fragment _: CountriesAPI.CountryBasics) {
-    self.init(code: "", name: "", emoji: "", continent: Continent(code: "", name: ""))
+  init(fragment: CountriesAPI.CountryBasics) {
+    self.init(
+      code: fragment.code,
+      name: fragment.name,
+      emoji: fragment.emoji,
+      continent: Continent(code: fragment.continent.code, name: fragment.continent.name)
+    )
   }
 }
