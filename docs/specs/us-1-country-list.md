@@ -12,7 +12,7 @@
 
 ## Acceptance criteria
 - [ ] **AC-1.1** The list shows every country with its flag, name and continent, sorted by name.
-- [ ] **AC-1.2** Typing issues at most one query per 300 ms pause, and a term that is unchanged after trimming issues none.
+- [x] **AC-1.2** Typing issues at most one query per 300 ms pause, and a term that is unchanged after trimming issues none.
 - [ ] **AC-1.3** Search is case-insensitive, and special characters such as `(` don't produce an error. A blank term lists every country.
 - [ ] **AC-1.4** The first load shows a full-screen loading state. Later searches and refreshes keep the current rows visible: a search shows a progress indicator in the toolbar, and a refresh shows the system refresh control.
 - [ ] **AC-1.5** A search with no match shows an empty state that names the query.
