@@ -91,6 +91,8 @@ Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xc
 ## Codegen
 Apollo's inputs live in `Packages/CountriesData/Sources/CountriesData/GraphQL/`: the downloaded `schema.graphqls` and the operations (`*.graphql`). The generated Swift goes to `Generated/` next to it, `internal` to CountriesData. Both are committed, so building never needs codegen. Settings are in `apollo-codegen-config.json`.
 
+Generated code is never edited by hand or by a formatter: SwiftLint and SwiftFormat exclude `**/Generated`, and `Generated/.swift-format-ignore` keeps the swift-format that ships with Xcode out too. Codegen keeps that file.
+
 1. Install the CLI once, at the repo root (it's gitignored). Its version must match Apollo's in `Package.resolved`; the CLI refuses a mismatch.
    ```sh
    curl -L https://github.com/apollographql/apollo-ios/releases/download/2.4.0/apollo-ios-cli.tar.gz | tar -xz
