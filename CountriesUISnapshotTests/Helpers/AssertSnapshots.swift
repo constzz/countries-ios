@@ -42,7 +42,7 @@ func assertSnapshots(
 enum SnapshotError: Error {
   case noWindowScene
   case pngEncodingFailed
-  /// Ten captures in a row differed.
+  /// The captures didn’t settle within about ten seconds.
   case unstable
 }
 
@@ -83,12 +83,18 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
   window.isHidden = false
   defer { window.isHidden = true }
 
-  // Some views settle a moment after layout (the search field shows its clear button late), so
-  // capture until two images taken a short while apart match.
+  // Some views settle a moment after layout, so capture until two images taken a short while
+  // apart match. On a fresh simulator, system images such as the search field's clear button
+  // reach their layers a second or two late, and captures taken until then match each other
+  // without them, so no capture counts while an image is undrawn.
   var previous = Data()
-  for _ in 0 ..< 10 {
+  for _ in 0 ..< 200 {
     controller.view.layoutIfNeeded()
     try await Task.sleep(for: .milliseconds(50))
+    if hasUndrawnImage(in: window) {
+      previous = Data()
+      continue
+    }
     let png = try capture(window)
     if png == previous {
       return png
@@ -182,6 +188,15 @@ private final class SnapshotWindow: UIWindow {
   override var safeAreaInsets: UIEdgeInsets {
     fixedSafeArea
   }
+}
+
+/// Whether an image view holds an image its layer doesn't show yet.
+@MainActor
+private func hasUndrawnImage(in view: UIView) -> Bool {
+  if let imageView = view as? UIImageView, imageView.image != nil, imageView.layer.contents == nil {
+    return true
+  }
+  return view.subviews.contains { hasUndrawnImage(in: $0) }
 }
 
 /// Removes animations with a finite duration, such as a spinner's frames or a fade UIKit starts
