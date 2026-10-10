@@ -11,7 +11,7 @@ public struct CountryDetails: Identifiable, Hashable, Sendable {
   public let languages: [Language]
 
   public var id: String {
-    ""
+    summary.id
   }
 
   public init(summary: CountrySummary, capital: String?, currencies: [String], languages: [Language]) {

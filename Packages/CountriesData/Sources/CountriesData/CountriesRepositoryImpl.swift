@@ -39,4 +39,8 @@ struct CountriesRepositoryImpl: CountriesRepository {
       .map { CountrySummary(fragment: $0.fragments.countryBasics) }
       .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
   }
+
+  func country(code _: String) async throws -> CountryDetails {
+    throw CountriesError.unknown
+  }
 }

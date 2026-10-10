@@ -22,4 +22,8 @@ actor MockCountriesRepository: CountriesRepository {
     calls.append(Call(term: term, forceRefresh: forceRefresh))
     return try result.get()
   }
+
+  func country(code _: String) async throws -> CountryDetails {
+    throw CountriesError.unknown
+  }
 }

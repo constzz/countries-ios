@@ -11,4 +11,8 @@ struct UnavailableCountriesRepository: CountriesRepository {
   func countries(matching _: String, forceRefresh _: Bool) async throws -> [CountrySummary] {
     throw CountriesError.unknown
   }
+
+  func country(code _: String) async throws -> CountryDetails {
+    throw CountriesError.unknown
+  }
 }
