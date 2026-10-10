@@ -5,8 +5,8 @@
 ## Scope
 - **Domain:** `CountryDetails`, `Language`, and `CountriesRepository.country(code:)`.
 - **Data:** `CountryQuery($code:)` on the `CountryBasics` fragment, the detail mapper, which reuses `CountrySummary(fragment:)`, `null` → `.notFound`, the repository method, and JSON fixtures captured from the live API (Antarctica, Switzerland, an unknown code).
-- **UI:** `CountryDetailViewModel` on the shared MVI base, the detail screen as a `List` of `LabeledContent` rows under a flag-and-name header, loading, error and not-found through `.loadState`, selectable list rows that fill the split view's detail column (pushed on compact width), the selection kept in `RootView` and restored with `@SceneStorage`, previews and snapshots of every detail state, and the list snapshots re-recorded for their new disclosure indicators and selection highlight.
-- **App:** nothing changes. `AppContainer` already injects the repository, which gains the new method.
+- **UI:** `CountryDetailViewModel` on the shared MVI base, the detail screen as a `List` of `LabeledContent` rows under a flag-and-name header, loading, error and not-found through `.loadState`, selectable list rows that fill the split view's detail column (pushed on compact width), the selection kept in `RootView` and restored with `@SceneStorage`, `RootView` taking the repository in its `init` in place of the `\.countriesRepository` environment entry, previews and snapshots of every detail state, and the list snapshots re-recorded for their new disclosure indicators and selection highlight.
+- **App:** `CountriesApp` passes the container's repository to `RootView(repository:)` instead of the environment. `AppContainer` is unchanged; its repository gains the new method.
 
 **Non-goals:** pull-to-refresh on the detail, currency and language names in the user's language (the API's codes and English names are shown as they are), native language names, subdivisions and phone codes, sharing or copying values, UI tests.
 
@@ -96,7 +96,7 @@ public protocol CountriesRepository: Sendable {
   func country(code: String) async throws -> CountryDetails
 }
 ```
-`UnavailableCountriesRepository`, the environment entry's default, and the UI test doubles gain the method.
+The UI test doubles gain the method.
 
 ## UI details
 - **Header:** the flag emoji at a size that scales with Dynamic Type (`@ScaledMetric` relative to `.largeTitle`), hidden from VoiceOver, above the name in a title font token, centered and wrapping, with the heading trait.
@@ -152,6 +152,7 @@ public protocol CountriesRepository: Sendable {
 - **Not found offers no Try Again.** Repeating the request won't make the country exist; the user picks another one. Rejected: Try Again on every error, which here would only fail again.
 - **The error title names what failed to load,** "Couldn't Load Country" on the detail, while the offline copy is shared. Rejected: one title for both screens, which says "Countries" when a single country failed.
 - **The detail snapshots show Bolivia, selected in the list beside it.** Its row sits near the top of the sidebar, so the highlight is on screen on every iPad preset, and it has two currencies and three languages. Bolivia joins the list's samples, so the list snapshots gain a row. Rejected: Switzerland, whose row is below the fold on iPad landscape, so the images couldn't show the highlight.
+- **No custom EnvironmentValues entry: the repository comes in through `RootView`'s `init`.** Revised during the story. The `\.countriesRepository` entry from US-1 was read only by `RootView`, which passed it on to both screens through `init`, so it moved the repository one level, and its required default, a repository that fails every request, turned a missing injection into an error state at runtime instead of a compile error. The brief asks for an entry only where more than one view genuinely needs it, and two shallow screens have no such value: locale, Dynamic Type and color scheme are SwiftUI's own, and everything else reaches its view through a parameter. Rejected: each screen reading the entry itself, which `init` can't do, so each view would build its view model late and draw an empty first frame.
 - **AC-2.1, AC-2.8, AC-2.9 and AC-2.11 are checked by hand,** like AC-1.13 and AC-1.14. Navigation, size changes and relaunch need UI tests, listed under "With more time"; the snapshots cover what each state looks like.
 
 Settled during the story:
