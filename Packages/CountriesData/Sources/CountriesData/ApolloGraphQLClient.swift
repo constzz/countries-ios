@@ -57,7 +57,7 @@ struct ApolloGraphQLClient: GraphQLClient {
       }
     case is ResponseCodeInterceptor.ResponseCodeError:
       CountriesError.network
-    case is JSONResponseParsingError, is GraphQLExecutionError:
+    case is JSONResponseParsingError, is JSONDecodingError, is GraphQLExecutionError:
       CountriesError.decoding
     default:
       CountriesError.unknown
