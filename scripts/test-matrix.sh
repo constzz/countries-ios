@@ -26,6 +26,9 @@ WORK_DIR="${MATRIX_OUTPUT_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/countries-test-matri
 mkdir -p "$WORK_DIR"
 echo "Logs and result bundles: $WORK_DIR"
 
+# Keep logs and result bundles, pass or fail; drop the DerivedData folders (several hundred MB each).
+trap 'rm -rf "$WORK_DIR"/*-DerivedData' EXIT
+
 fail() {
   echo "error: $1" >&2
   if [ -n "${2:-}" ] && [ -f "$2" ]; then
@@ -41,6 +44,7 @@ build() {
   local log="$WORK_DIR/$label-build.log" result="$WORK_DIR/$label-build.xcresult"
   [ -d "$xcode" ] || fail "Xcode not found at $xcode (set XCODE_27_PATH / XCODE_26_PATH)"
   echo "==> Build: $(DEVELOPER_DIR="$xcode/Contents/Developer" xcodebuild -version | head -n 1)"
+  rm -rf "$WORK_DIR/$label-DerivedData"
   DEVELOPER_DIR="$xcode/Contents/Developer" xcodebuild build-for-testing \
     -scheme "$SCHEME" -testPlan "$SCHEME" \
     -destination "generic/platform=iOS Simulator" \
@@ -54,12 +58,12 @@ build() {
   echo "    OK, 0 warnings"
 }
 
-# test <label> <xcode path> <destination> <snapshots: yes|no>: runs the test plan on a built product.
+# run_tests <label> <xcode path> <destination> <snapshots: yes|no>: runs the test plan on a built product.
 run_tests() {
   local label=$1 xcode=$2 destination=$3 snapshots=$4
   local row="$label ${destination#platform=iOS Simulator,}"
   local slug log result
-  slug=$(echo "$row" | tr -c '[:alnum:]' '-')
+  slug=$(printf '%s' "$row" | tr -c '[:alnum:]' '-')
   log="$WORK_DIR/$slug-test.log"
   result="$WORK_DIR/$slug-test.xcresult"
   local skip=()
@@ -100,6 +104,4 @@ for row in "${rows[@]}"; do
   run_tests "$label" "$xcode" "$destination" "$snapshots"
 done
 
-# Keep logs and result bundles; drop the DerivedData folders (several hundred MB each).
-rm -rf "$WORK_DIR"/*-DerivedData
 echo "Passed: ${rows[*]}"
