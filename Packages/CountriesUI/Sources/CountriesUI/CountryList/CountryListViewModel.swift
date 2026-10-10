@@ -57,7 +57,12 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
+  /// The pipe drops repeats of its own last term, not of the query already on screen: typing "a"
+  /// and deleting it within the debounce settles on the blank term the list already shows.
   private func handleSearchSettled(_ current: CountryListState, _ term: String) -> CountryListState {
+    guard term != current.query else {
+      return current
+    }
     var next = current
     next.query = term
     return start(.search, term: term, forceRefresh: false, in: next)
