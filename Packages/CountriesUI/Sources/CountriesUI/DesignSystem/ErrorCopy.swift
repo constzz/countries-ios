@@ -15,7 +15,7 @@ struct ErrorCopy: Equatable {
   /// Whether Try Again could help.
   var canRetry = true
 
-  init(_ error: CountriesError, subject _: Subject) {
+  init(_ error: CountriesError, subject: Subject) {
     switch error {
     case .offline:
       title = String(
@@ -29,18 +29,48 @@ struct ErrorCopy: Equatable {
         comment: "Message of the error state when the device has no internet connection."
       )
       systemImage = "wifi.slash"
-    case .network, .server, .notFound, .decoding, .unknown:
+    case .notFound:
       title = String(
+        localized: "Country Not Found",
+        bundle: .module,
+        comment: "Title of the state shown when the selected country no longer exists."
+      )
+      message = String(
+        localized: "This country isn’t available. Choose another one.",
+        bundle: .module,
+        comment: "Message of the state shown when the selected country no longer exists."
+      )
+      systemImage = "mappin.slash"
+      // The country won't start existing, so repeating the request can't help.
+      canRetry = false
+    case .network, .server, .decoding, .unknown:
+      title = subject.failureTitle
+      message = String(
+        localized: "Something went wrong. Try again in a moment.",
+        bundle: .module,
+        comment: "Message of the error state when the countries or a country failed to load, unless offline."
+      )
+      systemImage = "exclamationmark.triangle"
+    }
+  }
+}
+
+private extension ErrorCopy.Subject {
+  /// The title of a failure other than being offline.
+  var failureTitle: String {
+    switch self {
+    case .countries:
+      String(
         localized: "Couldn’t Load Countries",
         bundle: .module,
         comment: "Title of the error state when the country list failed to load for any reason but being offline."
       )
-      message = String(
-        localized: "Something went wrong. Try again in a moment.",
+    case .country:
+      String(
+        localized: "Couldn’t Load Country",
         bundle: .module,
-        comment: "Message of the error state when the country list failed to load for any reason but being offline."
+        comment: "Title of the error state when a country's details failed to load for any reason but being offline."
       )
-      systemImage = "exclamationmark.triangle"
     }
   }
 }

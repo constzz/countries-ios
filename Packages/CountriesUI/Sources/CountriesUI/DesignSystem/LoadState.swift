@@ -52,10 +52,12 @@ private struct LoadStateView: View {
     } description: {
       Text(copy.message)
     } actions: {
-      Button(action: retry) {
-        Text("Try Again", bundle: .module, comment: "Button on an error state that repeats the failed request.")
+      if copy.canRetry {
+        Button(action: retry) {
+          Text("Try Again", bundle: .module, comment: "Button on an error state that repeats the failed request.")
+        }
+        .buttonStyle(.bordered)
       }
-      .buttonStyle(.bordered)
     }
   }
 }
