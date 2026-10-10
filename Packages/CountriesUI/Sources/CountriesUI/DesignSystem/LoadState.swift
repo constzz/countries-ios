@@ -11,10 +11,15 @@ enum LoadPhase: Equatable {
 extension View {
   /// Covers the content with the view for `phase`, or shows the content when it's `nil`. The
   /// content stays in place underneath, so its search field and refresh control keep working.
-  func loadState(_ phase: LoadPhase?, loadingLabel: Text, retry: @escaping () -> Void) -> some View {
+  func loadState(
+    _ phase: LoadPhase?,
+    subject: ErrorCopy.Subject,
+    loadingLabel: Text,
+    retry: @escaping () -> Void
+  ) -> some View {
     overlay {
       if let phase {
-        LoadStateView(phase: phase, loadingLabel: loadingLabel, retry: retry)
+        LoadStateView(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry)
       }
     }
   }
@@ -22,6 +27,7 @@ extension View {
 
 private struct LoadStateView: View {
   let phase: LoadPhase
+  let subject: ErrorCopy.Subject
   let loadingLabel: Text
   let retry: () -> Void
 
@@ -32,7 +38,7 @@ private struct LoadStateView: View {
     case let .empty(query):
       ContentUnavailableView.search(text: query)
     case let .failed(error):
-      failure(ErrorCopy(error))
+      failure(ErrorCopy(error, subject: subject))
     }
   }
 

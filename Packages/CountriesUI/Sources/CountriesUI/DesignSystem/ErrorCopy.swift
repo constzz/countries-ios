@@ -3,11 +3,19 @@ import Foundation
 
 /// What an error state says. The domain error carries no text; this is where it gets its copy.
 struct ErrorCopy: Equatable {
+  /// What failed to load, which the generic failure's title names.
+  enum Subject {
+    case countries
+    case country
+  }
+
   let title: String
   let message: String
   let systemImage: String
+  /// Whether Try Again could help.
+  var canRetry = true
 
-  init(_ error: CountriesError) {
+  init(_ error: CountriesError, subject _: Subject) {
     switch error {
     case .offline:
       title = String(

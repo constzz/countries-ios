@@ -25,6 +25,7 @@ struct CountryListContent: View {
     }
     .loadState(
       phase,
+      subject: .countries,
       loadingLabel: Text(
         "Loading Countries…",
         bundle: .module,
