@@ -77,6 +77,36 @@ struct CountryDetailViewModelTests {
     #expect(viewModel.state.content == .failed(.notFound))
   }
 
+  // MARK: Title
+
+  @Test("AC-2.2 the title shows once the header's name is under the bar")
+  func titleShowsOnceTheHeaderIsUnderTheBar() async {
+    let viewModel = CountryDetailViewModel(
+      code: "CH",
+      repository: MockCountriesRepository(detailResult: .success(details))
+    )
+    await viewModel.send(.appeared).value
+    #expect(!viewModel.state.showsTitle)
+
+    viewModel.send(.headerScrolled(underBar: true))
+
+    #expect(viewModel.state.showsTitle)
+  }
+
+  @Test("AC-2.2 the title hides when the header's name scrolls back")
+  func titleHidesWhenTheHeaderScrollsBack() async {
+    let viewModel = CountryDetailViewModel(
+      code: "CH",
+      repository: MockCountriesRepository(detailResult: .success(details))
+    )
+    await viewModel.send(.appeared).value
+    viewModel.send(.headerScrolled(underBar: true))
+
+    viewModel.send(.headerScrolled(underBar: false))
+
+    #expect(!viewModel.state.showsTitle)
+  }
+
   // MARK: Cancelling
 
   @Test("AC-2.10 disappearing cancels the request and shows no error")

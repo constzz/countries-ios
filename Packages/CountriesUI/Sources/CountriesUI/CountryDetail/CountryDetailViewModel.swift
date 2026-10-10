@@ -23,6 +23,8 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       handleDisappeared(current)
     case .retryTapped:
       handleRetryTapped(current)
+    case .headerScrolled:
+      current
     case let .responseReceived(requestID, result):
       handleResponse(result, for: requestID, in: current)
     }
