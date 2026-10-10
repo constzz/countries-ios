@@ -12,15 +12,15 @@
 
 ## Acceptance criteria
 - [ ] **AC-2.1** Selecting a row shows that country's detail: pushed on compact width, in the detail column on regular width. On compact width each row shows a disclosure indicator.
-- [ ] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The name is also the navigation title. Long names and long lists wrap.
-- [ ] **AC-2.3** Missing values render as "None": no capital, no currencies (blank entries are dropped) or no languages. Antarctica shows "None" in all three rows.
-- [ ] **AC-2.4** The detail shows a loading state until its own query returns; nothing is prefilled from the list. A failure shows an error state with a Try Again button, which repeats the request. Offline has its own message.
-- [ ] **AC-2.5** A code the API doesn't know shows a "Country Not Found" state, with no Try Again.
-- [ ] **AC-2.6** Snapshots cover the loading, loaded, missing-values, long-name, error, offline and not-found states on every device preset in light and dark, plus accessibility XXXL on iPhone 17 Pro. On regular width the detail fills the detail column beside the list, with the country's row highlighted; on compact width it shows pushed. The list snapshots whose rows changed are re-recorded.
-- [ ] **AC-2.7** All detail copy comes from the String Catalog: row labels, "None", loading, error and not-found messages. Currencies and languages use the locale's list format. The localization tests pass, and the loaded state's right-to-left snapshots (iPhone 17 Pro and iPad landscape) are mirrored.
+- [x] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The name is also the navigation title. Long names and long lists wrap.
+- [x] **AC-2.3** Missing values render as "None": no capital, no currencies (blank entries are dropped) or no languages. Antarctica shows "None" in all three rows.
+- [x] **AC-2.4** The detail shows a loading state until its own query returns; nothing is prefilled from the list. A failure shows an error state with a Try Again button, which repeats the request. Offline has its own message.
+- [x] **AC-2.5** A code the API doesn't know shows a "Country Not Found" state, with no Try Again.
+- [x] **AC-2.6** Snapshots cover the loading, loaded, missing-values, long-name, error, offline and not-found states on every device preset in light and dark, plus accessibility XXXL on iPhone 17 Pro. On regular width the detail fills the detail column beside the list, with the country's row highlighted; on compact width it shows pushed. The list snapshots whose rows changed are re-recorded.
+- [x] **AC-2.7** All detail copy comes from the String Catalog: row labels, "None", loading, error and not-found messages. Currencies and languages use the locale's list format. The localization tests pass, and the loaded state's right-to-left snapshots (iPhone 17 Pro and iPad landscape) are mirrored.
 - [ ] **AC-2.8** On regular width the selected row stays highlighted. If a search filters it out, its detail stays visible, and a refresh keeps it. Going back on compact width clears the selection.
 - [ ] **AC-2.9** Folding or unfolding the iPhone Duo, and rotating or resizing an iPad window, keep the selected country. After relaunch, each window restores its selection.
-- [ ] **AC-2.10** Leaving the detail, or selecting another country, cancels its request in flight. A cancelled request never shows an error, the detail loads again when it reappears, and a stale response never replaces the current state.
+- [x] **AC-2.10** Leaving the detail, or selecting another country, cancels its request in flight. A cancelled request never shows an error, the detail loads again when it reappears, and a stale response never replaces the current state.
 - [ ] **AC-2.11** VoiceOver reads the header as the country's name, marked as a heading, without the flag, and each row as its label then its value.
 
 ## Screen contract
@@ -99,9 +99,10 @@ public protocol CountriesRepository: Sendable {
 ## UI details
 - **Header:** the flag emoji at a size that scales with Dynamic Type (`@ScaledMetric` relative to `.largeTitle`), hidden from VoiceOver, above the name in a title font token, centered and wrapping, with the heading trait.
 - **Rows:** `LabeledContent` with the label from the catalog and the value as `Text(verbatim:)`, or the catalog's "None". At accessibility sizes `LabeledContent` stacks the value under its label by itself.
-- **Values:** a small formatter in `CountryDetail/` turns details into row values: the capital or `nil`, and currencies and language names joined with `.formatted(.list(type: .and))` in the current locale, or `nil` when empty. The view shows `nil` as "None".
+- **Values:** `CountryDetailValues` turns details into the text of each row: the capital, or "None" from the catalog; currencies and language names joined with `.formatted(.list(type: .and))` in the current locale, or "None" when there are none; and the continent's name.
 - **Error copy:** `ErrorCopy` gains a subject: the list's generic failure stays "Couldn't Load Countries", the detail's is "Couldn't Load Country". Offline copy is shared. `.notFound` gets its own copy and `canRetry == false`, and `.loadState` shows no Try Again for it.
-- **Tokens:** new font tokens for the header name and the flag's base text style in `DesignSystem/Typography.swift`. Nothing else is styled by hand.
+- **Background:** the detail keeps the system grouped background in every state. An empty `List` draws a plain background whatever its style, so loading and errors would sit on white and the screen would change color when the rows arrive. The list's own background is hidden with `.scrollContentBackground(.hidden)` and the `groupedBackground` token is drawn behind it.
+- **Tokens:** `Font.detailTitle` for the header name and `Font.detailFlag(size:)` for the flag, whose size is a `@ScaledMetric` relative to `.largeTitle`; `primaryText` for the name inside the section header, which the system would style as secondary; and `groupedBackground`. Nothing else is styled by hand.
 
 ## Errors and edge cases
 | Scenario | Expected | UI state | Recovery |
@@ -125,15 +126,15 @@ public protocol CountriesRepository: Sendable {
 | AC | Tests |
 |---|---|
 | 2.1 | Manual on iPhone 17 Pro and iPad (A16) simulators; the `COUNTRY_DETAIL_*` and re-recorded `COUNTRY_LIST_*` images show the pushed detail and the disclosure indicators on compact width |
-| 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMappingTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
-| 2.3 | Mapping: "AC-2.3 Antarctica has no capital, currencies or languages" (AQ fixture), "AC-2.3 a blank capital is no capital"; `CountryDetailValuesTests`: "AC-2.3 missing values are nil"; UI: "AC-2.3 a missing value reads None"; `COUNTRY_DETAIL_MISSING_VALUES_*` |
-| 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure is passed on"; `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
+| 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMappingTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `CountryDetailValuesTests`: "AC-2.2 every row shows its value"; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
+| 2.3 | Mapping: "AC-2.3 Antarctica has no capital, currencies or languages" (AQ fixture), "AC-2.3 blank values are missing values"; `CountryDetailValuesTests`: "AC-2.3 missing values read None"; `COUNTRY_DETAIL_MISSING_VALUES_*` |
+| 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure reaches the caller unchanged"; `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
 | 2.5 | Repository: "AC-2.5 a null country is not found" (unknown-code fixture); view model: "AC-2.5 an unknown code shows not found"; `ErrorCopyTests`: "AC-2.5 not found has its own copy and no retry"; `COUNTRY_DETAIL_NOT_FOUND_*` |
 | 2.6 | `CountryDetailSnapshotTests`: `COUNTRY_DETAIL_LOADING`, `_LOADED`, `_MISSING_VALUES`, `_LONG_NAME`, `_ERROR`, `_OFFLINE`, `_NOT_FOUND`; `CountryListSnapshotTests` re-recorded |
 | 2.7 | `LocalizationTests`; `CountryDetailValuesTests`: "AC-2.7 currencies and languages use the locale's list format" (`en_US`); `COUNTRY_DETAIL_LOADED_*_rtl` images |
 | 2.8 | Manual on iPad (A16) and iPhone 17 Pro: highlight, search and refresh with a selection, back on compact width; the iPad `COUNTRY_DETAIL_*` images show the highlight |
 | 2.9 | Manual: fold and unfold on the iPhone Duo simulator, rotate the iPad, resize an iPad window; relaunch from Xcode after backgrounding the app |
-| 2.10 | View model, with the suspending repository: "AC-2.10 disappearing cancels the request and shows no error", "AC-2.10 appearing after disappearing loads again", "AC-2.10 a stale response is ignored" |
+| 2.10 | View model, with `SuspendingDetailsRepository`: "AC-2.10 disappearing cancels the request and shows no error", "AC-2.10 appearing after disappearing loads again", "AC-2.10 a stale response is ignored" |
 | 2.11 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
 
 ## Decisions
@@ -148,8 +149,11 @@ public protocol CountriesRepository: Sendable {
 - **Blank values are dropped in the mapper,** so the domain never carries an API quirk and the UI only knows "present" or "missing". Rejected: filtering in the view.
 - **Not found offers no Try Again.** Repeating the request won't make the country exist; the user picks another one. Rejected: Try Again on every error, which here would only fail again.
 - **The error title names what failed to load,** "Couldn't Load Country" on the detail, while the offline copy is shared. Rejected: one title for both screens, which says "Countries" when a single country failed.
+- **The detail snapshots show Bolivia, selected in the list beside it.** Its row sits near the top of the sidebar, so the highlight is on screen on every iPad preset, and it has two currencies and three languages. Bolivia joins the list's samples, so the list snapshots gain a row. Rejected: Switzerland, whose row is below the fold on iPad landscape, so the images couldn't show the highlight.
 - **AC-2.1, AC-2.8, AC-2.9 and AC-2.11 are checked by hand,** like AC-1.13 and AC-1.14. Navigation, size changes and relaunch need UI tests, listed under "With more time"; the snapshots cover what each state looks like.
 
+Settled during the story:
+- **Snapshots of a collapsed split view with a selection.** A `NavigationSplitView` that starts collapsed with a selection shows the detail pushed, with a back button, so compact presets render the same split view as the others.
+
 Open, settled during the story:
-- **Snapshots of a collapsed split view with a selection.** Expected: a `NavigationSplitView` that starts collapsed with a selection shows the detail pushed. Settled by the first detail snapshot on iPhone 17 Pro; if it shows the list instead, compact presets render the detail in a `NavigationStack` under the list's title.
 - **`List(selection:)` with the selected row filtered out.** Expected: SwiftUI leaves the binding alone. Settled by the AC-2.8 manual check; if the list clears it, the binding the list gets ignores a `nil` while the selected code isn't among the rows. Going back always happens with the row on screen, so it still clears the selection.
