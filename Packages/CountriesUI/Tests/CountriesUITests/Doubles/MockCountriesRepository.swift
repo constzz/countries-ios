@@ -8,14 +8,25 @@ actor MockCountriesRepository: CountriesRepository {
   }
 
   private(set) var calls: [Call] = []
+  /// The codes `country(code:)` was asked for, in order.
+  private(set) var requestedCodes: [String] = []
   private var result: Result<[CountrySummary], CountriesError>
+  private var detailResult: Result<CountryDetails, CountriesError>
 
-  init(result: Result<[CountrySummary], CountriesError> = .success([])) {
+  init(
+    result: Result<[CountrySummary], CountriesError> = .success([]),
+    detailResult: Result<CountryDetails, CountriesError> = .failure(.notFound)
+  ) {
     self.result = result
+    self.detailResult = detailResult
   }
 
   func setResult(_ result: Result<[CountrySummary], CountriesError>) {
     self.result = result
+  }
+
+  func setDetailResult(_ detailResult: Result<CountryDetails, CountriesError>) {
+    self.detailResult = detailResult
   }
 
   func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary] {
@@ -23,7 +34,8 @@ actor MockCountriesRepository: CountriesRepository {
     return try result.get()
   }
 
-  func country(code _: String) async throws -> CountryDetails {
-    throw CountriesError.unknown
+  func country(code: String) async throws -> CountryDetails {
+    requestedCodes.append(code)
+    return try detailResult.get()
   }
 }
