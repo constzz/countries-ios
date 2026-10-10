@@ -1,0 +1,47 @@
+{
+  "schemaNamespace" : "CountriesAPI",
+  "input" : {
+    "schemaSearchPaths" : [
+      "Packages/CountriesData/Sources/CountriesData/GraphQL/schema.graphqls"
+    ],
+    "operationSearchPaths" : [
+      "Packages/CountriesData/Sources/CountriesData/GraphQL/**/*.graphql"
+    ]
+  },
+  "output" : {
+    "schemaTypes" : {
+      "path" : "Packages/CountriesData/Sources/CountriesData/Generated",
+      "moduleType" : {
+        "embeddedInTarget" : {
+          "name" : "CountriesData",
+          "accessModifier" : "internal"
+        }
+      }
+    },
+    "operations" : {
+      "inSchemaModule" : {}
+    },
+    "testMocks" : {
+      "none" : {}
+    }
+  },
+  "options" : {
+    "pruneGeneratedFiles" : true,
+    "markTypesNonisolated" : true
+  },
+  "schemaDownload" : {
+    "downloadMethod" : {
+      "introspection" : {
+        "endpointURL" : "https://countries.trevorblades.com/graphql",
+        "httpMethod" : {
+          "POST" : {}
+        },
+        "includeDeprecatedInputValues" : false,
+        "outputFormat" : "SDL"
+      }
+    },
+    "downloadTimeout" : 60,
+    "headers" : [],
+    "outputPath" : "Packages/CountriesData/Sources/CountriesData/GraphQL/schema.graphqls"
+  }
+}

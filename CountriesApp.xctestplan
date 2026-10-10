@@ -1,0 +1,44 @@
+{
+  "configurations" : [
+    {
+      "id" : "5B1E2C3D-4F60-4A7B-8C9D-0E1F2A3B4C5D",
+      "name" : "Default",
+      "options" : {}
+    }
+  ],
+  "defaultOptions" : {
+    "language" : "en",
+    "region" : "US"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/CountriesDomain",
+        "identifier" : "CountriesDomainTests",
+        "name" : "CountriesDomainTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/CountriesData",
+        "identifier" : "CountriesDataTests",
+        "name" : "CountriesDataTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/CountriesUI",
+        "identifier" : "CountriesUITests",
+        "name" : "CountriesUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:CountriesApp.xcodeproj",
+        "identifier" : "C0A100000000000000000062",
+        "name" : "CountriesUISnapshotTests"
+      }
+    }
+  ],
+  "version" : 1
+}

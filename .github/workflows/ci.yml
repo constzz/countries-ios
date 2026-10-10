@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The Xcode 26.0.1 row of scripts/test-matrix.sh, plus lint and the codegen check. macos-15 is
+  # the image that has Xcode 26.0.1 together with the iOS 26.0 simulator runtime.
+  xcode26:
+    name: Lint, build and test (Xcode 26.0.1, iOS 26.0)
+    runs-on: macos-15
+    timeout-minutes: 45
+    env:
+      XCODE_26_PATH: /Applications/Xcode_26.0.1.app
+      DEVELOPER_DIR: /Applications/Xcode_26.0.1.app/Contents/Developer
+      MATRIX_OUTPUT_DIR: ${{ github.workspace }}/test-matrix-output
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install SwiftLint 0.65.1 and SwiftFormat 0.63.1
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o swiftlint.zip https://github.com/realm/SwiftLint/releases/download/0.65.1/portable_swiftlint.zip
+          curl -sSfL -o swiftformat.zip https://github.com/nicklockwood/SwiftFormat/releases/download/0.63.1/swiftformat.zip
+          shasum -a 256 -c - <<'SUMS'
+          c1e429b0599cf1b516f369a2d9ec04eaf0e436f3c12b637df8851fa52ff694d0  swiftlint.zip
+          385ef1a263ba28685157b98c5536b9c9105e124518f28b7ef8a2bee4b167eaeb  swiftformat.zip
+          SUMS
+          unzip -q -o swiftlint.zip swiftlint -d bin
+          unzip -q -o swiftformat.zip swiftformat -d bin
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Lint
+        run: scripts/lint.sh
+
+      - name: Install the Apollo iOS CLI 2.4.0
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o apollo-ios-cli.tar.gz https://github.com/apollographql/apollo-ios/releases/download/2.4.0/apollo-ios-cli.tar.gz
+          echo "c48b2137144bfc823c1b4f219d5b1d7f4f36a059744150e7f2505aa971f0b1fc  apollo-ios-cli.tar.gz" | shasum -a 256 -c -
+          tar -xzf apollo-ios-cli.tar.gz -C bin apollo-ios-cli
+
+      - name: Check the generated code is current
+        run: scripts/check-codegen.sh
+        env:
+          APOLLO_CLI: ${{ runner.temp }}/bin/apollo-ios-cli
+
+      - name: Build with zero warnings and run the test plan
+        run: scripts/test-matrix.sh xcode26-ios26
+
+      - name: Upload logs and result bundles
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-matrix-xcode26
+          path: test-matrix-output
+          retention-days: 7
+
+  # The Xcode 27.1 reference row, snapshots included. Public repositories only: private ones pay
+  # for macOS minutes. The xcode-27 image has the iOS 27.0 runtime but no iPhone 17 Pro
+  # simulator, so the job creates one.
+  xcode27:
+    name: Build and test with snapshots (Xcode 27.1, iOS 27.0)
+    if: ${{ !github.event.repository.private }}
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      XCODE_27_PATH: /Applications/Xcode_27.1.app
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      MATRIX_OUTPUT_DIR: ${{ github.workspace }}/test-matrix-output
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create the iPhone 17 Pro simulator on iOS 27.0
+        run: |
+          xcrun simctl list devices "iOS 27.0" | grep -q "iPhone 17 Pro (" ||
+            xcrun simctl create "iPhone 17 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro com.apple.CoreSimulator.SimRuntime.iOS-27-0
+
+      - name: Build with zero warnings and run the test plan
+        run: scripts/test-matrix.sh xcode27-ios27
+
+      - name: Upload logs and result bundles
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-matrix-xcode27
+          path: test-matrix-output
+          retention-days: 7

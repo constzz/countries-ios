@@ -1,0 +1,68 @@
+# SwiftLint owns code smells; SwiftFormat (.swiftformat) owns layout.
+
+excluded:
+  - "**/Generated"
+  - "**/.build"
+  - DerivedData
+
+opt_in_rules:
+  - contains_over_first_not_nil
+  - empty_count
+  - fatal_error_message
+  - first_where
+  - implicitly_unwrapped_optional
+  - private_swiftui_state
+
+line_length: 120
+
+# Matches SwiftFormat's --trailing-commas collections-only.
+trailing_comma:
+  mandatory_comma: true
+
+custom_rules:
+  no_print:
+    name: "No print"
+    regex: '\b(print|debugPrint|dump)\('
+    match_kinds: identifier
+    message: "Log with os.Logger instead of print."
+    severity: error
+
+  no_hardcoded_colors:
+    name: "No hard-coded colors"
+    included: '.*/Packages/CountriesUI/.*\.swift$'
+    regex: '\b(Color|UIColor)\(\s*(red|hex|white)\s*:|#colorLiteral|\.(black|white)\b'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Use system semantic colors, or a colorset with Any and Dark appearances."
+    severity: error
+
+  no_apollo_in_ui:
+    name: "No Apollo in UI"
+    included: '.*/Packages/CountriesUI/.*\.swift$'
+    regex: '^\s*(@testable\s+)?import\s+Apollo'
+    message: "CountriesUI depends only on CountriesDomain. Apollo stays in CountriesData."
+    severity: error
+
+  design_tokens_only:
+    name: "Design tokens only"
+    included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
+    excluded: '.*/DesignSystem/.*'
+    regex: '\bColor\(\s*(\.|uiColor:)|\bColor\.(primary|secondary|accentColor|black|white|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|gray)\b|\bFont\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|footnote|caption|caption2|system|custom)\b|\.(foregroundStyle|foregroundColor|background|tint)\(\s*(\.|Color\.)(primary|secondary|tertiary|quaternary|quinary|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|gray)\b|\.font\(\s*\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|footnote|caption|caption2|system)\b'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Use a semantic token from DesignSystem (Colors.swift, Typography.swift) instead of a system color or text style."
+    severity: error
+
+  localized_text_needs_bundle:
+    name: "Localized text needs bundle"
+    included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
+    regex: '\bText\(\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:tableName:[^,]+,\s*)?bundle:)|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView|NavigationLink|TextField|SecureField|Stepper|DatePicker|MultiDatePicker|ColorPicker|ProgressView|LabeledContent|DisclosureGroup|GroupBox|ControlGroup|ShareLink|Tab)\(\s*"|\.(?:navigationTitle|help|alert|confirmationDialog|badge|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|\bprompt:\s*"|\bString\(localized:\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:table:[^,]+,\s*)?bundle:)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+    message: "Look up UI copy in the package's String Catalog: Text(\"…\", bundle: .module, comment: \"…\"), String(localized: \"…\", bundle: .module, comment: \"…\"), or pass a Text to SwiftUI APIs that take a title. Use Text(verbatim:) for API data."
+    severity: error

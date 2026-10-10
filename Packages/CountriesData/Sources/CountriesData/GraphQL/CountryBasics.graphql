@@ -1,0 +1,11 @@
+# The fields every country screen shows. The list query and the detail query both select it,
+# so a country maps to the same domain summary on both screens.
+fragment CountryBasics on Country {
+  code
+  name
+  emoji
+  continent {
+    code
+    name
+  }
+}
