@@ -11,15 +11,18 @@ final class CountryListViewModel {
   private(set) var state = CountryListState()
 
   @ObservationIgnored private let repository: any CountriesRepository
+  @ObservationIgnored private let announce: @MainActor (String) -> Void
   @ObservationIgnored private let searchInput = PassthroughSubject<String, Never>()
   @ObservationIgnored private var subscriptions: Set<AnyCancellable> = []
   @ObservationIgnored private var fetchTask: Task<Void, Never>?
 
   init(
     repository: any CountriesRepository,
-    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300)
+    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300),
+    announce: @escaping @MainActor (String) -> Void = { _ in }
   ) {
     self.repository = repository
+    self.announce = announce
     searchInput
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .debounce(for: debounceInterval, scheduler: DispatchQueue.main)
