@@ -24,9 +24,6 @@
         }
       }
     },
-    "Browse every country in the world." : {
-      "comment" : "Placeholder description under the app name on the root screen."
-    },
     "Connect to the internet and try again." : {
       "comment" : "Message of the error state when the device has no internet connection."
     },
@@ -36,11 +33,26 @@
     "Countries" : {
       "comment" : "The app's name, shown as the root screen's title."
     },
+    "Loading Countries…" : {
+      "comment" : "Label under the progress indicator while the country list loads."
+    },
     "No countries found" : {
       "comment" : "VoiceOver announcement after a search that matched no country."
     },
+    "Search by name" : {
+      "comment" : "Placeholder in the search field above the country list."
+    },
+    "Searching" : {
+      "comment" : "VoiceOver label of the progress indicator shown while a search runs."
+    },
+    "Select a Country" : {
+      "comment" : "Placeholder in the detail column when no country is selected."
+    },
     "Something went wrong. Try again in a moment." : {
       "comment" : "Message of the error state when the country list failed to load for any reason but being offline."
+    },
+    "Try Again" : {
+      "comment" : "Button on an error state that repeats the failed request."
     },
     "You’re Offline" : {
       "comment" : "Title of the error state when the device has no internet connection."
