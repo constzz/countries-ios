@@ -45,7 +45,7 @@ The work ships as user stories, each with its own spec, branch and pull request:
 | Story | Spec |
 |---|---|
 | US-0 Project setup | [us-0-project-setup.md](docs/specs/us-0-project-setup.md) |
-| US-1 Country list | added with the story |
+| US-1 Country list | [us-1-country-list.md](docs/specs/us-1-country-list.md) |
 | US-2 Country detail | added with the story |
 
 ## Requirements map
@@ -56,16 +56,31 @@ Each requirement of the task traces to an acceptance criterion and the test that
 | At least two local Swift packages (data and UI) | US-0 / AC-0.6 | build |
 | Swift 6 strict concurrency | US-0 / AC-0.2 | warnings-as-errors build |
 | SwiftLint and SwiftFormat | US-0 / AC-0.4 | `scripts/lint.sh` |
+| A list of countries with flag, name and continent | US-1 / AC-1.1 | `CountriesRepositoryTests`, `CountryListReducerTests`, `COUNTRY_LIST_LOADED_*` snapshots |
+| Search by name, debounced with Combine | US-1 / AC-1.2, AC-1.3 | `CountryListSearchInputTests`, `SearchPatternTests`, `CountriesRepositoryTests` |
+| Loading, empty and error states | US-1 / AC-1.4 to AC-1.6, AC-1.9 | `CountryListReducerTests`, `CountryListViewModelTests`, `ErrorCopyTests`, `CountryListSnapshotTests` |
+| `@Observable` and `@MainActor` view models | US-1 / AC-1.1, AC-1.11 | `CountryListViewModelTests` |
+| Tests with a mocked network boundary | US-1 / AC-1.1, AC-1.3, AC-1.8 | `FakeGraphQLClient` in the data tests, `MockCountriesRepository` in the view-model tests |
+| A test of the GraphQL to domain mapping | US-1 / AC-1.1 | `CountrySummaryMappingTests` |
 
 ## How to see each state
 - Snapshot images: every screen state on every device, in light and dark, in [`CountriesUISnapshotTests/snapshots`](CountriesUISnapshotTests/snapshots).
 - SwiftUI previews for each screen.
+- In the app: search "zzz" for the empty state; turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
 
 ## Key decisions
-Filled in per story.
+- **Search runs on the server, debounced.** The API's `name` filter takes a regex, so typing sends at most one query per 300 ms pause, and an unchanged term sends none. The term is escaped and each letter becomes a class of both cases, because the API's regex is case-sensitive and an unbalanced `(` is a server error. Rejected: loading all 250 countries once and filtering on the device, which matches better (diacritics included) but leaves the debounce nothing to gate.
+- **MVI on each screen.** One state value, one action enum and a pure reducer that returns the new state and the effects to run; the `@MainActor @Observable` view model only exposes `state` and `send(_:)` and runs the effects. Every state change is in one function that tests call directly, and a stale response is dropped there by request id. Rejected: a view model with an event method per interaction and several observable properties.
+- **Combine only in the search field's input pipe**, where the debounce lives. Everything else is async/await.
+- **One request at a time.** A new load, search, refresh or retry cancels the one in flight, and the reducer ignores any response that doesn't answer the latest request.
+- **Snapshots of every state on every device**, light and dark, drawn at @1x and matched within 2 of 255 per color channel, because Liquid Glass over a search field holding text varies by that much between runs ([details](docs/specs/us-1-country-list.md#decisions)).
 
 ## Left out
-Filled in per story.
+- Diacritic-insensitive search: "Reunion" doesn't find "Réunion", because the API's regex matches the names as written.
+- Localized country and continent names: they stay in English, because search matches the English names.
 
 ## With more time
-Filled in per story.
+- UI tests, with accessibility identifiers and a stub repository chosen by launch argument.
+- An automated test of the 15 s timeout, with a network transport that never answers. Today it's checked by hand.
+- Apollo cache keys by country `code`, so the list and detail queries share cached countries.
+- Snapshots of iPad multitasking window sizes and the iPhone Duo's rotated postures.
