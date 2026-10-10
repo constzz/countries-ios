@@ -31,8 +31,8 @@ func assertSnapshots(
   for (preset, variant) in shots {
     let imageName = "\(name)_\(preset.name)_\(variant.suffix)"
     do {
-      let png = try await render(view, on: preset, variant)
-      compare(png, with: folder.appending(path: "\(imageName).png"), sourceLocation: sourceLocation)
+      let snapshot = try await render(view, on: preset, variant)
+      compare(snapshot, with: folder.appending(path: "\(imageName).png"), sourceLocation: sourceLocation)
     } catch {
       Issue.record("Could not render \(imageName): \(error)", sourceLocation: sourceLocation)
     }
@@ -41,18 +41,26 @@ func assertSnapshots(
 
 enum SnapshotError: Error {
   case noWindowScene
+  case captureFailed
   case pngEncodingFailed
-  /// The captures didn’t settle within about ten seconds.
-  case unstable
+  /// The captures didn’t settle within about ten seconds. `waitingFor` names the image view still
+  /// undrawn at the end, if one was.
+  case unstable(waitingFor: String?)
 }
 
-/// Hosts the view in a window with the preset's size, safe area and traits, and renders it to PNG.
+/// A rendered image: its PNG, to record or attach, and its pixels, to compare.
+private struct Snapshot {
+  let png: Data
+  let pixels: RGBAImage
+}
+
+/// Hosts the view in a window with the preset's size, safe area and traits, and renders it.
 ///
 /// The window joins the test host's window scene, behind the app's own window: Liquid Glass and
 /// other materials are drawn by the render server, so `drawHierarchy` captures them only for a
 /// window in a scene. The image is forced to sRGB so it doesn't depend on the Mac's display.
 @MainActor
-private func render(_ view: some View, on preset: SnapshotPreset, _ variant: SnapshotVariant) async throws -> Data {
+private func render(_ view: some View, on preset: SnapshotPreset, _ variant: SnapshotVariant) async throws -> Snapshot {
   await RenderGate.shared.enter()
   defer { RenderGate.shared.leave() }
   let scene = try await hostScene()
@@ -84,31 +92,36 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
   defer { window.isHidden = true }
 
   // Some views settle a moment after layout, so capture until two images taken a short while
-  // apart match. On a fresh simulator, system images such as the search field's clear button
-  // reach their layers a second or two late, and captures taken until then match each other
-  // without them, so no capture counts while an image is undrawn.
-  var previous = Data()
+  // apart match, within the same tolerance as the reference: Liquid Glass may differ that much
+  // from one frame to the next. On a fresh simulator, system images such as the search field's
+  // clear button reach their layers a second or two late, and captures taken until then match
+  // each other without them, so no capture counts while an image is undrawn.
+  var previous: RGBAImage?
+  var undrawn: UIImageView?
   for _ in 0 ..< 200 {
     controller.view.layoutIfNeeded()
     try await Task.sleep(for: .milliseconds(50))
-    if hasUndrawnImage(in: window) {
-      previous = Data()
+    undrawn = undrawnImageView(in: window)
+    if undrawn != nil {
+      previous = nil
       continue
     }
-    let png = try capture(window)
-    if png == previous {
-      return png
+    let image = try capture(window)
+    guard let pixels = RGBAImage(image) else { throw SnapshotError.captureFailed }
+    if let previous, matches(pixels, previous) {
+      guard let png = UIImage(cgImage: image).pngData() else { throw SnapshotError.pngEncodingFailed }
+      return Snapshot(png: png, pixels: pixels)
     }
-    previous = png
+    previous = pixels
   }
-  throw SnapshotError.unstable
+  throw SnapshotError.unstable(waitingFor: undrawn.map(describe))
 }
 
 /// Draws the window as the render server shows it, at @1x. The window keeps the device's display
 /// scale, so layout matches the device; only the image is smaller, which keeps the reference images
 /// a reviewable size.
 @MainActor
-private func capture(_ window: UIWindow) throws -> Data {
+private func capture(_ window: UIWindow) throws -> CGImage {
   removeMotion(from: window.layer)
   let format = UIGraphicsImageRendererFormat()
   format.scale = 1
@@ -117,8 +130,8 @@ private func capture(_ window: UIWindow) throws -> Data {
   let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
     window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
   }
-  guard let png = image.pngData() else { throw SnapshotError.pngEncodingFailed }
-  return png
+  guard let cgImage = image.cgImage else { throw SnapshotError.captureFailed }
+  return cgImage
 }
 
 /// The test host's active window scene. The first test can start before the scene connects, so
@@ -136,14 +149,14 @@ private func hostScene() async throws -> UIWindowScene {
 }
 
 @MainActor
-private func compare(_ png: Data, with reference: URL, sourceLocation: SourceLocation) {
+private func compare(_ snapshot: Snapshot, with reference: URL, sourceLocation: SourceLocation) {
   let name = reference.lastPathComponent
   if SnapshotEnvironment.isRecording {
     do {
       try FileManager.default.createDirectory(
         at: reference.deletingLastPathComponent(), withIntermediateDirectories: true
       )
-      try png.write(to: reference)
+      try snapshot.png.write(to: reference)
       Issue.record(
         "Recorded \(name). Recording always fails; run the tests again without SNAPSHOT_RECORD.",
         sourceLocation: sourceLocation
@@ -161,9 +174,11 @@ private func compare(_ png: Data, with reference: URL, sourceLocation: SourceLoc
     )
     return
   }
-  guard !matches(png, stored) else { return }
+  if let stored = RGBAImage(stored), matches(snapshot.pixels, stored) {
+    return
+  }
 
-  Attachment.record(png, named: name, sourceLocation: sourceLocation)
+  Attachment.record(snapshot.png, named: name, sourceLocation: sourceLocation)
   Issue.record(
     "\(name) doesn't match its reference image. The rendered image is attached to the test result.",
     sourceLocation: sourceLocation
@@ -190,13 +205,31 @@ private final class SnapshotWindow: UIWindow {
   }
 }
 
-/// Whether an image view holds an image its layer doesn't show yet.
+/// The first image view on screen that holds an image its layer doesn't show yet. Hidden and
+/// transparent views and their subviews are skipped, as are empty image views: none is drawn, so
+/// their layers may never get contents.
 @MainActor
-private func hasUndrawnImage(in view: UIView) -> Bool {
-  if let imageView = view as? UIImageView, imageView.image != nil, imageView.layer.contents == nil {
-    return true
+private func undrawnImageView(in view: UIView) -> UIImageView? {
+  guard !view.isHidden, view.alpha > 0 else {
+    return nil
   }
-  return view.subviews.contains { hasUndrawnImage(in: $0) }
+  if let imageView = view as? UIImageView, imageView.image != nil, !imageView.bounds.isEmpty,
+     imageView.layer.contents == nil {
+    return imageView
+  }
+  for subview in view.subviews {
+    if let imageView = undrawnImageView(in: subview) {
+      return imageView
+    }
+  }
+  return nil
+}
+
+/// The image an image view holds and where it sits in its window, for a failure message.
+@MainActor
+private func describe(_ imageView: UIImageView) -> String {
+  let image = imageView.image.map { String(describing: $0) } ?? "no image"
+  return "\(image) at \(imageView.convert(imageView.bounds, to: nil))"
 }
 
 /// Removes animations with a finite duration, such as a spinner's frames or a fade UIKit starts
@@ -239,26 +272,33 @@ private final class RenderGate {
   }
 }
 
-/// Whether two PNGs show the same image. Each channel may differ by up to 2 of 255: Liquid Glass
-/// over a search field holding text renders with that much noise from one run to the next. Any
-/// change to layout, text or color differs by far more.
-private func matches(_ png: Data, _ reference: Data, tolerance: Int = 2) -> Bool {
-  if png == reference {
-    return true
-  }
-  guard let lhs = RGBAImage(png), let rhs = RGBAImage(reference), lhs.size == rhs.size else {
+/// Whether two images are the same. Each channel may differ by up to 2 of 255: Liquid Glass over
+/// a search field holding text renders with that much noise from one run to the next. Any change
+/// to layout, text or color differs by far more.
+private func matches(_ lhs: RGBAImage, _ rhs: RGBAImage, tolerance: Int = 2) -> Bool {
+  guard lhs.size == rhs.size else {
     return false
+  }
+  if lhs.bytes == rhs.bytes {
+    return true
   }
   return zip(lhs.bytes, rhs.bytes).allSatisfy { abs(Int($0) - Int($1)) <= tolerance }
 }
 
-/// A PNG decoded to 8-bit sRGB RGBA bytes.
+/// An image as 8-bit sRGB RGBA bytes.
 private struct RGBAImage {
   let size: CGSize
   let bytes: [UInt8]
 
   init?(_ png: Data) {
-    guard let image = UIImage(data: png)?.cgImage, let space = CGColorSpace(name: CGColorSpace.sRGB) else {
+    guard let image = UIImage(data: png)?.cgImage else {
+      return nil
+    }
+    self.init(image)
+  }
+
+  init?(_ image: CGImage) {
+    guard let space = CGColorSpace(name: CGColorSpace.sRGB) else {
       return nil
     }
     let (width, height) = (image.width, image.height)
