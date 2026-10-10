@@ -6,7 +6,7 @@
 - **Domain:** `CountrySummary`, `Continent`, `CountriesError`, and `CountriesRepository.countries(matching:forceRefresh:)`.
 - **Data:** `CountriesQuery($filter:)` on the `CountryBasics` fragment, `SearchPattern`, the `GraphQLClient` seam with its Apollo adapter and error mapping, the summary mapper, the repository and its public factory, and the `network` logger.
 - **UI:** `CountryListViewModel`, the list screen with `.searchable` and `.refreshable` as the sidebar of a `NavigationSplitView` whose detail column shows a "Select a Country" placeholder, the shared state views, the `.loadState(_:retry:)` modifier, the `\.countriesRepository` environment entry, previews and snapshots of every list state. The US-0 placeholder root screen and its snapshots are replaced.
-- **App:** `AppContainer` builds the `ApolloClient` with a 15 s request timeout and injects the repository.
+- **App:** `AppContainer` creates the repository through CountriesData's factory with a 15 s request timeout and injects it. Apollo stays inside CountriesData, so the factory builds the `ApolloClient`. While the app hosts tests, no repository is injected, so no test run touches the network.
 
 **Non-goals:** selecting a row and the country detail (US-2), diacritic-insensitive search ("Reunion" doesn't find "Réunion"), localized country names, persistence beyond Apollo's in-memory cache, UI tests.
 

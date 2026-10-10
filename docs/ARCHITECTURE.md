@@ -53,7 +53,7 @@ SwiftUI screens and their view models. It imports only CountriesDomain, never Ap
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp
-The `@main` App and `AppContainer`, the composition root. It builds the `ApolloClient` (with a 15 s request timeout), creates the repository and injects it into the environment. Startup does nothing else.
+The `@main` App and `AppContainer`, the composition root. It creates the repository through CountriesData's public factory, with a 15 s request timeout, and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests it injects nothing, so no test run touches the network. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
