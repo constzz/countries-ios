@@ -1,7 +1,5 @@
 import UIKit
 
-// MARK: - SnapshotPreset
-
 /// A device the snapshot tests render on. Sizes, safe areas and size classes were read from the
 /// running simulators (Xcode 27.1), not taken from spec sheets.
 struct SnapshotPreset: Sendable {
@@ -15,7 +13,6 @@ struct SnapshotPreset: Sendable {
 }
 
 extension SnapshotPreset {
-  /// iPhone 17 Pro in portrait (iOS 27.0).
   static let iPhone17Pro = SnapshotPreset(
     name: "iPhone17Pro",
     size: CGSize(width: 402, height: 874),

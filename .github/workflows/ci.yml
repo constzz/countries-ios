@@ -1,6 +1,5 @@
 name: CI
 
-# Pull requests only: macOS minutes are scarce while the repository is private.
 on:
   pull_request:
   workflow_dispatch:
@@ -54,9 +53,9 @@ jobs:
           path: test-matrix-output
           retention-days: 7
 
-  # The Xcode 27.1 reference row, snapshots included. It runs once the repository is public
-  # (Actions minutes are free then). The xcode-27 image has the iOS 27.0 runtime but no
-  # iPhone 17 Pro simulator, so the job creates one.
+  # The Xcode 27.1 reference row, snapshots included. Public repositories only: private ones pay
+  # for macOS minutes. The xcode-27 image has the iOS 27.0 runtime but no iPhone 17 Pro
+  # simulator, so the job creates one.
   xcode27:
     name: Build and test with snapshots (Xcode 27.1, iOS 27.0)
     if: ${{ !github.event.repository.private }}

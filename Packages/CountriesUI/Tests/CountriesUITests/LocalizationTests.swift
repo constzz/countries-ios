@@ -2,12 +2,9 @@ import Foundation
 import Testing
 @testable import CountriesUI
 
-// MARK: - LocalizationTests
-
 /// Checks the String Catalog against the bundle the app ships. English is the source language:
 /// its keys are the English text, so the compiled bundle needs no English table. Every other
-/// language the bundle ships must translate every key, so adding a language without finishing its
-/// translations fails here.
+/// language the bundle ships must translate every key.
 @Suite("Localization")
 struct LocalizationTests {
   @Test("AC-0.10 every catalog key is translated in every language the bundle ships")
@@ -43,8 +40,6 @@ struct LocalizationTests {
     }
   }
 }
-
-// MARK: - StringCatalog
 
 /// The parts of `Localizable.xcstrings` the tests read.
 private struct StringCatalog: Decodable {

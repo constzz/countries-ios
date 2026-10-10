@@ -1,7 +1,6 @@
 // swift-tools-version: 6.2
 import PackageDescription
 
-/// Zero warnings: every warning fails the build.
 let swiftSettings: [SwiftSetting] = [.treatAllWarnings(as: .error)]
 
 let package = Package(
