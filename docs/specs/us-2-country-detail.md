@@ -12,7 +12,7 @@
 
 ## Acceptance criteria
 - [ ] **AC-2.1** Selecting a row shows that country's detail: pushed on compact width, in the detail column on regular width. On compact width each row shows a disclosure indicator.
-- [ ] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The navigation bar shows the name, inline, only once the header's name has scrolled under it, so the name never shows twice and never lags behind the header. Long names and long lists wrap.
+- [x] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The navigation bar shows the name, inline, only once the header's name has scrolled under it, so the name never shows twice and never lags behind the header. Long names and long lists wrap.
 - [x] **AC-2.3** Missing values render as "None": no capital, no currencies (blank entries are dropped) or no languages. Antarctica shows "None" in all three rows.
 - [x] **AC-2.4** The detail shows a loading state until its own query returns; nothing is prefilled from the list. A failure shows an error state with a Try Again button, which repeats the request. Offline has its own message.
 - [x] **AC-2.5** A code the API doesn't know shows a "Country Not Found" state, with no Try Again.
