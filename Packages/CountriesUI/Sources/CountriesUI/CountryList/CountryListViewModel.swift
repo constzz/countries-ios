@@ -47,7 +47,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     guard current.content == .idle else {
       return current
     }
-    return start(.load, term: current.query, forceRefresh: false, in: current)
+    return start(.load, term: current.query, in: current)
   }
 
   private func handleSearchTextChanged(_ current: CountryListState, _ text: String) -> CountryListState {
@@ -65,18 +65,18 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     }
     var next = current
     next.query = term
-    return start(.search, term: term, forceRefresh: false, in: next)
+    return start(.search, term: term, in: next)
   }
 
   private func handleRefreshRequested(_ current: CountryListState) -> CountryListState {
-    start(.refresh, term: current.query, forceRefresh: true, in: current)
+    start(.refresh, term: current.query, in: current)
   }
 
   /// Repeats the last request. Try Again sits on the error screen, so the retry replaces it with
   /// loading, even for a refresh.
   private func handleRetryTapped(_ current: CountryListState) -> CountryListState {
-    let last = current.request ?? CountriesRequest(id: 0, term: current.query, forceRefresh: false, kind: .load)
-    var next = start(last.kind, term: last.term, forceRefresh: last.forceRefresh, in: current)
+    let last = current.request ?? CountriesRequest(id: 0, term: current.query, kind: .load)
+    var next = start(last.kind, term: last.term, in: current)
     if case .failed = next.content {
       next.content = .loading
     }
@@ -114,14 +114,12 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private func start(
     _ kind: CountriesRequest.Kind,
     term: String,
-    forceRefresh: Bool,
     in current: CountryListState
   ) -> CountryListState {
     var next = current
     let request = CountriesRequest(
       id: (current.request?.id ?? 0) + 1,
       term: term,
-      forceRefresh: forceRefresh,
       kind: kind
     )
     next.request = request

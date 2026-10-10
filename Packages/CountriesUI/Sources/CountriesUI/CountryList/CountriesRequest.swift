@@ -6,6 +6,10 @@ struct CountriesRequest: Equatable {
 
   let id: Int
   let term: String
-  let forceRefresh: Bool
   let kind: Kind
+
+  /// A refresh bypasses the cache.
+  var forceRefresh: Bool {
+    kind == .refresh
+  }
 }
