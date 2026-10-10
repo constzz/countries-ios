@@ -2,17 +2,19 @@ import Foundation
 import Testing
 @testable import CountriesUI
 
-/// Checks the String Catalog against the bundle the app ships. English is the source language:
-/// its keys are the English text, so the compiled bundle needs no English table. Every other
-/// language the bundle ships must translate every key.
+/// Checks the String Catalog against the bundle the app ships. Every language the bundle ships,
+/// English included, must have a value for every key. English is the source language and its keys
+/// are the English text, but a key with no English value in the compiled table only displays by
+/// falling back to the key, and "Show non-localized strings" flags it.
 @Suite("Localization")
 struct LocalizationTests {
-  @Test("AC-0.10 every catalog key is translated in every language the bundle ships")
+  @Test("AC-0.10 AC-1.10 every catalog key has a value in every language the bundle ships, English included")
   func everyKeyIsTranslatedInEveryLanguage() throws {
     let catalog = try StringCatalog.load()
     #expect(Bundle.module.developmentLocalization == catalog.sourceLanguage)
 
-    let translations = Bundle.module.localizations.filter { $0 != catalog.sourceLanguage && $0 != "Base" }
+    let translations = Bundle.module.localizations.filter { $0 != "Base" }
+    #expect(translations.contains(catalog.sourceLanguage))
     let missing = "\u{0}missing"
     for localization in translations {
       let path = try #require(

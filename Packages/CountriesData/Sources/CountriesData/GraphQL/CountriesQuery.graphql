@@ -1,0 +1,6 @@
+# The country list. Without a filter it returns every country, sorted by code.
+query Countries($filter: CountryFilterInput) {
+  countries(filter: $filter) {
+    ...CountryBasics
+  }
+}

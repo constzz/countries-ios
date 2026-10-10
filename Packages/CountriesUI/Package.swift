@@ -20,6 +20,10 @@ let package = Package(
       resources: [.process("Resources")],
       swiftSettings: swiftSettings
     ),
-    .testTarget(name: "CountriesUITests", dependencies: ["CountriesUI"], swiftSettings: swiftSettings),
+    .testTarget(
+      name: "CountriesUITests",
+      dependencies: ["CountriesUI", "CountriesDomain"],
+      swiftSettings: swiftSettings
+    ),
   ]
 )

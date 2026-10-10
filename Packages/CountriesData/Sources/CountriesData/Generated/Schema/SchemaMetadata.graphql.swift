@@ -29,7 +29,8 @@ extension CountriesAPI {
 
     private static let objectTypeMap: [String: ApolloAPI.Object] = [
       "Continent": CountriesAPI.Objects.Continent,
-      "Country": CountriesAPI.Objects.Country
+      "Country": CountriesAPI.Objects.Country,
+      "Query": CountriesAPI.Objects.Query
     ]
 
     static func objectType(forTypename typename: String) -> ApolloAPI.Object? {

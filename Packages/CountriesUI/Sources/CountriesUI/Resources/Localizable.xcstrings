@@ -1,11 +1,149 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Browse every country in the world." : {
-      "comment" : "Placeholder description under the app name on the root screen."
+    "%lld countries found" : {
+      "comment" : "VoiceOver announcement after a search: the number of countries that match. Varies by plural.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld country found"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld countries found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Connect to the internet and try again." : {
+      "comment" : "Message of the error state when the device has no internet connection.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect to the internet and try again."
+          }
+        }
+      }
+    },
+    "Couldn’t Load Countries" : {
+      "comment" : "Title of the error state when the country list failed to load for any reason but being offline.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Load Countries"
+          }
+        }
+      }
     },
     "Countries" : {
-      "comment" : "The app's name, shown as the root screen's title."
+      "comment" : "The app's name, shown as the root screen's title.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Countries"
+          }
+        }
+      }
+    },
+    "Loading Countries…" : {
+      "comment" : "Label under the progress indicator while the country list loads.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Countries…"
+          }
+        }
+      }
+    },
+    "No countries found" : {
+      "comment" : "VoiceOver announcement after a search that matched no country.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No countries found"
+          }
+        }
+      }
+    },
+    "Search by name" : {
+      "comment" : "Placeholder in the search field above the country list.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by name"
+          }
+        }
+      }
+    },
+    "Searching…" : {
+      "comment" : "Shown above the country list while a search runs.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching…"
+          }
+        }
+      }
+    },
+    "Select a Country" : {
+      "comment" : "Placeholder in the detail column when no country is selected.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Country"
+          }
+        }
+      }
+    },
+    "Something went wrong. Try again in a moment." : {
+      "comment" : "Message of the error state when the country list failed to load for any reason but being offline.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong. Try again in a moment."
+          }
+        }
+      }
+    },
+    "Try Again" : {
+      "comment" : "Button on an error state that repeats the failed request.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
+          }
+        }
+      }
+    },
+    "You’re Offline" : {
+      "comment" : "Title of the error state when the device has no internet connection.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You’re Offline"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

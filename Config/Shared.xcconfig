@@ -4,6 +4,10 @@
 // App identity. The app's bundle ID is $(BUNDLE_ID_PREFIX).countries.
 BUNDLE_ID_PREFIX = kostiantyn.bezzemelnyi
 
+// The Countries GraphQL API. The app reads it from its Info.plist (CountriesAPIURL). `$()`
+// keeps the `//` from starting a comment.
+COUNTRIES_API_URL = https:/$()/countries.trevorblades.com/graphql
+
 // iOS 17 is the first release with the Observation framework (@Observable).
 IPHONEOS_DEPLOYMENT_TARGET = 17.0
 

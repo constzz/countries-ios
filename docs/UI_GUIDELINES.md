@@ -52,7 +52,7 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Views
 - The `body` is split into small private computed subviews.
-- The outer view owns the view model with `@State` and starts work from `.task`. The inner view takes a state and draws it, so previews and snapshots can feed it any state.
+- The outer view owns the view model with `@State` and sends `.appeared` from `.task`. The inner view takes a state and an action handler, so previews and snapshots can feed it any state.
 - Previews cover loading, loaded, empty, error, long names, dark mode and the largest accessibility text size.
 
 ## Navigation
@@ -92,7 +92,7 @@ Every UI change ships snapshot tests for each state it affects, recorded and ins
   | `iPad11Portrait` | 820 × 1180 | |
   | `iPad11Landscape` | 1180 × 820 | both split-view columns |
 
-  Safe areas and size classes were read from the running simulators. Liquid Glass and other materials appear in the images as on a device.
+  Safe areas and size classes were read from the running simulators. Liquid Glass and other materials appear in the images as on a device. Images are drawn at @1x; layout uses each device's real display scale.
 - iPhone 17 Pro also gets the largest accessibility text size, in light. Loaded states also get a right-to-left image on iPhone 17 Pro in light.
 - Snapshots render inner views fed a fixed state, never views that load data. The locale is `en_US`.
 - File names follow `<SCREEN>_<STATE>_<preset>_<light|dark>[_<variant>]`, e.g. `COUNTRY_LIST_EMPTY_iPhoneDuoUnfolded_dark.png`. Reference images live in a `snapshots/` folder next to the test file.

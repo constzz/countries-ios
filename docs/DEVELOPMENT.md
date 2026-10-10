@@ -38,7 +38,7 @@ Work ships as user stories, one branch and one pull request each.
 3. The ACs are approved before any test is written.
 4. Implement test-first ([The loop](#the-loop)).
 5. Update the README requirements map.
-6. Run `scripts/lint.sh` and `scripts/test-matrix.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
+6. Run `scripts/lint.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
 7. When CI is green, merge with a merge commit, never squash, so the story's commits stay in history.
 
 **Specs are committed; plans are not.** A spec records what a story delivers and is kept up to date: if scope changes mid-story, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests land. Implementation plans are working notes and stay out of the repo.
@@ -65,7 +65,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 ### Definition of Done
 - Every AC has a test (or, for setup work, a verification command), and the spec's ACs are ticked.
 - `scripts/lint.sh` is clean.
-- `scripts/test-matrix.sh` passes on every row.
+- CI is green: it runs every row of `scripts/test-matrix.sh`. Locally, run only the tests a change touches.
 - Previews cover every state in light, dark and the largest accessibility size.
 - Every UI change ships snapshots of each affected state on every preset, in light and dark, inspected before committing.
 - Every new string is in the String Catalog with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
@@ -86,6 +86,8 @@ Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xc
   ```sh
   xcodebuild test -scheme CountriesApp -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
   ```
+- **How an image is made:** each one is drawn at @1x, while the window keeps the device's display scale, so layout matches the device and the images stay small. Renders run one at a time, because every snapshot window joins the host app's scene and Liquid Glass in one picks up another on screen. UIKit animations are off, animations with a finite duration (a spinner's frames, a fade) are removed before each capture so layers draw their final state, and the helper captures until two images taken 50 ms apart match within the comparison's tolerance. No capture counts while a visible image view holds an image its layer doesn't show yet, and if one never draws, the failure names it: on a fresh simulator, as in CI, system images such as the search field's clear button take a few seconds to draw the first time. Animations of infinite duration stay: Liquid Glass uses them to tie its shapes to other layers.
+- **Comparison:** an image matches its reference when no color channel differs by more than 2 of 255. Liquid Glass over a search field holding text varies by that much between runs; any change to layout, text or color differs by far more.
 - **Review:** open every new or changed PNG before committing. Pull requests show image diffs.
 - **On a mismatch:** the rendered image is attached to the test result (in Xcode's test report, or in the result bundle CI uploads). Compare it with the reference; if the change is intended, record again.
 - **Off the reference simulator** snapshot tests are skipped, and a recording run fails.

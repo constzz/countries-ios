@@ -41,11 +41,21 @@
 			);
 			target = C0A100000000000000000062 /* CountriesUISnapshotTests */;
 		};
+		C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0A100000000000000000061 /* CountriesApp */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		C0A100000000000000000031 /* CountriesApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */,
+			);
 			path = CountriesApp;
 			sourceTree = "<group>";
 		};
@@ -383,6 +393,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CountriesApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Countries;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -411,6 +422,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CountriesApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Countries;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
