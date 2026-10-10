@@ -1,5 +1,4 @@
 # SwiftLint owns code smells; SwiftFormat (.swiftformat) owns layout.
-# Default rules apply, plus the opt-ins and custom rules below.
 
 excluded:
   - "**/Generated"
@@ -61,6 +60,9 @@ custom_rules:
   localized_text_needs_bundle:
     name: "Localized text needs bundle"
     included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
-    regex: '\bText\(\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:tableName:[^,]+,\s*)?bundle:)|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView)\(\s*"|\.(?:navigationTitle|help)\(\s*"|\bprompt:\s*"|\bString\(localized:\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:table:[^,]+,\s*)?bundle:)'
+    regex: '\bText\(\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:tableName:[^,]+,\s*)?bundle:)|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView|NavigationLink|TextField|SecureField|Stepper|DatePicker|MultiDatePicker|ColorPicker|ProgressView|LabeledContent|DisclosureGroup|GroupBox|ControlGroup|ShareLink|Tab)\(\s*"|\.(?:navigationTitle|help|alert|confirmationDialog|badge|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|\bprompt:\s*"|\bString\(localized:\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:table:[^,]+,\s*)?bundle:)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
     message: "Look up UI copy in the package's String Catalog: Text(\"…\", bundle: .module, comment: \"…\"), String(localized: \"…\", bundle: .module, comment: \"…\"), or pass a Text to SwiftUI APIs that take a title. Use Text(verbatim:) for API data."
     severity: error
