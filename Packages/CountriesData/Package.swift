@@ -32,6 +32,8 @@ let package = Package(
         .product(name: "Apollo", package: "apollo-ios"),
         .product(name: "ApolloAPI", package: "apollo-ios"),
       ],
+      // JSON responses captured from the live API.
+      resources: [.copy("Fixtures")],
       swiftSettings: swiftSettings
     ),
   ]
