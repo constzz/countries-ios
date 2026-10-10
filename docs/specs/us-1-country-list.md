@@ -14,7 +14,7 @@
 - [x] **AC-1.1** The list shows every country with its flag, name and continent, sorted by name.
 - [x] **AC-1.2** Typing issues at most one query per 300 ms pause, and a term that is unchanged after trimming issues none.
 - [x] **AC-1.3** Search is case-insensitive, and special characters such as `(` don't produce an error. A blank term lists every country.
-- [x] **AC-1.4** The first load shows a full-screen loading state. Later searches and refreshes keep the current rows visible: a search shows a progress indicator in the toolbar, and a refresh shows the system refresh control.
+- [x] **AC-1.4** The first load shows a full-screen loading state. Later searches and refreshes keep the current rows visible: a search shows "Searching…" with a progress indicator pinned above the rows, and a refresh shows the system refresh control.
 - [x] **AC-1.5** A search with no match shows an empty state that names the query.
 - [x] **AC-1.6** A failure shows an error state with a Try Again button, which repeats the last request. Offline has its own message.
 - [x] **AC-1.7** Rows keep their identity, the country code, across refresh and filtering.
@@ -31,7 +31,7 @@
 |---|---|
 | `content` is `.idle` or `.loading` | Full-screen progress with "Loading Countries…" |
 | `.loaded(rows)` | One row per country: flag, name, and the continent below it in secondary text. Long names wrap. |
-| `.loaded`, `isSearching` | The rows stay; a progress indicator in the toolbar |
+| `.loaded` or `.empty`, `isSearching` | The content stays; "Searching…" with a progress indicator, pinned above it |
 | `.loaded` while refreshing | The rows stay; the system refresh control |
 | `.empty(query:)` | `ContentUnavailableView.search(text: query)` |
 | `.failed(.offline)` | "You're Offline", "Connect to the internet and try again.", Try Again |
@@ -135,6 +135,7 @@ public protocol CountriesRepository: Sendable {
 - **Sorting is part of the repository contract.** The API sorts by code; every caller wants names. Rejected: sorting in the view model, which lets an API quirk leak into the UI.
 - **Retry repeats the last request with its cache policy,** so a failed refresh retries from the network. Rejected: retry always reading through the cache, which could bring back the data the refresh meant to replace.
 - **A failure replaces the rows with the error state.** One state at a time keeps the screen contract small. Rejected: stale rows under an error banner, a sixth state for a rare case.
+- **A running search shows "Searching…" pinned above the rows, not in the toolbar.** On iPhone the navigation bar hides while the search field is active, so a toolbar indicator vanished exactly when a search ran, and a slow or stalled search looked like nothing was happening. Above the rows it stays visible on every device and in one place (HIG Progress indicators: "Display progress indicators in a consistent location"). Rejected: replacing the rows with full-screen progress, which drops the content the user is refining.
 - **VoiceOver announces after searches only,** not after the first load or a refresh, where the content the user asked for is already on screen.
 - **Snapshot images are drawn at @1x and match within 2 of 255 per color channel,** revising US-0's byte-for-byte comparison at native scale. With text in the search field, Liquid Glass renders with noise of 1–2 per channel from one run to the next, which byte comparison can't pass; layout, text and color changes differ by far more. At native scale the list's images alone were 27 MB, mostly the iPad sidebar material, and @1x brings them to under 7 MB. Rejected: byte comparison with the searching and empty states shown without search text, which isn't what users see; and @2x, which leaves the iPad images, already @2x, unchanged.
 - **The snapshot helper renders one image at a time, with UIKit animations off and finite-duration animations removed before each capture.** Swift Testing runs tests in parallel, and Liquid Glass in one snapshot window picked up another window's rows; the search field's clear button was caught mid-fade; and the spinner was caught at a different angle each run.
