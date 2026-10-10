@@ -2,6 +2,7 @@ import Combine
 import CountriesDomain
 import Foundation
 import Observation
+import SwiftUI
 
 /// Holds the country list's state, feeds actions through the reducer and runs the effects it
 /// returns.
@@ -19,7 +20,7 @@ final class CountryListViewModel {
   init(
     repository: any CountriesRepository,
     debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300),
-    announce: @escaping @MainActor (String) -> Void = { _ in }
+    announce: @escaping @MainActor (String) -> Void = { AccessibilityNotification.Announcement($0).post() }
   ) {
     self.repository = repository
     self.announce = announce
@@ -71,7 +72,8 @@ final class CountryListViewModel {
       fetchTask = task
       return task
 
-    case .announce:
+    case let .announce(resultCount):
+      announce(SearchAnnouncement.text(forResultCount: resultCount))
       return nil
     }
   }
