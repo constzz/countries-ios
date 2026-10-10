@@ -12,7 +12,7 @@
 
 ## Acceptance criteria
 - [ ] **AC-2.1** Selecting a row shows that country's detail: pushed on compact width, in the detail column on regular width. On compact width each row shows a disclosure indicator.
-- [x] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The name is also the navigation title. Long names and long lists wrap.
+- [ ] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The navigation bar shows the name, inline, only once the header's name has scrolled under it, so the name never shows twice and never lags behind the header. Long names and long lists wrap.
 - [x] **AC-2.3** Missing values render as "None": no capital, no currencies (blank entries are dropped) or no languages. Antarctica shows "None" in all three rows.
 - [x] **AC-2.4** The detail shows a loading state until its own query returns; nothing is prefilled from the list. A failure shows an error state with a Try Again button, which repeats the request. Offline has its own message.
 - [x] **AC-2.5** A code the API doesn't know shows a "Country Not Found" state, with no Try Again.
@@ -27,7 +27,8 @@
 | State | UI |
 |---|---|
 | `content` is `.idle` or `.loading` | Full-screen progress with "Loading Country…"; no title |
-| `.loaded(details)` | Header: the flag above the name, centered. Rows: Capital, Currencies, Languages, Continent. Title: the name, inline. |
+| `.loaded(details)` | Header: the flag above the name, centered. Rows: Capital, Currencies, Languages, Continent. No title while the header's name is visible. |
+| `.loaded`, `showsTitle` | The name as the inline title |
 | `.loaded`, a value is missing | That row reads "None" |
 | `.failed(.offline)` | "You're Offline", "Connect to the internet and try again.", Try Again |
 | `.failed(.notFound)` | "Country Not Found", "This country isn't available. Choose another one.", no button |
@@ -40,6 +41,7 @@
 | The detail disappears (`.onDisappear`) | `.disappeared` | While `.loading`: cancel the fetch, back to `.idle`. Otherwise nothing. |
 | Tapping Try Again | `.retryTapped` | From `.failed`: `.loading`, fetch again with the same cache policy |
 | A response arrives | `.responseReceived(id, result)` | Ignored unless it answers the latest request. Details → `.loaded`, an error → `.failed`. |
+| The header's name scrolls under the bar, or back out | `.headerScrolled(underBar:)` | `showsTitle = underBar` |
 
 | Interaction | Selection (in `RootView`) |
 |---|---|
@@ -51,8 +53,8 @@
 
 ## Presentation: MVI
 The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rules in `docs/ARCHITECTURE.md`), the same way the list does. Each type has its own file in `CountryDetail/`.
-- **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, and `requestID`, the latest request's id.
-- **Actions:** `CountryDetailAction: MVIAction`. The view sends `.appeared`, `.disappeared` and `.retryTapped`; the view model sends `.responseReceived(requestID:, Result<CountryDetails, CountriesError>)`.
+- **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, `requestID`, the latest request's id, and `showsTitle`, whether the header's name is under the navigation bar.
+- **Actions:** `CountryDetailAction: MVIAction`. The view sends `.appeared`, `.disappeared`, `.retryTapped` and `.headerScrolled(underBar:)`; the view model sends `.responseReceived(requestID:, Result<CountryDetails, CountriesError>)`.
 - **Effects:** `CountryDetailEffect: MVIEffect` is a caseless enum: the screen has no one-time UI events, so its view doesn't subscribe to `effects()`.
 - **View model:** `CountryDetailViewModel` subclasses `MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect>`. Its `init` stores the country `code` and the repository and does nothing else. `reduce(_:_:)` hands each action to a `handle…` method that reads `current`; the one fetch runs through `launchEffect`, a new one cancels the previous, and the result comes back as `.responseReceived`. A `CancellationError` sends nothing.
 - **Views:** `CountryDetailView` owns the view model in `@State`, created in its `init(code:repository:)`, sends `.appeared` from `.task` and `.disappeared` from `.onDisappear`. `CountryDetailContent` draws a given state and sends actions; previews and snapshots render it.
@@ -115,7 +117,7 @@ public protocol CountriesRepository: Sendable {
 | Currencies `[""]` (AQ) | `[]` | "None" | none needed |
 | No languages (AQ) | `[]` | "None" | none needed |
 | Eight currencies (ZW) | One list | Wraps | none needed |
-| Longest name ("South Georgia and the South Sandwich Islands") | Header wraps; the inline title truncates | Loaded | none needed |
+| Longest name ("South Georgia and the South Sandwich Islands") | Header wraps; once scrolled away, the inline title truncates | Loaded | none needed |
 | The user selects another country while one loads | The old request is cancelled | The new country loads | none needed |
 | The detail disappears while loading (back on compact width, a size change) | Cancelled, back to `.idle` | Loads again when it reappears | none needed |
 | A response to an older request arrives | Ignored by the reducer | Unchanged | none needed |
@@ -126,7 +128,7 @@ public protocol CountriesRepository: Sendable {
 | AC | Tests |
 |---|---|
 | 2.1 | Manual on iPhone 17 Pro and iPad (A16) simulators; the `COUNTRY_DETAIL_*` and re-recorded `COUNTRY_LIST_*` images show the pushed detail and the disclosure indicators on compact width |
-| 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMappingTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `CountryDetailValuesTests`: "AC-2.2 every row shows its value"; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
+| 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMappingTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `CountryDetailValuesTests`: "AC-2.2 every row shows its value"; view model: "AC-2.2 the title shows once the header's name is under the bar", "AC-2.2 the title hides when the header's name scrolls back"; manual: scroll the detail at the largest text size; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
 | 2.3 | Mapping: "AC-2.3 Antarctica has no capital, currencies or languages" (AQ fixture), "AC-2.3 blank values are missing values"; `CountryDetailValuesTests`: "AC-2.3 missing values read None"; `COUNTRY_DETAIL_MISSING_VALUES_*` |
 | 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure reaches the caller unchanged"; `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
 | 2.5 | Repository: "AC-2.5 a null country is not found" (unknown-code fixture); view model: "AC-2.5 an unknown code shows not found"; `ErrorCopyTests`: "AC-2.5 not found has its own copy and no retry"; `COUNTRY_DETAIL_NOT_FOUND_*` |
@@ -144,7 +146,7 @@ public protocol CountriesRepository: Sendable {
 - **Leaving the detail cancels its request and returns it to `.idle`.** Flicking through countries on iPad would otherwise leave a request running for each, and `.idle` makes the next `.appeared` load again, so a size change that removes and re-adds the view never leaves it stuck on loading. Rejected: letting abandoned requests finish and dropping their results.
 - **The selection lives in `RootView` as `@SceneStorage`,** the one source for the sidebar and the detail column, kept per window and restored after relaunch. Rejected: selection in the list's view model, which would tie the detail column to the list's state; and `@State` mirrored to `@SceneStorage`, two copies to keep in step.
 - **Rows are `NavigationLink(value:)` inside `List(selection:)`,** Apple's pattern for a split-view sidebar: the system highlights the row on regular width, pushes on compact width, clears the selection on back, and adds the disclosure indicator. Rejected: tap gestures that set the selection, which lose the highlight, the indicator and the accessibility traits of a link.
-- **A header with the flag and the name, and the name as an inline title.** The header wraps the longest name and gives the flag room; the inline title stays visible when the rows scroll. Rejected: a large title, which truncates long names and leaves the flag no place; and "Flag" and "Name" rows, which make the most important fact look like any other value.
+- **A header with the flag and the name; the bar shows the name only once the header's name has scrolled under it.** That's the pattern of Contacts and the App Store. The header wraps the longest name and gives the flag room, and the bar names the screen once the header is gone. Revised during the story from "the name is also the inline title": SwiftUI hands the navigation bar its title a pass after it draws the content, so a title set when the details arrive showed up a few frames after the header's name, and the name showed twice. Measured on iOS 17, 26 and 27: a `List`'s SwiftUI frame starts at the bar's bottom edge, so the header's name is under the bar when its global `maxY` is above the list's global `minY`. The view sends `.headerScrolled(underBar:)` only when that flips. Rejected: a large title, which truncates long names and leaves the flag no place; the title drawn as a principal toolbar item, which arrives just as late; fading the content in to hide the lag; and "Flag" and "Name" rows, which make the most important fact look like any other value.
 - **Values are shown as the API gives them:** currency codes and English language and continent names, the same as the list. Rejected: currency and language names from `Locale`, which would mix localized names with English ones next to them.
 - **Blank values are dropped in the mapper,** so the domain never carries an API quirk and the UI only knows "present" or "missing". Rejected: filtering in the view.
 - **Not found offers no Try Again.** Repeating the request won't make the country exist; the user picks another one. Rejected: Try Again on every error, which here would only fail again.
