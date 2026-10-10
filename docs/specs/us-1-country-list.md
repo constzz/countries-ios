@@ -11,12 +11,12 @@
 **Non-goals:** selecting a row and the country detail (US-2), diacritic-insensitive search ("Reunion" doesn't find "Réunion"), localized country names, persistence beyond Apollo's in-memory cache, UI tests.
 
 ## Acceptance criteria
-- [ ] **AC-1.1** The list shows every country with its flag, name and continent, sorted by name.
+- [x] **AC-1.1** The list shows every country with its flag, name and continent, sorted by name.
 - [x] **AC-1.2** Typing issues at most one query per 300 ms pause, and a term that is unchanged after trimming issues none.
 - [x] **AC-1.3** Search is case-insensitive, and special characters such as `(` don't produce an error. A blank term lists every country.
-- [ ] **AC-1.4** The first load shows a full-screen loading state. Later searches and refreshes keep the current rows visible: a search shows a progress indicator in the toolbar, and a refresh shows the system refresh control.
-- [ ] **AC-1.5** A search with no match shows an empty state that names the query.
-- [ ] **AC-1.6** A failure shows an error state with a Try Again button, which repeats the last request. Offline has its own message.
+- [x] **AC-1.4** The first load shows a full-screen loading state. Later searches and refreshes keep the current rows visible: a search shows a progress indicator in the toolbar, and a refresh shows the system refresh control.
+- [x] **AC-1.5** A search with no match shows an empty state that names the query.
+- [x] **AC-1.6** A failure shows an error state with a Try Again button, which repeats the last request. Offline has its own message.
 - [x] **AC-1.7** Rows keep their identity, the country code, across refresh and filtering.
 - [x] **AC-1.8** Pull-to-refresh fetches fresh data from the network, bypassing the cache.
 - [x] **AC-1.9** Snapshots cover the loading, loaded, searching, empty, error and offline states on every device preset in light and dark, plus accessibility XXXL on iPhone 17 Pro. On regular width (iPad, unfolded iPhone Duo where the system gives two columns) the list sits beside the "Select a Country" placeholder.
