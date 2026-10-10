@@ -213,8 +213,8 @@ private func undrawnImageView(in view: UIView) -> UIImageView? {
   guard !view.isHidden, view.alpha > 0 else {
     return nil
   }
-  if let imageView = view as? UIImageView, imageView.image != nil, !imageView.bounds.isEmpty,
-     imageView.layer.contents == nil {
+  let imageView = view as? UIImageView
+  if let imageView, imageView.image != nil, !imageView.bounds.isEmpty, imageView.layer.contents == nil {
     return imageView
   }
   for subview in view.subviews {

@@ -15,10 +15,9 @@ struct AppContainer {
 
   /// The API endpoint, set by `COUNTRIES_API_URL` in `Config/Shared.xcconfig`.
   private static func endpoint(in bundle: Bundle) -> URL {
-    guard let value = bundle.object(forInfoDictionaryKey: "CountriesAPIURL") as? String,
-          let url = URL(string: value), url.scheme != nil
-    else {
-      preconditionFailure("CountriesAPIURL is missing from Info.plist. Set COUNTRIES_API_URL in Config/Shared.xcconfig.")
+    let value = bundle.object(forInfoDictionaryKey: "CountriesAPIURL") as? String
+    guard let url = value.flatMap(URL.init(string:)), url.scheme != nil else {
+      preconditionFailure("No valid CountriesAPIURL in Info.plist: set COUNTRIES_API_URL in Config/Shared.xcconfig.")
     }
     return url
   }
