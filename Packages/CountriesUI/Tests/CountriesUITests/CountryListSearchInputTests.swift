@@ -36,4 +36,17 @@ struct CountryListSearchInputTests {
 
     #expect(await repository.calls.map(\.term) == ["ger"])
   }
+
+  @Test("AC-1.2 returning to the settled term issues no search")
+  func returningToTheSettledTermIssuesNoSearch() async {
+    let repository = MockCountriesRepository()
+    let viewModel = CountryListViewModel(repository: repository, debounceInterval: .milliseconds(interval))
+    await viewModel.send(.appeared).value
+
+    viewModel.send(.searchTextChanged("a"))
+    viewModel.send(.searchTextChanged(""))
+    try? await Task.sleep(for: .milliseconds(5 * interval))
+
+    #expect(await repository.calls.map(\.term) == [""])
+  }
 }
