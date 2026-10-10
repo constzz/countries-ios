@@ -50,11 +50,12 @@
 One fetch runs at a time: a new one cancels the one in flight. Full-screen loading shows only when there's nothing to keep on screen (the first load, or after a failure).
 
 ## Presentation: MVI
-- **State:** `CountryListState` is one value: `content` (`idle | loading | loaded([CountrySummary]) | empty(query:) | failed(CountriesError)`), `searchText`, `query` (the settled search term), `isSearching`, and the latest `request` (id, term, cache policy, kind).
-- **Actions:** `CountryListAction` lists everything that can happen. The view sends `.appeared`, `.searchTextChanged`, `.refreshRequested` and `.retryTapped`; the view model sends `.searchSettled` and `.responseReceived`.
-- **Reducer:** `CountryListReducer.reduce(_:_:) -> (CountryListState, [CountryListEffect])` is pure and the only place the state changes. Effects describe work: `.debounce(text)`, `.fetch(request)`, `.announce(resultCount:)`.
-- **View model:** `CountryListViewModel` (`@MainActor @Observable`) exposes only `private(set) var state` and `send(_:)`. It runs the effects: the Combine search pipe, one fetch task at a time, and the VoiceOver announcement. `send` returns the task running the action's effects, so `.refreshable` and tests can await it.
-- **View:** draws `state` and sends actions. The search field binds to `state.searchText` and sends `.searchTextChanged`.
+The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rules in `docs/ARCHITECTURE.md`). Each type has its own file, named after it.
+- **State:** `CountryListState: MVIState` is one value: `content` (`idle | loading | loaded([CountrySummary]) | empty(query:) | failed(CountriesError)`), `searchText`, `query` (the settled search term), `isSearching`, and the latest `request`. `CountriesRequest` (id, term, cache policy, kind) has its own file.
+- **Actions:** `CountryListAction: MVIAction` lists everything that can happen. The view sends `.appeared`, `.searchTextChanged`, `.refreshRequested` and `.retryTapped`; the view model sends `.searchSettled` and `.responseReceived`.
+- **Effects:** `CountryListEffect: MVIEffect` holds the screen's one-time UI events: `.announce(resultCount:)`, which the view posts to VoiceOver.
+- **View model:** `CountryListViewModel` subclasses `MVIViewModel<CountryListState, CountryListAction, CountryListEffect>`. Its `reduce(_:_:)` is the only place the state changes: it hands each action to a `handle…` method and returns the new state at once. The handlers feed the Combine search pipe, start the one fetch in flight through `launchEffect` (cancelling the previous one), and `emit` the announcement. The view model exposes `state`, `send(_:)` and `effects`. `send` returns a task that finishes when the work the action started has, so `.refreshable` and tests can await it.
+- **View:** draws `state`, sends actions, and handles `effects` in `.task`. The search field binds to `state.searchText` and sends `.searchTextChanged`.
 
 ## Data layer
 - **Operation:** `query Countries($filter: CountryFilterInput) { countries(filter: $filter) { ...CountryBasics } }`. A blank term sends no filter.
@@ -113,23 +114,24 @@ public protocol CountriesRepository: Sendable {
 ## Test plan
 | AC | Tests |
 |---|---|
-| 1.1 | `CountrySummaryMappingTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); reducer: "AC-1.1 a response shows the loaded rows"; view model: "AC-1.1 appearing loads every country" |
+| 1.1 | `CountrySummaryMappingTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); view model: "AC-1.1 a response shows the loaded rows", "AC-1.1 appearing loads every country" |
 | 1.2 | View model, short injected interval and recorded mock calls: "AC-1.2 typing searches once after a pause", "AC-1.2 an unchanged term issues no search" |
 | 1.3 | `SearchPatternTests`: "AC-1.3 letters match either case", "AC-1.3 regex metacharacters are escaped", "AC-1.3 a blank term means no filter"; repository: "AC-1.3 sends the pattern as a name regex filter" |
-| 1.4 | Reducer: "AC-1.4 the first load shows loading", "AC-1.4 a search keeps rows visible while searching", "AC-1.4 a refresh keeps rows visible" |
-| 1.5 | Reducer: "AC-1.5 no match shows the empty state with the query" |
-| 1.6 | Reducer: "AC-1.6 a failure shows the error", "AC-1.6 retry repeats the last request"; error mapping: "AC-1.6 not connected maps to offline" and one test per row of the mapping; UI: "AC-1.6 offline has its own message" |
-| 1.7 | Reducer: "AC-1.7 rows keep their codes across refresh and filtering" |
-| 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; reducer: "AC-1.8 refresh fetches from the network" |
+| 1.4 | View model: "AC-1.4 the first load shows loading", "AC-1.4 a search keeps rows visible while searching", "AC-1.4 a refresh keeps rows visible" |
+| 1.5 | View model: "AC-1.5 no match shows the empty state with the query" |
+| 1.6 | View model: "AC-1.6 a failure shows the error", "AC-1.6 retry repeats the last request"; error mapping: "AC-1.6 not connected maps to offline" and one test per row of the mapping; UI: "AC-1.6 offline has its own message" |
+| 1.7 | View model: "AC-1.7 rows keep their codes across refresh and filtering" |
+| 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; view model: "AC-1.8 refresh fetches from the network" |
 | 1.9 | `CountryListSnapshotTests`: `COUNTRY_LIST_LOADING`, `_LOADED`, `_SEARCHING`, `_EMPTY`, `_ERROR`, `_OFFLINE` |
 | 1.10 | `LocalizationTests` (every key current, commented and translated); "AC-1.10 error copy comes from the catalog"; `COUNTRY_LIST_LOADED_*_rtl` images |
-| 1.11 | Reducer: "AC-1.11 a stale response never replaces newer results"; view model, with a mock repository that suspends until released: "AC-1.11 a new fetch cancels the one in flight", "AC-1.11 a cancelled request shows no error" |
-| 1.12 | Reducer: "AC-1.12 a search announces its result count", "AC-1.12 load and refresh announce nothing"; "AC-1.12 the announcement text uses plural variants", "AC-1.12 no results is announced" |
+| 1.11 | View model, with a mock repository that suspends until released: "AC-1.11 a stale response never replaces newer results", "AC-1.11 a new fetch cancels the one in flight", "AC-1.11 a cancelled request shows no error" |
+| 1.12 | View model: "AC-1.12 a search announces its result count", "AC-1.12 load and refresh announce nothing" (both read `effects`); "AC-1.12 the announcement text uses plural variants", "AC-1.12 no results is announced" |
 | 1.13 | Manual: Network Link Conditioner at 100% loss, the error state appears after about 15 s |
 | 1.14 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
+| none | `MVIViewModelTests`, on a toy view model: the shared base reduces, launches and tracks work, and delivers effects, including those emitted before the view subscribes |
 
 ## Decisions
-- **MVI on the list screen:** one state value, one action enum, and a pure reducer that returns the new state and the effects to run. The view model only holds the state, runs effects and exposes `send(_:)`. Every state change lives in one function that tests call directly, and stale responses are dropped there by request id. It keeps the name view model: it's the `@MainActor @Observable` object the screen owns. Rejected: MVVM with an event method per interaction and several observable properties, which spreads state changes across methods and widens the view model's surface.
+- **MVI on the list screen, on a shared base.** One state value, one action enum and one `reduce` per screen, and the shared `MVIViewModel` runs them: `send` reduces, assigns the state only when it changed, and returns a task for the work the action started. `reduce` lives on the view model and starts async work itself through `launchEffect`; the work's result comes back as an action, and stale responses are dropped in `reduce` by request id. Effects are one-time UI events only, so anything that must survive a redraw is state. Every screen conforms the same way, and each of its types sits in its own file. Rejected: a separate pure reducer that returns effects as values for the view model to run, which tests without doubles but splits each screen across two types and makes "effect" mean both work and UI events; MVVM with an event method per interaction and several observable properties, which spreads state changes across methods and widens the view model's surface.
 - **The empty search state is the system's `ContentUnavailableView.search(text:)`.** It names the query, and iOS localizes its copy in every language it supports, so it needs no catalog entry. Rejected: our own "No countries match “…”" sentence in a hand-built `ContentUnavailableView`, which rebuilds a system component.
 - **Snapshots render the split view with the list's inner view fed a fixed state.** No snapshot loads data or depends on timing. Rejected: the full screen with a stub repository, which would rely on the helper's few layout passes to settle.
 - **Sorting is part of the repository contract.** The API sorts by code; every caller wants names. Rejected: sorting in the view model, which lets an API quirk leak into the UI.
