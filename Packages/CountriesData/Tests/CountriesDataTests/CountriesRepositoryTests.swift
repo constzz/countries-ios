@@ -91,6 +91,43 @@ struct CountriesRepositoryTests {
     }
   }
 
+  // MARK: One country
+
+  @Test("AC-2.2 fetches the country by code, cache first")
+  func fetchesTheCountryByCode() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-CH")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(details.currencies == ["CHE", "CHF", "CHW"])
+    let query = try #require(await client.queries.first as? CountriesAPI.CountryQuery)
+    #expect(query.code == "CH")
+    #expect(await client.cachePolicies == [.cacheFirst])
+  }
+
+  @Test("AC-2.5 a null country is not found")
+  func nullCountryIsNotFound() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-unknown")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    await #expect(throws: CountriesError.notFound) {
+      try await repository.country(code: "XX")
+    }
+  }
+
+  @Test("AC-2.4 a failure reaches the caller unchanged")
+  func countryFailurePropagates() async {
+    let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
+
+    await #expect(throws: CountriesError.offline) {
+      try await repository.country(code: "CH")
+    }
+  }
+
+  // MARK: Client
+
   @Test("AC-1.13 requests time out after 15 s")
   func requestsTimeOut() throws {
     let endpoint = try #require(URL(string: "https://countries.example/graphql"))
