@@ -13,9 +13,9 @@ struct CountryListSearchInputTests {
     let repository = MockCountriesRepository()
     let viewModel = CountryListViewModel(repository: repository, debounceInterval: .milliseconds(interval))
 
-    viewModel.searchTextChanged("g")
-    viewModel.searchTextChanged("ge")
-    viewModel.searchTextChanged("ger")
+    viewModel.send(.searchTextChanged("g"))
+    viewModel.send(.searchTextChanged("ge"))
+    viewModel.send(.searchTextChanged("ger"))
 
     let searched = await eventually { await !repository.calls.isEmpty }
     #expect(searched)
@@ -28,10 +28,10 @@ struct CountryListSearchInputTests {
     let repository = MockCountriesRepository()
     let viewModel = CountryListViewModel(repository: repository, debounceInterval: .milliseconds(interval))
 
-    viewModel.searchTextChanged("ger")
+    viewModel.send(.searchTextChanged("ger"))
     let searched = await eventually { await !repository.calls.isEmpty }
     #expect(searched)
-    viewModel.searchTextChanged("ger ")
+    viewModel.send(.searchTextChanged("ger "))
     try? await Task.sleep(for: .milliseconds(5 * interval))
 
     #expect(await repository.calls.map(\.term) == ["ger"])
