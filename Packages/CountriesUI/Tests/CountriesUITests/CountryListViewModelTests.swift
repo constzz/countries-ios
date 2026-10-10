@@ -236,24 +236,26 @@ struct CountryListViewModelTests {
   func searchAnnouncesItsResultCount() async {
     let repository = MockCountriesRepository(result: .success(rows))
     let viewModel = CountryListViewModel(repository: repository)
+    let effects = viewModel.effects()
     await viewModel.send(.appeared).value
 
     await viewModel.send(.searchSettled("a")).value
     await repository.setResult(.success([]))
     await viewModel.send(.searchSettled("zzz")).value
 
-    #expect(await first(2, of: viewModel.effects()) == [.announce(resultCount: rows.count), .announce(resultCount: 0)])
+    #expect(await first(2, of: effects) == [.announce(resultCount: rows.count), .announce(resultCount: 0)])
   }
 
   @Test("AC-1.12 load and refresh announce nothing")
   func loadAndRefreshAnnounceNothing() async {
     let viewModel = CountryListViewModel(repository: MockCountriesRepository(result: .success(rows)))
+    let effects = viewModel.effects()
 
     await viewModel.send(.appeared).value
     await viewModel.send(.refreshRequested).value
     await viewModel.send(.searchSettled("a")).value
 
-    #expect(await first(1, of: viewModel.effects()) == [.announce(resultCount: rows.count)])
+    #expect(await first(1, of: effects) == [.announce(resultCount: rows.count)])
   }
 
   // MARK: Helpers

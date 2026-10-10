@@ -60,14 +60,15 @@ struct MVIViewModelTests {
     #expect(await first(1, of: effects) == [.pinged(1)])
   }
 
-  @Test("an effect emitted before anyone subscribes reaches the first subscriber")
-  func earlyEffectReachesFirstSubscriber() async {
+  @Test("an effect emitted while no one subscribes is dropped")
+  func unheardEffectIsDropped() async {
     let viewModel = CounterViewModel()
 
     viewModel.send(.pingRequested(1))
+    let effects = viewModel.effects()
     viewModel.send(.pingRequested(2))
 
-    #expect(await first(2, of: viewModel.effects()) == [.pinged(1), .pinged(2)])
+    #expect(await first(1, of: effects) == [.pinged(2)])
   }
 
   @Test("a new subscriber after a cancelled one still gets effects")
@@ -79,9 +80,10 @@ struct MVIViewModelTests {
     firstSubscriber.cancel()
     await firstSubscriber.value
 
+    let effects = viewModel.effects()
     viewModel.send(.pingRequested(3))
 
-    #expect(await first(1, of: viewModel.effects()) == [.pinged(3)])
+    #expect(await first(1, of: effects) == [.pinged(3)])
   }
 
   // MARK: Helpers
