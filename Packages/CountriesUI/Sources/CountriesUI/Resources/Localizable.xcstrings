@@ -90,13 +90,13 @@
         }
       }
     },
-    "Searching" : {
-      "comment" : "VoiceOver label of the progress indicator shown while a search runs.",
+    "Searching…" : {
+      "comment" : "Shown above the country list while a search runs.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Searching"
+            "value" : "Searching…"
           }
         }
       }

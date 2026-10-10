@@ -23,18 +23,6 @@ struct CountryListContent: View {
     .refreshable {
       await send(.refreshRequested).value
     }
-    .toolbar {
-      if state.isSearching {
-        ToolbarItem(placement: .topBarTrailing) {
-          ProgressView()
-            .accessibilityLabel(Text(
-              "Searching",
-              bundle: .module,
-              comment: "VoiceOver label of the progress indicator shown while a search runs."
-            ))
-        }
-      }
-    }
     .loadState(
       phase,
       loadingLabel: Text(
@@ -43,6 +31,10 @@ struct CountryListContent: View {
         comment: "Label under the progress indicator while the country list loads."
       ),
       retry: { _ = send(.retryTapped) }
+    )
+    .inlineProgress(
+      state.isSearching,
+      label: Text("Searching…", bundle: .module, comment: "Shown above the country list while a search runs.")
     )
   }
 

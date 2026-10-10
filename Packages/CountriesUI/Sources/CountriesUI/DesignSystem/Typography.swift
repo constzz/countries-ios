@@ -11,6 +11,11 @@ extension Font {
     .subheadline
   }
 
+  /// The label beside an inline progress indicator, such as "Searching…".
+  static var progressLabel: Font {
+    .subheadline
+  }
+
   /// A country's flag emoji in a list row. A text style, so it scales with Dynamic Type.
   static var rowFlag: Font {
     .title
