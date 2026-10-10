@@ -34,6 +34,14 @@ struct ErrorMappingTests {
     #expect(ApolloGraphQLClient.mapped(error) as? CountriesError == .decoding)
   }
 
+  @Test(
+    "AC-1.6 a value that doesn't fit its field maps to decoding",
+    arguments: [JSONDecodingError.missingValue, .nullValue, .wrongType]
+  )
+  func undecodableValueMapsToDecoding(error: JSONDecodingError) {
+    #expect(ApolloGraphQLClient.mapped(error) as? CountriesError == .decoding)
+  }
+
   @Test("AC-1.6 anything else maps to unknown, and a CountriesError passes through")
   func otherErrorsMapToUnknown() {
     #expect(ApolloGraphQLClient.mapped(ApolloClient.Error.noResults) as? CountriesError == .unknown)
