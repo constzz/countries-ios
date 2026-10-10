@@ -81,6 +81,7 @@ Each requirement of the task traces to an acceptance criterion and the test that
 - **Snapshots of every state on every device**, light and dark, drawn at @1x and matched within 2 of 255 per color channel, because Liquid Glass over a search field holding text varies by that much between runs ([details](docs/specs/us-1-country-list.md#decisions)).
 
 ## Left out
+- A custom EnvironmentValues entry. Dependencies come in through `init`, and two shallow screens have no value the environment would carry better: locale, Dynamic Type and color scheme are SwiftUI's own. The custom ViewModifier, `.loadState`, is in, and both screens use it.
 - Diacritic-insensitive search: "Reunion" doesn't find "Réunion", because the API's regex matches the names as written.
 - Localized country and continent names: they stay in English, because search matches the English names. Currencies show as ISO codes and languages by their English names, as the API gives them.
 

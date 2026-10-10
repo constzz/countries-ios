@@ -50,11 +50,11 @@ Implements the repository with Apollo iOS.
 SwiftUI screens and their view models. It imports only CountriesDomain, never Apollo.
 - `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
 - `CountryList/` and `CountryDetail/`, one folder per feature.
-- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views, the `.loadState(_:retry:)` modifier and the `\.countriesRepository` environment entry.
+- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:retry:)` modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp
-`AppLauncher`, the `@main` entry point; the `CountriesApp` App; and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
+`AppLauncher`, the `@main` entry point; the `CountriesApp` App; and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory, and `CountriesApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
