@@ -52,7 +52,7 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Views
 - The `body` is split into small private computed subviews.
-- The outer view owns the view model with `@State` and starts work from `.task`. The inner view takes a state and draws it, so previews and snapshots can feed it any state.
+- The outer view owns the view model with `@State` and sends `.appeared` from `.task`. The inner view takes a state and an action handler, so previews and snapshots can feed it any state.
 - Previews cover loading, loaded, empty, error, long names, dark mode and the largest accessibility text size.
 
 ## Navigation

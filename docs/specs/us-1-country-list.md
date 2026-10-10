@@ -29,25 +29,32 @@
 ## Screen contract
 | State | UI |
 |---|---|
-| `idle`, `loading` | Full-screen progress with "Loading Countries…" |
-| `loaded(rows)` | One row per country: flag, name, and the continent below it in secondary text. Long names wrap. |
-| `loaded` while a search runs | The rows stay; a progress indicator in the toolbar |
-| `loaded` while refreshing | The rows stay; the system refresh control |
-| `empty(query:)` | `ContentUnavailableView.search(text: query)` |
-| `failed(.offline)` | "You're Offline", "Connect to the internet and try again.", Try Again |
-| `failed(other)` | "Couldn't Load Countries", "Something went wrong. Try again in a moment.", Try Again |
+| `content` is `.idle` or `.loading` | Full-screen progress with "Loading Countries…" |
+| `.loaded(rows)` | One row per country: flag, name, and the continent below it in secondary text. Long names wrap. |
+| `.loaded`, `isSearching` | The rows stay; a progress indicator in the toolbar |
+| `.loaded` while refreshing | The rows stay; the system refresh control |
+| `.empty(query:)` | `ContentUnavailableView.search(text: query)` |
+| `.failed(.offline)` | "You're Offline", "Connect to the internet and try again.", Try Again |
+| `.failed(other)` | "Couldn't Load Countries", "Something went wrong. Try again in a moment.", Try Again |
 | Detail column, regular width | "Select a Country" placeholder |
 
-| Interaction | Event | Effect |
+| Interaction | Action | Reduction |
 |---|---|---|
-| The screen appears (`.task`) | `onAppear()` | The first time, loads every country (`idle → loading`). Later, nothing. |
-| Typing in the search field | `searchTextChanged(_:)` | Trim, debounce 300 ms, drop duplicates, then search the term |
-| Clearing the search field | `searchTextChanged("")` | Same pipe; a blank term lists every country |
-| Pull to refresh | `refreshRequested()` | Re-runs the current term from the network |
-| Tapping Try Again | `retryTapped()` | Repeats the last request: same term, same cache policy |
-| A search finishes | | VoiceOver announces the result count |
+| The screen appears (`.task`) | `.appeared` | The first time: `.loading`, fetch every country. Later, nothing. |
+| Typing or clearing the search field | `.searchTextChanged(text)` | `searchText = text`; the text enters the search pipe: trim, debounce 300 ms, drop duplicates |
+| The pipe settles on a term | `.searchSettled(term)` | `query = term`, fetch it; `isSearching` over the current content, or `.loading` if there's none. A blank term lists every country. |
+| Pull to refresh | `.refreshRequested` | Fetch `query` from the network; the content stays |
+| Tapping Try Again | `.retryTapped` | `.loading`, then repeat the last request: same term, same cache policy |
+| A response arrives | `.responseReceived(id, result)` | Ignored unless it answers the latest request. Rows → `.loaded`, none → `.empty(query:)`, an error → `.failed`. After a search, VoiceOver announces the result count. |
 
-Load, search, refresh and retry share one task: starting one cancels the one in flight. Full-screen loading shows only when there are no rows to keep (the first load, or after a failure).
+One fetch runs at a time: a new one cancels the one in flight. Full-screen loading shows only when there's nothing to keep on screen (the first load, or after a failure).
+
+## Presentation: MVI
+- **State:** `CountryListState` is one value: `content` (`idle | loading | loaded([CountrySummary]) | empty(query:) | failed(CountriesError)`), `searchText`, `query` (the settled search term), `isSearching`, and the latest `request` (id, term, cache policy, kind).
+- **Actions:** `CountryListAction` lists everything that can happen. The view sends `.appeared`, `.searchTextChanged`, `.refreshRequested` and `.retryTapped`; the view model sends `.searchSettled` and `.responseReceived`.
+- **Reducer:** `CountryListReducer.reduce(_:_:) -> (CountryListState, [CountryListEffect])` is pure and the only place the state changes. Effects describe work: `.debounce(text)`, `.fetch(request)`, `.announce(resultCount:)`.
+- **View model:** `CountryListViewModel` (`@MainActor @Observable`) exposes only `private(set) var state` and `send(_:)`. It runs the effects: the Combine search pipe, one fetch task at a time, and the VoiceOver announcement. `send` returns the task running the action's effects, so `.refreshable` and tests can await it.
+- **View:** draws `state` and sends actions. The search field binds to `state.searchText` and sends `.searchTextChanged`.
 
 ## Data layer
 - **Operation:** `query Countries($filter: CountryFilterInput) { countries(filter: $filter) { ...CountryBasics } }`. A blank term sends no filter.
@@ -83,7 +90,7 @@ public protocol CountriesRepository: Sendable {
   func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary]
 }
 ```
-`.notFound` is unused until US-2. The UI's state is `idle | loading | loaded([CountrySummary]) | empty(query: String) | failed(CountriesError)`, plus `isUpdating` while a search runs over visible rows.
+`.notFound` is unused until US-2.
 
 ## Errors and edge cases
 | Scenario | Expected | UI state | Recovery |
@@ -93,6 +100,7 @@ public protocol CountriesRepository: Sendable {
 | Other transport or HTTP failure | `.network` | Error | Try Again |
 | GraphQL errors, or `data: null` | `.server` | Error | Try Again |
 | A newer request starts | `CancellationError` | Unchanged; the newest request decides | none needed |
+| A response to an older request arrives | Ignored by the reducer | Unchanged | none needed |
 | Term `(` or `C++` | Escaped, sent as a regex | Results or empty | none needed |
 | Blank or whitespace-only term | No filter | Every country | none needed |
 | Term unchanged after trimming | No request | Unchanged | none needed |
@@ -105,22 +113,23 @@ public protocol CountriesRepository: Sendable {
 ## Test plan
 | AC | Tests |
 |---|---|
-| 1.1 | `CountrySummaryMappingTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); VM: "AC-1.1 load shows the loaded rows" |
-| 1.2 | VM, short injected interval and recorded mock calls: "AC-1.2 typing searches once after a pause", "AC-1.2 an unchanged term issues no search" |
+| 1.1 | `CountrySummaryMappingTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); reducer: "AC-1.1 a response shows the loaded rows"; view model: "AC-1.1 appearing loads every country" |
+| 1.2 | View model, short injected interval and recorded mock calls: "AC-1.2 typing searches once after a pause", "AC-1.2 an unchanged term issues no search" |
 | 1.3 | `SearchPatternTests`: "AC-1.3 letters match either case", "AC-1.3 regex metacharacters are escaped", "AC-1.3 a blank term means no filter"; repository: "AC-1.3 sends the pattern as a name regex filter" |
-| 1.4 | VM: "AC-1.4 first load shows loading", "AC-1.4 a search keeps rows visible while updating", "AC-1.4 a refresh keeps rows visible" |
-| 1.5 | VM: "AC-1.5 no match shows the empty state with the query" |
-| 1.6 | VM: "AC-1.6 failure shows the error", "AC-1.6 retry repeats the last request"; error mapping: "AC-1.6 not connected maps to offline" and one test per row of the mapping; UI: "AC-1.6 offline has its own message" |
-| 1.7 | VM: "AC-1.7 rows keep their codes across refresh and filtering" |
-| 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; VM: "AC-1.8 refresh requests a forced refresh" |
+| 1.4 | Reducer: "AC-1.4 the first load shows loading", "AC-1.4 a search keeps rows visible while searching", "AC-1.4 a refresh keeps rows visible" |
+| 1.5 | Reducer: "AC-1.5 no match shows the empty state with the query" |
+| 1.6 | Reducer: "AC-1.6 a failure shows the error", "AC-1.6 retry repeats the last request"; error mapping: "AC-1.6 not connected maps to offline" and one test per row of the mapping; UI: "AC-1.6 offline has its own message" |
+| 1.7 | Reducer: "AC-1.7 rows keep their codes across refresh and filtering" |
+| 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; reducer: "AC-1.8 refresh fetches from the network" |
 | 1.9 | `CountryListSnapshotTests`: `COUNTRY_LIST_LOADING`, `_LOADED`, `_SEARCHING`, `_EMPTY`, `_ERROR`, `_OFFLINE` |
 | 1.10 | `LocalizationTests` (every key current, commented and translated); "AC-1.10 error copy comes from the catalog"; `COUNTRY_LIST_LOADED_*_rtl` images |
-| 1.11 | VM, with a mock repository that suspends until released: "AC-1.11 a new search cancels the one in flight", "AC-1.11 a stale response never replaces newer results", "AC-1.11 a cancelled request shows no error" |
-| 1.12 | "AC-1.12 the announcement counts results", "AC-1.12 no results is announced" |
+| 1.11 | Reducer: "AC-1.11 a stale response never replaces newer results"; view model, with a mock repository that suspends until released: "AC-1.11 a new fetch cancels the one in flight", "AC-1.11 a cancelled request shows no error" |
+| 1.12 | Reducer: "AC-1.12 a search announces its result count", "AC-1.12 load and refresh announce nothing"; "AC-1.12 the announcement text uses plural variants", "AC-1.12 no results is announced" |
 | 1.13 | Manual: Network Link Conditioner at 100% loss, the error state appears after about 15 s |
 | 1.14 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
 
 ## Decisions
+- **MVI on the list screen:** one state value, one action enum, and a pure reducer that returns the new state and the effects to run. The view model only holds the state, runs effects and exposes `send(_:)`. Every state change lives in one function that tests call directly, and stale responses are dropped there by request id. It keeps the name view model: it's the `@MainActor @Observable` object the screen owns. Rejected: MVVM with an event method per interaction and several observable properties, which spreads state changes across methods and widens the view model's surface.
 - **The empty search state is the system's `ContentUnavailableView.search(text:)`.** It names the query, and iOS localizes its copy in every language it supports, so it needs no catalog entry. Rejected: our own "No countries match “…”" sentence in a hand-built `ContentUnavailableView`, which rebuilds a system component.
 - **Snapshots render the split view with the list's inner view fed a fixed state.** No snapshot loads data or depends on timing. Rejected: the full screen with a stub repository, which would rely on the helper's few layout passes to settle.
 - **Sorting is part of the repository contract.** The API sorts by code; every caller wants names. Rejected: sorting in the view model, which lets an API quirk leak into the UI.
@@ -129,6 +138,6 @@ public protocol CountriesRepository: Sendable {
 - **VoiceOver announces after searches only,** not after the first load or a refresh, where the content the user asked for is already on screen.
 - **AC-1.13 and AC-1.14 are checked by hand.** Testing them automatically needs a stalled network transport and UI tests; both are listed under "With more time".
 
-Open, settled during the story:
-- **Isolation of the Combine `sink`** under Swift 6 on both compilers: settled by the first task, a failing VM test for AC-1.2, with whichever approach compiles warning-free on Xcode 26.0.1 and 27.1.
-- **How Apollo 2.4.0 wraps a `URLError`:** settled by reading its transport errors while writing the error-mapping tests, so the adapter unwraps exactly what Apollo throws.
+Settled during the story:
+- **Isolation of the Combine `sink`.** A plain `sink` closure formed in the `@MainActor` `init` inherits main-actor isolation, and it runs on the main queue after `debounce(for:scheduler: DispatchQueue.main)`. It compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1), with no `MainActor.assumeIsolated` and no `Task` hop.
+- **Apollo 2.4.0 rethrows a `URLError` unwrapped.** Other failures: `ResponseCodeInterceptor.ResponseCodeError` (non-2xx) maps to `.network`, `JSONResponseParsingError` and `GraphQLExecutionError` to `.decoding`, and `URLError.cancelled` counts as cancellation, like `CancellationError`.

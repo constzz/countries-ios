@@ -68,13 +68,14 @@ The `@main` App and `AppContainer`, the composition root. It builds the `ApolloC
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
-MVVM with one-way data flow: view → event → view model → repository → new state → view.
-- Each screen has an outer view that owns its view model with `@State`, and an inner view that only draws a given state. Previews and snapshot tests render the inner view.
-- A view model is `@MainActor @Observable`. It exposes one read-only `state` and event methods named after what happened: `onAppear`, `searchTextChanged`, `retryTapped`, `refreshRequested`.
-- A view model's `init` has no side effects. Work starts from `.task`, because SwiftUI may create a view's initial `@State` value more than once.
-- One request at a time per screen: load, search, refresh and retry share one task, and starting any of them cancels the one in flight. A stale response never replaces newer results.
+MVI with one-way data flow: view → action → reducer → new state and effects → view.
+- Each screen has an outer view that owns its view model with `@State`, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
+- A screen's state is one value. Its actions are one enum of everything that can happen, named after what happened: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
+- A pure reducer, `reduce(state, action) -> (state, effects)`, is the only place the state changes. Effects describe work to do: fetch, debounce, announce.
+- The view model is `@MainActor @Observable`. It exposes only `state` and `send(_:)`, and runs the effects the reducer returns. Its `init` has no side effects: work starts when the view sends `.appeared` from `.task`, because SwiftUI may create a view's initial `@State` value more than once.
+- One request at a time per screen: a new fetch cancels the one in flight, and the reducer ignores any response that doesn't answer the latest request.
 - Identity is stable: a country's `code` is its `id` across reloads and filtering.
-- No full MVI: there's no action enum, reducer or effects layer. For two screens it would be ceremony.
+- No effects framework: effects are a small enum the view model switches over.
 
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`.
