@@ -40,7 +40,13 @@ struct CountriesRepositoryImpl: CountriesRepository {
       .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
   }
 
-  func country(code _: String) async throws -> CountryDetails {
-    throw CountriesError.unknown
+  func country(code: String) async throws -> CountryDetails {
+    let query = CountriesAPI.CountryQuery(code: code)
+    guard let country = try await client.fetch(query, cachePolicy: .cacheFirst).country else {
+      let operation = CountriesAPI.CountryQuery.operationName
+      Logger.network.error("\(operation, privacy: .public) found no country \(code, privacy: .public)")
+      throw CountriesError.notFound
+    }
+    return CountryDetails(country: country)
   }
 }
