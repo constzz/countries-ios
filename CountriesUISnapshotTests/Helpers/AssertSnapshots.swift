@@ -75,12 +75,9 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
   window.traitOverrides.layoutDirection = variant.layoutDirection
 
   // SwiftUI's transaction doesn't reach UIKit: with animations on, the search field's clear
-  // button is captured mid-fade. Off, views take their final state at once. Core Animation
-  // animations that UIKit adds itself, like a spinner's rotation, still run, so the window's layer
-  // time is frozen before any view is added and each one renders its first frame.
+  // button is captured mid-fade. Off, views take their final state at once.
   UIView.setAnimationsEnabled(false)
   defer { UIView.setAnimationsEnabled(true) }
-  window.layer.speed = 0
 
   window.rootViewController = controller
   window.isHidden = false
@@ -106,6 +103,7 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
 /// a reviewable size.
 @MainActor
 private func capture(_ window: UIWindow) throws -> Data {
+  removeMotion(from: window.layer)
   let format = UIGraphicsImageRendererFormat()
   format.scale = 1
   format.opaque = true
@@ -183,6 +181,19 @@ private final class SnapshotWindow: UIWindow {
 
   override var safeAreaInsets: UIEdgeInsets {
     fixedSafeArea
+  }
+}
+
+/// Removes animations with a finite duration, such as a spinner's frames or a fade UIKit starts
+/// itself, so each layer draws its final state instead of whichever frame the capture lands on.
+/// Liquid Glass ties its shapes to other layers with animations of infinite duration; those stay.
+@MainActor
+private func removeMotion(from layer: CALayer) {
+  for key in layer.animationKeys() ?? [] where layer.animation(forKey: key)?.duration.isFinite == true {
+    layer.removeAnimation(forKey: key)
+  }
+  for sublayer in layer.sublayers ?? [] {
+    removeMotion(from: sublayer)
   }
 }
 
