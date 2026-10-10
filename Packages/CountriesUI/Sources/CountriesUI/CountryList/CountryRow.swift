@@ -6,20 +6,41 @@ import SwiftUI
 struct CountryRow: View {
   let country: CountrySummary
 
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
   var body: some View {
-    Label {
-      VStack(alignment: .leading) {
-        Text(verbatim: country.name)
-          .font(.rowTitle)
-        Text(verbatim: country.continent.name)
-          .font(.rowSubtitle)
-          .foregroundStyle(.secondaryText)
+    Group {
+      // At accessibility sizes the flag beside the name leaves too little width, and names
+      // break mid-word, so the flag goes above.
+      if dynamicTypeSize.isAccessibilitySize {
+        VStack(alignment: .leading) {
+          flag
+          details
+        }
+      } else {
+        Label {
+          details
+        } icon: {
+          flag
+        }
       }
-    } icon: {
-      Text(verbatim: country.emoji)
-        .font(.rowFlag)
-        .accessibilityHidden(true)
     }
     .accessibilityElement(children: .combine)
+  }
+
+  private var flag: some View {
+    Text(verbatim: country.emoji)
+      .font(.rowFlag)
+      .accessibilityHidden(true)
+  }
+
+  private var details: some View {
+    VStack(alignment: .leading) {
+      Text(verbatim: country.name)
+        .font(.rowTitle)
+      Text(verbatim: country.continent.name)
+        .font(.rowSubtitle)
+        .foregroundStyle(.secondaryText)
+    }
   }
 }
