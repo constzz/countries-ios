@@ -25,6 +25,14 @@ let package = Package(
       exclude: ["GraphQL"],
       swiftSettings: swiftSettings
     ),
-    .testTarget(name: "CountriesDataTests", dependencies: ["CountriesData"], swiftSettings: swiftSettings),
+    .testTarget(
+      name: "CountriesDataTests",
+      dependencies: [
+        "CountriesData",
+        .product(name: "Apollo", package: "apollo-ios"),
+        .product(name: "ApolloAPI", package: "apollo-ios"),
+      ],
+      swiftSettings: swiftSettings
+    ),
   ]
 )
