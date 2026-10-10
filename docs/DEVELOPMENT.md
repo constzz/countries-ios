@@ -38,7 +38,7 @@ Work ships as user stories, one branch and one pull request each.
 3. The ACs are approved before any test is written.
 4. Implement test-first ([The loop](#the-loop)).
 5. Update the README requirements map.
-6. Run `scripts/lint.sh` and `scripts/test-matrix.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
+6. Run `scripts/lint.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
 7. When CI is green, merge with a merge commit, never squash, so the story's commits stay in history.
 
 **Specs are committed; plans are not.** A spec records what a story delivers and is kept up to date: if scope changes mid-story, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests land. Implementation plans are working notes and stay out of the repo.
@@ -65,7 +65,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 ### Definition of Done
 - Every AC has a test (or, for setup work, a verification command), and the spec's ACs are ticked.
 - `scripts/lint.sh` is clean.
-- `scripts/test-matrix.sh` passes on every row.
+- CI is green: it runs the `xcode26-ios26` and `xcode27-ios27` rows of `scripts/test-matrix.sh`. Locally, run only the tests a change touches.
 - Previews cover every state in light, dark and the largest accessibility size.
 - Every UI change ships snapshots of each affected state on every preset, in light and dark, inspected before committing.
 - Every new string is in the String Catalog with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
