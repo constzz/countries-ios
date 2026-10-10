@@ -13,10 +13,10 @@ struct CountryListView: View {
   var body: some View {
     CountryListContent(state: viewModel.state, send: viewModel.send)
       .task {
+        // Subscribe first: an effect emitted while no one listens is dropped.
+        let effects = viewModel.effects()
         viewModel.send(.appeared)
-      }
-      .task {
-        for await effect in viewModel.effects() {
+        for await effect in effects {
           handle(effect)
         }
       }

@@ -6,7 +6,10 @@ import Foundation
 /// announce search results.
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
-  private let searchInput = PassthroughSubject<String, Never>()
+  private let debounceInterval: DispatchQueue.SchedulerTimeType.Stride
+  /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
+  /// view, so `init` only stores dependencies.
+  private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
 
@@ -15,13 +18,20 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300)
   ) {
     self.repository = repository
+    self.debounceInterval = debounceInterval
     super.init(initialState: CountryListState())
-    searchInput
+  }
+
+  /// The search field's input pipe: trim, debounce, then drop repeats of the last term.
+  private func makeSearchInput() -> PassthroughSubject<String, Never> {
+    let input = PassthroughSubject<String, Never>()
+    input
       .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
       .debounce(for: debounceInterval, scheduler: DispatchQueue.main)
       .removeDuplicates()
       .sink { [weak self] term in self?.send(.searchSettled(term)) }
       .store(in: &subscriptions)
+    return input
   }
 
   override func reduce(_ current: CountryListState, _ action: CountryListAction) -> CountryListState {
