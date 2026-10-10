@@ -6,7 +6,7 @@ This document describes the target shape of the app. Each story builds its own s
 
 ```
                       CountriesApp
-           (@main App, AppContainer: composition root)
+     (@main AppLauncher, App, AppContainer: composition root)
               │               │               │
               ▼               ▼               ▼
         CountriesUI ──► CountriesDomain ◄── CountriesData ──► Apollo iOS
@@ -54,7 +54,7 @@ SwiftUI screens and their view models. It imports only CountriesDomain, never Ap
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp
-The `@main` App and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests it creates no repository and its window shows no screen, so no test run touches the network. Startup does nothing else.
+`AppLauncher`, the `@main` entry point; the `CountriesApp` App; and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
