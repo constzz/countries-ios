@@ -16,6 +16,11 @@ func assertSnapshots(
   filePath: StaticString = #filePath,
   sourceLocation: SourceLocation = #_sourceLocation
 ) async {
+  guard SnapshotEnvironment.isReference else {
+    Issue.record("Record snapshots on Xcode 27.1 with the iOS 27.0 simulator.", sourceLocation: sourceLocation)
+    return
+  }
+
   var shots: [(SnapshotPreset, SnapshotVariant)] = SnapshotPreset.all.flatMap { [($0, .light), ($0, .dark)] }
   shots.append((.iPhone17Pro, .lightAccessibilityXXXL))
   if rightToLeft {
@@ -34,8 +39,6 @@ func assertSnapshots(
   }
 }
 
-// MARK: - SnapshotError
-
 enum SnapshotError: Error {
   case noWindowScene
   case pngEncodingFailed
@@ -48,9 +51,7 @@ enum SnapshotError: Error {
 /// window in a scene. The image is forced to sRGB so it doesn't depend on the Mac's display.
 @MainActor
 private func render(_ view: some View, on preset: SnapshotPreset, _ variant: SnapshotVariant) async throws -> Data {
-  guard let scene = UIApplication.shared.connectedScenes.lazy.compactMap({ $0 as? UIWindowScene }).first else {
-    throw SnapshotError.noWindowScene
-  }
+  let scene = try await hostScene()
   let controller = UIHostingController(
     rootView: view
       .environment(\.locale, Locale(identifier: "en_US"))
@@ -89,7 +90,20 @@ private func render(_ view: some View, on preset: SnapshotPreset, _ variant: Sna
   return png
 }
 
-/// Compares PNG bytes with the reference image, or records the image when recording.
+/// The test host's active window scene. The first test can start before the scene connects, so
+/// this waits up to about five seconds for it.
+@MainActor
+private func hostScene() async throws -> UIWindowScene {
+  for _ in 0 ..< 100 {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    if let scene = scenes.first(where: { $0.activationState == .foregroundActive }) {
+      return scene
+    }
+    try await Task.sleep(for: .milliseconds(50))
+  }
+  throw SnapshotError.noWindowScene
+}
+
 @MainActor
 private func compare(_ png: Data, with reference: URL, sourceLocation: SourceLocation) {
   let name = reference.lastPathComponent
@@ -118,19 +132,12 @@ private func compare(_ png: Data, with reference: URL, sourceLocation: SourceLoc
   }
   guard stored != png else { return }
 
-  let actual = FileManager.default.temporaryDirectory.appending(path: name)
-  do {
-    try png.write(to: actual)
-    Issue.record(
-      "\(name) doesn't match its reference image.\nReference: \(reference.path)\nActual: \(actual.path)",
-      sourceLocation: sourceLocation
-    )
-  } catch {
-    Issue.record("\(name) doesn't match its reference image (\(error)).", sourceLocation: sourceLocation)
-  }
+  Attachment.record(png, named: name, sourceLocation: sourceLocation)
+  Issue.record(
+    "\(name) doesn't match its reference image. The rendered image is attached to the test result.",
+    sourceLocation: sourceLocation
+  )
 }
-
-// MARK: - SnapshotWindow
 
 /// A window with a fixed safe area. Without it the window would take its safe area from the
 /// simulator's screen, whatever device the tests run on.

@@ -86,7 +86,8 @@ Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xc
   xcodebuild test -scheme CountriesApp -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
   ```
 - **Review:** open every new or changed PNG before committing. Pull requests show image diffs.
-- **On a mismatch:** the failure message has the path of the new image in the temporary directory. Compare it with the reference; if the change is intended, record again.
+- **On a mismatch:** the rendered image is attached to the test result (in Xcode's test report, or in the result bundle CI uploads). Compare it with the reference; if the change is intended, record again.
+- **Off the reference simulator** snapshot tests are skipped, and a recording run fails.
 
 ## Codegen
 Apollo's inputs live in `Packages/CountriesData/Sources/CountriesData/GraphQL/`: the downloaded `schema.graphqls` and the operations (`*.graphql`). The generated Swift goes to `Generated/` next to it, `internal` to CountriesData. Both are committed, so building never needs codegen. Settings are in `apollo-codegen-config.json`.

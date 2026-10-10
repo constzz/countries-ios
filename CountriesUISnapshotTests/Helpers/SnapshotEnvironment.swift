@@ -14,6 +14,12 @@ enum SnapshotEnvironment {
     #endif
   }
 
+  /// Off the reference destination the tests are skipped, unless recording: a recording there
+  /// fails rather than passing without writing any image.
+  static var isEnabled: Bool {
+    isReference || isRecording
+  }
+
   static let notReferenceReason: Comment = "Snapshots run only on Xcode 27.1 with the iOS 27.0 simulator."
 
   /// Set by the RecordSnapshots test plan.

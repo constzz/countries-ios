@@ -4,7 +4,7 @@ import Testing
 
 @Suite(
   "RootView snapshots",
-  .enabled(if: SnapshotEnvironment.isReference, SnapshotEnvironment.notReferenceReason)
+  .enabled(if: SnapshotEnvironment.isEnabled, SnapshotEnvironment.notReferenceReason)
 )
 @MainActor
 struct RootViewSnapshotTests {
