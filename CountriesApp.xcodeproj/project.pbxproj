@@ -34,19 +34,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = C0A100000000000000000061 /* CountriesApp */;
-		};
 		C0A100000000000000000034 /* Exceptions for "CountriesUISnapshotTests" folder in "CountriesUISnapshotTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				snapshots,
 			);
 			target = C0A100000000000000000062 /* CountriesUISnapshotTests */;
+		};
+		C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0A100000000000000000061 /* CountriesApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
