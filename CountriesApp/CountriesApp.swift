@@ -7,11 +7,10 @@ struct CountriesApp: App {
 
   var body: some Scene {
     WindowGroup {
+      // Empty while the app hosts tests.
       if let repository = container.countriesRepository {
         RootView()
           .environment(\.countriesRepository, repository)
-      } else {
-        RootView()
       }
     }
   }
