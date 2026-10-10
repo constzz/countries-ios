@@ -1,7 +1,8 @@
 import CountriesDomain
 import SwiftUI
 
-/// The country list screen: owns its view model and starts loading when it appears.
+/// The country list screen: owns its view model, starts loading when it appears and handles the
+/// view model's effects.
 struct CountryListView: View {
   @State private var viewModel: CountryListViewModel
 
@@ -14,5 +15,17 @@ struct CountryListView: View {
       .task {
         viewModel.send(.appeared)
       }
+      .task {
+        for await effect in viewModel.effects() {
+          handle(effect)
+        }
+      }
+  }
+
+  private func handle(_ effect: CountryListEffect) {
+    switch effect {
+    case let .announce(resultCount):
+      AccessibilityNotification.Announcement(SearchAnnouncement.text(forResultCount: resultCount)).post()
+    }
   }
 }

@@ -3,7 +3,7 @@ import Testing
 @testable import CountriesUI
 
 /// Every action, sent to the view model with a test repository: the state it leaves, the requests
-/// it makes and what it announces.
+/// it makes and the effects it emits.
 @Suite("CountryListViewModel")
 @MainActor
 struct CountryListViewModelTests {
@@ -235,32 +235,25 @@ struct CountryListViewModelTests {
   @Test("AC-1.12 a search announces its result count")
   func searchAnnouncesItsResultCount() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    var announcements: [String] = []
-    let viewModel = CountryListViewModel(repository: repository, announce: { announcements.append($0) })
+    let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
 
     await viewModel.send(.searchSettled("a")).value
     await repository.setResult(.success([]))
     await viewModel.send(.searchSettled("zzz")).value
 
-    #expect(announcements == [
-      SearchAnnouncement.text(forResultCount: rows.count),
-      SearchAnnouncement.text(forResultCount: 0),
-    ])
+    #expect(await first(2, of: viewModel.effects()) == [.announce(resultCount: rows.count), .announce(resultCount: 0)])
   }
 
   @Test("AC-1.12 load and refresh announce nothing")
   func loadAndRefreshAnnounceNothing() async {
-    var announcements: [String] = []
-    let viewModel = CountryListViewModel(
-      repository: MockCountriesRepository(result: .success(rows)),
-      announce: { announcements.append($0) }
-    )
+    let viewModel = CountryListViewModel(repository: MockCountriesRepository(result: .success(rows)))
 
     await viewModel.send(.appeared).value
     await viewModel.send(.refreshRequested).value
+    await viewModel.send(.searchSettled("a")).value
 
-    #expect(announcements.isEmpty)
+    #expect(await first(1, of: viewModel.effects()) == [.announce(resultCount: rows.count)])
   }
 
   // MARK: Helpers

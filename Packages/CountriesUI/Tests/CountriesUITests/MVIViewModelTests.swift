@@ -86,18 +86,6 @@ struct MVIViewModelTests {
 
   // MARK: Helpers
 
-  /// Collects the first `count` effects, or fewer if the stream ends first.
-  private func first(_ count: Int, of effects: AsyncStream<CounterEffect>) async -> [CounterEffect] {
-    var received: [CounterEffect] = []
-    for await effect in effects {
-      received.append(effect)
-      if received.count == count {
-        break
-      }
-    }
-    return received
-  }
-
   /// Counts the next change to `state`. Observation reports only the first change after it starts.
   private func observeState(of viewModel: CounterViewModel, counting changes: ChangeCount) {
     withObservationTracking {

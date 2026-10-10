@@ -1,7 +1,7 @@
 import CountriesDomain
 
 /// Everything the country list shows, as one value.
-struct CountryListState: Equatable {
+struct CountryListState: MVIState {
   enum Content: Equatable {
     /// Nothing requested yet.
     case idle
@@ -22,16 +22,4 @@ struct CountryListState: Equatable {
   var isSearching = false
   /// The latest request. Only its response is applied.
   var request: CountriesRequest?
-}
-
-/// One fetch of the country list.
-struct CountriesRequest: Equatable {
-  enum Kind: Equatable {
-    case load, search, refresh
-  }
-
-  let id: Int
-  let term: String
-  let forceRefresh: Bool
-  let kind: Kind
 }
