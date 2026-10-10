@@ -20,7 +20,7 @@
 - [x] **AC-1.7** Rows keep their identity, the country code, across refresh and filtering.
 - [x] **AC-1.8** Pull-to-refresh fetches fresh data from the network, bypassing the cache.
 - [x] **AC-1.9** Snapshots cover the loading, loaded, searching, empty, error and offline states on every device preset in light and dark, plus accessibility XXXL on iPhone 17 Pro. On regular width (iPad, unfolded iPhone Duo where the system gives two columns) the list sits beside the "Select a Country" placeholder.
-- [ ] **AC-1.10** All list copy comes from the String Catalog: title, search prompt, loading, error and placeholder messages, the Try Again button and the VoiceOver announcements. The localization tests pass, and the loaded state's right-to-left snapshots (iPhone 17 Pro and iPad landscape) are mirrored.
+- [x] **AC-1.10** All list copy comes from the String Catalog: title, search prompt, loading, error and placeholder messages, the Try Again button and the VoiceOver announcements. The localization tests pass, and the loaded state's right-to-left snapshots (iPhone 17 Pro and iPad landscape) are mirrored.
 - [x] **AC-1.11** Starting a load, search, refresh or retry cancels the request in flight, and a stale response never replaces newer results. A cancelled request never shows an error.
 - [x] **AC-1.12** After each search, VoiceOver announces the number of results, with plural variants, or that there are none.
 - [ ] **AC-1.13** A request with no response for 15 s ends in the error state.
