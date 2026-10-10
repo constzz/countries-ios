@@ -63,10 +63,10 @@ struct CountriesRepositoryTests {
     }
   }
 
-  @Test("AC-1.13 requests time out after the configured interval")
+  @Test("AC-1.13 requests time out after 15 s")
   func requestsTimeOut() throws {
     let endpoint = try #require(URL(string: "https://countries.example/graphql"))
-    let client = makeApolloClient(endpoint: endpoint, requestTimeout: 15)
+    let client = makeApolloClient(endpoint: endpoint)
     #expect(client.defaultRequestConfiguration.requestTimeout == 15)
   }
 }

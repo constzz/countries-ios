@@ -4,20 +4,22 @@ import Foundation
 
 /// The composition root: builds the app's dependencies. Startup does nothing else.
 struct AppContainer {
-  /// `nil` while the app hosts tests, so no test run touches the network; screens then fall back
-  /// to a repository whose requests fail.
+  /// `nil` while the app hosts tests: the app then shows no screen, so no test run touches the
+  /// network.
   let countriesRepository: (any CountriesRepository)?
 
-  init(environment: [String: String] = ProcessInfo.processInfo.environment) {
+  init(environment: [String: String] = ProcessInfo.processInfo.environment, bundle: Bundle = .main) {
     let isHostingTests = environment["XCTestConfigurationFilePath"] != nil
-    countriesRepository = isHostingTests ? nil : makeCountriesRepository(
-      endpoint: Self.endpoint,
-      requestTimeout: Self.requestTimeout
-    )
+    countriesRepository = isHostingTests ? nil : makeCountriesRepository(endpoint: Self.endpoint(in: bundle))
   }
 
-  // swiftlint:disable:next force_unwrapping
-  private static let endpoint = URL(string: "https://countries.trevorblades.com/graphql")!
-  /// How long a request may wait for data before it fails, instead of URLSession's 60 s.
-  private static let requestTimeout: TimeInterval = 15
+  /// The API endpoint, set by `COUNTRIES_API_URL` in `Config/Shared.xcconfig`.
+  private static func endpoint(in bundle: Bundle) -> URL {
+    guard let value = bundle.object(forInfoDictionaryKey: "CountriesAPIURL") as? String,
+          let url = URL(string: value), url.scheme != nil
+    else {
+      preconditionFailure("CountriesAPIURL is missing from Info.plist. Set COUNTRIES_API_URL in Config/Shared.xcconfig.")
+    }
+    return url
+  }
 }

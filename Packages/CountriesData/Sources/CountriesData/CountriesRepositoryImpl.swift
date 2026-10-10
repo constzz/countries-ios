@@ -2,17 +2,15 @@ import Apollo
 import CountriesDomain
 import Foundation
 
-/// Creates the repository the app uses, backed by the Countries GraphQL API.
-///
-/// - Parameter requestTimeout: how long a request may wait for data before it fails.
-public func makeCountriesRepository(endpoint: URL, requestTimeout: TimeInterval) -> any CountriesRepository {
-  CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(
-    endpoint: endpoint,
-    requestTimeout: requestTimeout
-  )))
+/// Creates the repository the app uses, backed by the Countries GraphQL API at `endpoint`.
+public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
+  CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint)))
 }
 
-func makeApolloClient(endpoint: URL, requestTimeout: TimeInterval) -> ApolloClient {
+/// How long a request may wait for data before it fails, instead of URLSession's 60 s.
+private let requestTimeout: TimeInterval = 15
+
+func makeApolloClient(endpoint: URL) -> ApolloClient {
   ApolloClient(url: endpoint, defaultRequestConfiguration: RequestConfiguration(requestTimeout: requestTimeout))
 }
 
