@@ -23,8 +23,8 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       handleDisappeared(current)
     case .retryTapped:
       handleRetryTapped(current)
-    case .headerScrolled:
-      current
+    case let .headerScrolled(underBar):
+      handleHeaderScrolled(current, underBar: underBar)
     case let .responseReceived(requestID, result):
       handleResponse(result, for: requestID, in: current)
     }
@@ -56,6 +56,12 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       return current
     }
     return start(in: current)
+  }
+
+  private func handleHeaderScrolled(_ current: CountryDetailState, underBar: Bool) -> CountryDetailState {
+    var next = current
+    next.showsTitle = underBar
+    return next
   }
 
   /// Applies the response to the latest request; responses to older ones are ignored.
