@@ -13,6 +13,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
+  private var searchProgressTask: Task<Void, Never>?
 
   init(
     repository: any CountriesRepository,
@@ -45,8 +46,8 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       handleSearchTextChanged(current, text)
     case let .searchSettled(term):
       handleSearchSettled(current, term)
-    case .searchProgressDue:
-      current
+    case let .searchProgressDue(requestID):
+      handleSearchProgressDue(current, requestID)
     case .refreshRequested:
       handleRefreshRequested(current)
     case .retryTapped:
@@ -83,6 +84,21 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return start(.search, term: term, in: next)
   }
 
+  /// Shows "Searching…" if the search is still the latest request and its content is on screen.
+  private func handleSearchProgressDue(_ current: CountryListState, _ requestID: Int) -> CountryListState {
+    guard let request = current.request, request.id == requestID, request.kind == .search else {
+      return current
+    }
+    switch current.content {
+    case .loaded, .empty:
+      var next = current
+      next.isSearching = true
+      return next
+    case .idle, .loading, .failed:
+      return current
+    }
+  }
+
   private func handleRefreshRequested(_ current: CountryListState) -> CountryListState {
     start(.refresh, term: current.query, in: current)
   }
@@ -107,6 +123,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     guard let request = current.request, request.id == requestID else {
       return current
     }
+    searchProgressTask?.cancel()
     var next = current
     next.isSearching = false
     switch result {
@@ -124,8 +141,9 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   // MARK: Fetching
 
   /// Issues a request that replaces any in flight. Rows or an empty result stay on screen while
-  /// it runs; with nothing to keep, the screen shows loading. A refresh shows the system's own
-  /// refresh control, so it changes nothing here.
+  /// it runs, and a search over them shows "Searching…" once it has run a while, or keeps it up
+  /// if it's already showing. With nothing to keep, the screen shows loading. A refresh shows the
+  /// system's own refresh control, so it changes nothing here.
   private func start(
     _ kind: CountriesRequest.Kind,
     term: String,
@@ -138,17 +156,33 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       kind: kind
     )
     next.request = request
+    searchProgressTask?.cancel()
     switch (kind, current.content) {
-    case (.refresh, _):
+    case (.search, .loaded), (.search, .empty):
+      if !current.isSearching {
+        scheduleSearchProgress(for: request)
+      }
+    case (.refresh, _), (.load, .loaded), (.load, .empty):
       next.isSearching = false
-    case (_, .loaded), (_, .empty):
-      next.isSearching = kind == .search
     case (_, .idle), (_, .loading), (_, .failed):
       next.content = .loading
       next.isSearching = false
     }
     fetch(request)
     return next
+  }
+
+  /// Sends `.searchProgressDue` once `request` has run for `searchProgressDelay`, unless its
+  /// response or a newer request cancels the wait first.
+  private func scheduleSearchProgress(for request: CountriesRequest) {
+    searchProgressTask = launchEffect { [weak self, searchProgressDelay] in
+      do {
+        try await Task.sleep(for: searchProgressDelay)
+      } catch {
+        return
+      }
+      self?.send(.searchProgressDue(requestID: request.id))
+    }
   }
 
   /// Cancels the fetch in flight and starts `request`. A cancelled fetch sends nothing back.
