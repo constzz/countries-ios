@@ -43,7 +43,7 @@
   /// The detail beside the list, with Bolivia selected; on compact width, pushed.
   @MainActor
   private func countryDetail(_ state: CountryDetailState) -> some View {
-    CountriesSplitView {
+    RootSplitView {
       CountryListContent(
         state: CountryListState(content: .loaded(CountrySummary.samples)),
         selection: .constant(CountryDetails.bolivia.id)

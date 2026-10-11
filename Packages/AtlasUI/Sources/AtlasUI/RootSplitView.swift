@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The list in the sidebar and the selected country in the detail column. On compact width it
 /// collapses into a navigation stack by itself.
-struct CountriesSplitView<Sidebar: View, Detail: View>: View {
+struct RootSplitView<Sidebar: View, Detail: View>: View {
   /// Both columns, so iPad portrait shows the list too; people can still hide the sidebar.
   @State private var columnVisibility = NavigationSplitViewVisibility.all
   private let sidebar: Sidebar

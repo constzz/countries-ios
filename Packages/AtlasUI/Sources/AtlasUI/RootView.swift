@@ -12,7 +12,7 @@ public struct RootView: View {
   }
 
   public var body: some View {
-    CountriesSplitView {
+    RootSplitView {
       CountryListView(repository: repository, selection: $selection)
     } detail: {
       if let selection {

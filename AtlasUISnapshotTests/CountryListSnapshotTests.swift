@@ -64,7 +64,7 @@ struct CountryListSnapshotTests {
   }
 
   private func countryList(_ state: CountryListState) -> some View {
-    CountriesSplitView {
+    RootSplitView {
       CountryListContent(state: state, selection: .constant(nil)) { _ in Task {} }
     } detail: {
       SelectCountryPlaceholder()

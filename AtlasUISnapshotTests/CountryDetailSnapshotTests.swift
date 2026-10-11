@@ -52,7 +52,7 @@ struct CountryDetailSnapshotTests {
 
   /// Bolivia's row is selected in every state, so the iPad images show the highlight.
   private func countryDetail(_ content: CountryDetailState.Content) -> some View {
-    CountriesSplitView {
+    RootSplitView {
       CountryListContent(
         state: CountryListState(content: .loaded(CountrySummary.samples)),
         selection: .constant(CountryDetails.bolivia.id)
