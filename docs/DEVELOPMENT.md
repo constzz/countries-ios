@@ -41,17 +41,17 @@ Work ships as user stories, one branch and one pull request each.
 6. Run `scripts/lint.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
 7. When CI is green, merge with a merge commit, never squash, so the story's commits stay in history.
 
-**Specs are committed; plans are not.** A spec records what a story delivers and is kept up to date: if scope changes mid-story, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests land. Implementation plans are working notes and stay out of the repo.
+**Specs are committed; plans are not.** A spec records what a story delivers and why. While the story is open, the spec follows it: if scope changes, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests land. Once the story merges, the spec is frozen. The code and these guides describe the app as it is now; a later change goes into them, or into the next story's spec, and the old spec gains one line under "Changed since". Implementation plans are working notes and stay out of the repo.
 
 ### Spec sections
-1. Story, scope and non-goals.
-2. Acceptance criteria, numbered `AC-<story>.<n>`.
-3. For UI stories, screen contract tables: State → UI, and Interaction → event → effect.
-4. Data layer: operations, mapping, repository.
-5. Domain types.
-6. Errors and edge cases: Scenario | Expected | UI state | Recovery.
-7. Test plan: AC → test name.
-8. Decisions, each with its rejected alternative, and anything still open together with what will settle it.
+A spec says what and why, not how. Types, signatures, file layout and reducer logic live in the code and in [ARCHITECTURE.md](ARCHITECTURE.md), and a spec that repeats them goes stale with the first refactor.
+1. Delivery note, added at merge: the pull request, the date, and "Changed since" once a later change touches it.
+2. Story, scope and non-goals.
+3. Acceptance criteria, numbered `AC-<story>.<n>`.
+4. For UI stories, the screen contract: State → UI.
+5. Errors and edge cases: Scenario | Expected | UI state | Recovery.
+6. Verification: how each AC without an automated test is checked by hand. Tests carry their AC in their name, so the spec doesn't list them.
+7. Decisions, each with its rejected alternative, and anything still open together with what will settle it.
 
 ### The loop
 1. Pick an AC.
