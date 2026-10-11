@@ -10,7 +10,7 @@ enum AppLauncher {
     if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
       TestHostApp.main()
     } else {
-      CountriesApp.main()
+      AtlasApp.main()
     }
   }
 }

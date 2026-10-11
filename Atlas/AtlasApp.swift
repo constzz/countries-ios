@@ -1,7 +1,7 @@
 import AtlasUI
 import SwiftUI
 
-struct CountriesApp: App {
+struct AtlasApp: App {
   private let container = AppContainer(environment: AppEnvironment(bundle: .main))
 
   var body: some Scene {

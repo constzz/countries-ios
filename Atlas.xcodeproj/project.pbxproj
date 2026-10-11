@@ -18,14 +18,14 @@
 			containerPortal = C0A100000000000000000000 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = C0A100000000000000000061;
-			remoteInfo = CountriesApp;
+			remoteInfo = Atlas;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		C0A100000000000000000011 /* CountriesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CountriesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0A100000000000000000011 /* Atlas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Atlas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A100000000000000000012 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
-		C0A100000000000000000013 /* CountriesApp.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = CountriesApp.xctestplan; sourceTree = "<group>"; };
+		C0A100000000000000000013 /* Atlas.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Atlas.xctestplan; sourceTree = "<group>"; };
 		C0A100000000000000000014 /* AtlasUISnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasUISnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A100000000000000000015 /* RecordSnapshots.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RecordSnapshots.xctestplan; sourceTree = "<group>"; };
 		C0A100000000000000000021 /* AtlasDomain */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasDomain; sourceTree = "<group>"; };
@@ -41,22 +41,22 @@
 			);
 			target = C0A100000000000000000062 /* AtlasUISnapshotTests */;
 		};
-		C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */ = {
+		C0A100000000000000000035 /* Exceptions for "Atlas" folder in "Atlas" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = C0A100000000000000000061 /* CountriesApp */;
+			target = C0A100000000000000000061 /* Atlas */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		C0A100000000000000000031 /* CountriesApp */ = {
+		C0A100000000000000000031 /* Atlas */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */,
+				C0A100000000000000000035 /* Exceptions for "Atlas" folder in "Atlas" target */,
 			);
-			path = CountriesApp;
+			path = Atlas;
 			sourceTree = "<group>";
 		};
 		C0A100000000000000000032 /* AtlasUISnapshotTests */ = {
@@ -96,11 +96,11 @@
 		C0A100000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				C0A100000000000000000031 /* CountriesApp */,
+				C0A100000000000000000031 /* Atlas */,
 				C0A100000000000000000032 /* AtlasUISnapshotTests */,
 				C0A100000000000000000042 /* Packages */,
 				C0A100000000000000000041 /* Config */,
-				C0A100000000000000000013 /* CountriesApp.xctestplan */,
+				C0A100000000000000000013 /* Atlas.xctestplan */,
 				C0A100000000000000000015 /* RecordSnapshots.xctestplan */,
 				C0A100000000000000000043 /* Products */,
 			);
@@ -127,7 +127,7 @@
 		C0A100000000000000000043 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				C0A100000000000000000011 /* CountriesApp.app */,
+				C0A100000000000000000011 /* Atlas.app */,
 				C0A100000000000000000014 /* AtlasUISnapshotTests.xctest */,
 			);
 			name = Products;
@@ -136,9 +136,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		C0A100000000000000000061 /* CountriesApp */ = {
+		C0A100000000000000000061 /* Atlas */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C0A100000000000000000081 /* Build configuration list for PBXNativeTarget "CountriesApp" */;
+			buildConfigurationList = C0A100000000000000000081 /* Build configuration list for PBXNativeTarget "Atlas" */;
 			buildPhases = (
 				C0A100000000000000000051 /* Sources */,
 				C0A100000000000000000052 /* Frameworks */,
@@ -149,16 +149,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				C0A100000000000000000031 /* CountriesApp */,
+				C0A100000000000000000031 /* Atlas */,
 			);
-			name = CountriesApp;
+			name = Atlas;
 			packageProductDependencies = (
 				C0A100000000000000000201 /* AtlasDomain */,
 				C0A100000000000000000202 /* AtlasData */,
 				C0A100000000000000000203 /* AtlasUI */,
 			);
-			productName = CountriesApp;
-			productReference = C0A100000000000000000011 /* CountriesApp.app */;
+			productName = Atlas;
+			productReference = C0A100000000000000000011 /* Atlas.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C0A100000000000000000062 /* AtlasUISnapshotTests */ = {
@@ -201,7 +201,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C0A100000000000000000071 /* Build configuration list for PBXProject "CountriesApp" */;
+			buildConfigurationList = C0A100000000000000000071 /* Build configuration list for PBXProject "Atlas" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -215,7 +215,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C0A100000000000000000061 /* CountriesApp */,
+				C0A100000000000000000061 /* Atlas */,
 				C0A100000000000000000062 /* AtlasUISnapshotTests */,
 			);
 		};
@@ -258,7 +258,7 @@
 /* Begin PBXTargetDependency section */
 		C0A100000000000000000091 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = C0A100000000000000000061 /* CountriesApp */;
+			target = C0A100000000000000000061 /* Atlas */;
 			targetProxy = C0A100000000000000000092 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -393,8 +393,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CountriesApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Countries;
+				INFOPLIST_FILE = Atlas/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Atlas;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -405,7 +405,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).countries";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).atlas";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -422,8 +422,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = CountriesApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Countries;
+				INFOPLIST_FILE = Atlas/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Atlas;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -434,7 +434,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).countries";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).atlas";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -451,13 +451,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).countries.snapshot-tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).atlas.snapshot-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CountriesApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CountriesApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atlas.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Atlas";
 			};
 			name = Debug;
 		};
@@ -469,20 +469,20 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).countries.snapshot-tests";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).atlas.snapshot-tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CountriesApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CountriesApp";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atlas.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Atlas";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C0A100000000000000000071 /* Build configuration list for PBXProject "CountriesApp" */ = {
+		C0A100000000000000000071 /* Build configuration list for PBXProject "Atlas" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0A100000000000000000072 /* Debug */,
@@ -491,7 +491,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C0A100000000000000000081 /* Build configuration list for PBXNativeTarget "CountriesApp" */ = {
+		C0A100000000000000000081 /* Build configuration list for PBXNativeTarget "Atlas" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0A100000000000000000082 /* Debug */,

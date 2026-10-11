@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "C0A100000000000000000061"
-               BuildableName = "CountriesApp.app"
-               BlueprintName = "CountriesApp"
-               ReferencedContainer = "container:CountriesApp.xcodeproj">
+               BuildableName = "Atlas.app"
+               BlueprintName = "Atlas"
+               ReferencedContainer = "container:Atlas.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -30,7 +30,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:CountriesApp.xctestplan"
+            reference = "container:Atlas.xctestplan"
             default = "YES">
          </TestPlanReference>
          <TestPlanReference
@@ -53,9 +53,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C0A100000000000000000061"
-            BuildableName = "CountriesApp.app"
-            BlueprintName = "CountriesApp"
-            ReferencedContainer = "container:CountriesApp.xcodeproj">
+            BuildableName = "Atlas.app"
+            BlueprintName = "Atlas"
+            ReferencedContainer = "container:Atlas.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -70,9 +70,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C0A100000000000000000061"
-            BuildableName = "CountriesApp.app"
-            BlueprintName = "CountriesApp"
-            ReferencedContainer = "container:CountriesApp.xcodeproj">
+            BuildableName = "Atlas.app"
+            BlueprintName = "Atlas"
+            ReferencedContainer = "container:Atlas.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

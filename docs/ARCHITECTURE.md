@@ -5,10 +5,10 @@ This document describes the target shape of the app. Each story builds its own s
 ## Packages
 
 ```
-                      CountriesApp
-     (@main AppLauncher, App, AppContainer: composition root)
-              │               │               │
-              ▼               ▼               ▼
+                       Atlas
+  (@main AppLauncher, AtlasApp, AppContainer: composition root)
+           │             │              │
+           ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
 ```
 
@@ -54,8 +54,8 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
 - `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
-### CountriesApp
-`AppLauncher`, the `@main` entry point; the `CountriesApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through AtlasData's public factory, and `CountriesApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves AtlasData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
+### Atlas
+`AppLauncher`, the `@main` entry point; the `AtlasApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through AtlasData's public factory, and `AtlasApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves AtlasData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `AtlasApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in AtlasData, and domain types are what crosses into the UI.
@@ -88,7 +88,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
 - No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
 - Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `AtlasUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
-- `CountriesApp.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
+- `Atlas.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 
 ## Logging
 `os.Logger`, with a `network` category in AtlasData, called from the Apollo adapter's error mapping. User input such as search terms is logged as `.private`. `print` is banned by lint.

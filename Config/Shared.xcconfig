@@ -1,7 +1,7 @@
-// Build settings shared by every target in CountriesApp.xcodeproj.
+// Build settings shared by every target in Atlas.xcodeproj.
 // The local packages under Packages/ declare the same choices in their Package.swift.
 
-// App identity. The app's bundle ID is $(BUNDLE_ID_PREFIX).countries.
+// App identity. The app's bundle ID is $(BUNDLE_ID_PREFIX).atlas.
 BUNDLE_ID_PREFIX = kostiantyn.bezzemelnyi
 
 // The Countries GraphQL API. The app reads it from its Info.plist (CountriesAPIURL). `$()`

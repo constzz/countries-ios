@@ -1,4 +1,4 @@
-# Countries
+# Atlas
 
 [![CI](https://github.com/constzz/countries-ios/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/ci.yml?query=branch%3Amain)
 [![Snapshots](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml?query=branch%3Amain)
@@ -19,7 +19,7 @@ These are reference images from the snapshot tests, so the Snapshots workflow ch
 ## Build and run
 **Requirements:** Xcode 26.0.1 or later, iOS 17.0 or later.
 
-Open `CountriesApp.xcodeproj` and press ⌘R. Nothing else needs installing: the generated GraphQL code is committed, and Apollo iOS is the only package dependency.
+Open `Atlas.xcodeproj` and press ⌘R. Nothing else needs installing: the generated GraphQL code is committed, and Apollo iOS is the only package dependency.
 
 Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 
@@ -33,7 +33,7 @@ Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 ### Commands
 | Task | Command |
 |---|---|
-| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
+| All tests | `xcodebuild test -scheme Atlas -testPlan Atlas -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
 | Test matrix (Xcode 26 and 27) | `scripts/test-matrix.sh` |
 | Lint | `scripts/lint.sh` (needs `brew install swiftlint swiftformat`) |
 | Record snapshots | the `RecordSnapshots` test plan ([details](docs/DEVELOPMENT.md#snapshot-tests)) |
@@ -45,9 +45,9 @@ To check right-to-left layout or long text: Edit Scheme → Run → Options → 
 Three local Swift packages with one dependency direction: `AtlasUI → AtlasDomain ← AtlasData`. The domain package defines the models, the repository protocol and the error type. The data package implements the repository with Apollo iOS and keeps every generated type internal. The UI package has the screens and their `@MainActor @Observable` view models, and never sees Apollo. The app target composes the three.
 
 ```
-                      CountriesApp
-              │               │               │
-              ▼               ▼               ▼
+                       Atlas
+           │             │              │
+           ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
 ```
 

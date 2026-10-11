@@ -10,8 +10,8 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 ## Commands
 | Task | Command |
 |---|---|
-| Build and run | open `CountriesApp.xcodeproj`, then ⌘R |
-| All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
+| Build and run | open `Atlas.xcodeproj`, then ⌘R |
+| All tests | `xcodebuild test -scheme Atlas -testPlan Atlas -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
 | Package tests on macOS | `swift test --package-path Packages/AtlasData` (also `AtlasDomain`) |
 | Lint | `scripts/lint.sh` |
 | Format, then lint | `scripts/lint.sh --fix` |
@@ -84,7 +84,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 Snapshot tests live in `AtlasUISnapshotTests/`, a unit-test target in the Xcode project hosted by the app (a package test target has no window scene, so Liquid Glass wouldn't render). Its helpers are in `Helpers/`, and reference images in `snapshots/` next to the test files. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
 - **Record:** run the `RecordSnapshots` test plan. It sets `SNAPSHOT_RECORD=1`, writes the reference PNGs, and fails every snapshot test on purpose, so a recording run can never pass in CI. From the command line:
   ```sh
-  xcodebuild test -scheme CountriesApp -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
+  xcodebuild test -scheme Atlas -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
   ```
 - **How an image is made:** each one is drawn at @1x, while the window keeps the device's display scale, so layout matches the device and the images stay small. Renders run one at a time, because every snapshot window joins the host app's scene and Liquid Glass in one picks up another on screen. UIKit animations are off, animations with a finite duration (a spinner's frames, a fade) are removed before each capture so layers draw their final state, and the helper captures until two images taken 50 ms apart match within the comparison's tolerance. No capture counts while a visible image view holds an image its layer doesn't show yet, and if one never draws, the failure names it: on a fresh simulator, as in CI, system images such as the search field's clear button take a few seconds to draw the first time. Animations of infinite duration stay: Liquid Glass uses them to tie its shapes to other layers.
 - **Comparison:** an image matches its reference when no color channel differs by more than 2 of 255. Liquid Glass over a search field holding text varies by that much between runs; any change to layout, text or color differs by far more.
