@@ -1,7 +1,7 @@
 # US-2: Country detail
 
 > Delivered in [PR #3](https://github.com/constzz/countries-ios/pull/3) on 2026-10-11. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
-> **Changed since:** the detail keeps no request id: a cancelled fetch sends nothing back, so `.responseReceived` carries only the result, and a response to an older request never reaches the reducer; `showsTitle` is `isHeaderUnderBar`; the view model builds the rows' text, so `.loaded` holds `CountryDetailValues`, formatted in the view model's locale rather than the view's `\.locale`; `.failed` holds the `ErrorCopy` the view model chose, so not found is `.failed(.countryNotFound)`; the view model and view take `countryCode:` (PR #13).
+> **Changed since:** the detail keeps no request id: a cancelled fetch sends nothing back, so `.responseReceived` carries only the result, and a response to an older request never reaches the reducer; `showsTitle` is `isHeaderUnderBar`; the view model builds the rows' text, so `.loaded` holds `CountryDetailValues`, formatted in the view model's locale rather than the view's `\.locale`; `.failed` holds the `ErrorCopy` the view model chose, so not found is `.failed(.countryNotFound)`; the view model and view take `countryCode:`; the result arrives as an event, `.countryLoaded` or `.countryFailedToLoad`, not as the action `.responseReceived` (PR #13).
 
 *As a user, I can tap a country to see its name, flag, capital, currencies, languages and continent.*
 

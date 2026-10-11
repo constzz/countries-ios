@@ -1,7 +1,9 @@
 import AtlasMVI
+import Combine
 
 /// The smallest view model on the shared base, for testing the base itself.
-final class CounterViewModel: MVIViewModel<CounterState, CounterAction, CounterEffect> {
+final class CounterViewModel: MVIViewModel<CounterState, CounterAction, CounterEvent, CounterEffect> {
+  let input = PassthroughSubject<Int, Never>()
   private var longWork: Task<Void, Never>?
   private var valueRequest: Task<Void, Never>?
 
@@ -17,44 +19,44 @@ final class CounterViewModel: MVIViewModel<CounterState, CounterAction, CounterE
     case .nothingChanged:
       break
     case .workStarted:
-      launchEffect { [weak self] in
+      launchEffect {
         await Task.yield()
-        self?.send(.workFinished)
+      } then: { _ in
+        .workFinished
       }
-    case .workFinished:
-      next.isWorkFinished = true
     case .longWorkStarted:
-      longWork = launchEffect { [weak self] in
+      longWork = launchEffect {
         while !Task.isCancelled {
           try? await Task.sleep(for: .milliseconds(5))
         }
-        self?.send(.longWorkStopped)
+      } then: { _ in
+        .longWorkStopped
       }
     case .longWorkCancelled:
       longWork?.cancel()
-    case .longWorkStopped:
-      next.isWorkCancelled = true
     case let .pingRequested(value):
       emit(.pinged(value))
-    case .valueRequested, .valueRequestCancelled, .valueReceived, .valueFailed:
-      return handleValue(current, action)
-    }
-    return next
-  }
-
-  private func handleValue(_ current: CounterState, _ action: CounterAction) -> CounterState {
-    var next = current
-    switch action {
     case let .valueRequested(value):
       requestValue(value)
     case .valueRequestCancelled:
       valueRequest?.cancel()
+    case .inputOpened:
+      subscribe(to: input) { .valueReceived($0) }
+    }
+    return next
+  }
+
+  override func reduce(_ current: CounterState, _ event: CounterEvent) -> CounterState {
+    var next = current
+    switch event {
+    case .workFinished:
+      next.isWorkFinished = true
+    case .longWorkStopped:
+      next.isLongWorkStopped = true
     case let .valueReceived(value):
       next.value = value
     case .valueFailed:
       next.didFail = true
-    default:
-      break
     }
     return next
   }
@@ -68,7 +70,7 @@ final class CounterViewModel: MVIViewModel<CounterState, CounterAction, CounterE
       }
       return value
     } then: { result in
-      (try? result.get()).map(CounterAction.valueReceived) ?? .valueFailed
+      (try? result.get()).map(CounterEvent.valueReceived) ?? .valueFailed
     }
   }
 }

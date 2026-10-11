@@ -1,6 +1,7 @@
 import AtlasDomain
 import AtlasMVITesting
 import Testing
+@testable import AtlasMVI
 @testable import AtlasUI
 
 /// Every action, sent to the view model with a test repository: the state it leaves and the
@@ -66,7 +67,7 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository()
     let viewModel = await loadedViewModel(repository)
 
-    viewModel.send(.searchSettled("ger"))
+    viewModel.receive(.searchSettled("ger"))
 
     #expect(viewModel.state.content == .loaded(rows))
     #expect(!viewModel.state.isSearching)
@@ -88,7 +89,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.appeared).value
     await repository.setResult(.success([rows[0]]))
 
-    let search = viewModel.send(.searchSettled("ger"))
+    let search = viewModel.receive(.searchSettled("ger"))
     #expect(!viewModel.state.isSearching)
     let isAnswered = await eventually { viewModel.state.content == .loaded([rows[0]]) }
     #expect(isAnswered)
@@ -104,12 +105,12 @@ struct CountryListViewModelTests {
   func searchingStaysUpAcrossSearches() async {
     let repository = SuspendingCountriesRepository()
     let viewModel = await loadedViewModel(repository)
-    viewModel.send(.searchSettled("a"))
+    viewModel.receive(.searchSettled("a"))
     clock.advance(by: .milliseconds(500))
     let isShown = await eventually { viewModel.state.isSearching }
     #expect(isShown)
 
-    viewModel.send(.searchSettled("ab"))
+    viewModel.receive(.searchSettled("ab"))
 
     #expect(viewModel.state.isSearching)
   }
@@ -120,7 +121,7 @@ struct CountryListViewModelTests {
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
 
-    let search = viewModel.send(.searchSettled("ger"))
+    let search = viewModel.receive(.searchSettled("ger"))
 
     #expect(viewModel.state.content == .loading)
     #expect(!viewModel.state.isSearching)
@@ -134,7 +135,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.appeared).value
 
     await repository.setResult(.success([]))
-    await viewModel.send(.searchSettled("zzz")).value
+    await viewModel.receive(.searchSettled("zzz")).value
 
     #expect(viewModel.state.content == .empty(query: "zzz"))
     #expect(!viewModel.state.isSearching)
@@ -174,7 +175,7 @@ struct CountryListViewModelTests {
     let repository = MockCountriesRepository(result: .success(rows))
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
-    await viewModel.send(.searchSettled("a")).value
+    await viewModel.receive(.searchSettled("a")).value
 
     await repository.setResult(.success([rows[0]]))
     await viewModel.send(.refreshRequested).value
@@ -192,7 +193,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.refreshRequested).value
     let refreshed = ids(viewModel.state)
     await repository.setResult(.success([rows[1], rows[2]]))
-    await viewModel.send(.searchSettled("an")).value
+    await viewModel.receive(.searchSettled("an")).value
 
     #expect(refreshed == rows.map(\.code))
     #expect(ids(viewModel.state) == [rows[1].code, rows[2].code])
@@ -207,7 +208,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.appeared).value
 
     await repository.setResult(.failure(.offline))
-    await viewModel.send(.searchSettled("ger")).value
+    await viewModel.receive(.searchSettled("ger")).value
 
     #expect(viewModel.state.content == .failed(.offline))
     #expect(!viewModel.state.isSearching)
@@ -236,7 +237,7 @@ struct CountryListViewModelTests {
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
     await repository.setResult(.failure(.offline))
-    await viewModel.send(.searchSettled("ger")).value
+    await viewModel.receive(.searchSettled("ger")).value
 
     await repository.setResult(.success([rows[0]]))
     let retry = viewModel.send(.retryTapped)
@@ -254,10 +255,10 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository()
     let viewModel = CountryListViewModel(repository: repository)
 
-    let first = viewModel.send(.searchSettled("a"))
+    let first = viewModel.receive(.searchSettled("a"))
     let isRequested = await eventually { await repository.requestedTerms == ["a"] }
     #expect(isRequested)
-    let second = viewModel.send(.searchSettled("ab"))
+    let second = viewModel.receive(.searchSettled("ab"))
     await first.value
 
     #expect(await repository.cancelledTerms == ["a"])
@@ -276,10 +277,10 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository(honorsCancellation: false)
     let viewModel = await loadedViewModel(repository)
 
-    let first = viewModel.send(.searchSettled("a"))
+    let first = viewModel.receive(.searchSettled("a"))
     let isFirstRequested = await eventually { await repository.requestedTerms.last == "a" }
     #expect(isFirstRequested)
-    let second = viewModel.send(.searchSettled("ab"))
+    let second = viewModel.receive(.searchSettled("ab"))
     let isSecondRequested = await eventually { await repository.requestedTerms.last == "ab" }
     #expect(isSecondRequested)
     await repository.respond(to: "ab", with: [rows[0]])

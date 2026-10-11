@@ -52,7 +52,7 @@ Implements the repository with Apollo iOS.
 
 ### AtlasMVI
 The MVI layer every screen is built on, with no knowledge of countries.
-- `AtlasMVI`: `MVIState`, `MVIAction`, `MVIEffect`, the `MVIViewModel` base and `MVITime`.
+- `AtlasMVI`: `MVIState`, `MVIAction`, `MVIEvent`, `MVIEffect`, the `MVIViewModel` base and `MVITime`.
 - `AtlasMVITesting`, linked by test targets only: the `.testTime` trait with `TestScheduler` and `TestClock`, and the `eventually` and `first(_:of:)` helpers.
 - `AtlasMVITests` test the base on a toy counter view model.
 
@@ -83,10 +83,11 @@ SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, neve
 
 ## Presentation
 MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in AtlasMVI; there's no third-party framework.
-- **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Effect>`.
+- **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Event: MVIEvent`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Event, …Effect>`.
 - **One type per file.** Every top-level type has its own file, named after it, in its feature's subfolder for that role. That includes helper values such as `CountriesRequest`.
 - **State** is one value with everything the screen shows.
-- **Actions** are one enum of everything that can happen, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
+- **Actions** are what the view sends, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`.
+- **Events** are what the view model's own work produced, named after the domain event: `.searchSettled`, `.searchProgressDue`, `.countriesLoaded`, `.countryFailedToLoad`. `launchEffect(_:then:)` and `subscribe(to:then:)` deliver them through the base's `receive(_:)`, which is internal to AtlasMVI, so a view can't send one; tests reach it with `@testable import AtlasMVI`. Each kind has its own `reduce`.
 - **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
 - **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. An effect emitted while no view subscribes is dropped, so the view subscribes before it sends `.appeared`.
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.

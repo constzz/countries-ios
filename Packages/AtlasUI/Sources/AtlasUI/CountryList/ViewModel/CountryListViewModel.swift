@@ -3,10 +3,14 @@ import AtlasMVI
 import Combine
 import Foundation
 
-final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
+final class CountryListViewModel: MVIViewModel<
+  CountryListState,
+  CountryListAction,
+  CountryListEvent,
+  CountryListEffect
+> {
   private let repository: any CountriesRepository
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
-  private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
@@ -18,10 +22,9 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private func makeSearchInput() -> PassthroughSubject<String, Never> {
     let input = PassthroughSubject<String, Never>()
     let trimmed = input.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-    time.debounce(trimmed, for: .milliseconds(300))
-      .removeDuplicates()
-      .sink { [weak self] term in self?.send(.searchSettled(term)) }
-      .store(in: &subscriptions)
+    subscribe(to: time.debounce(trimmed, for: .milliseconds(300)).removeDuplicates()) {
+      .searchSettled($0)
+    }
     return input
   }
 
@@ -31,16 +34,23 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       handleAppeared(current)
     case let .searchTextChanged(text):
       handleSearchTextChanged(current, text)
-    case let .searchSettled(term):
-      handleSearchSettled(current, term)
-    case .searchProgressDue:
-      handleSearchProgressDue(current)
     case .refreshRequested:
       handleRefreshRequested(current)
     case .retryTapped:
       handleRetryTapped(current)
-    case let .responseReceived(request, result):
-      handleResponse(current, request, result)
+    }
+  }
+
+  override func reduce(_ current: CountryListState, _ event: CountryListEvent) -> CountryListState {
+    switch event {
+    case let .searchSettled(term):
+      handleSearchSettled(current, term)
+    case .searchProgressDue:
+      handleSearchProgressDue(current)
+    case let .countriesLoaded(countries, request):
+      handleCountriesLoaded(current, countries, request)
+    case let .countriesFailedToLoad(error):
+      handleCountriesFailedToLoad(current, error)
     }
   }
 
@@ -94,23 +104,26 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  private func handleResponse(
+  private func handleCountriesLoaded(
     _ current: CountryListState,
-    _ request: CountriesRequest,
-    _ result: Result<[CountrySummary], RequestError>
+    _ countries: [CountrySummary],
+    _ request: CountriesRequest
   ) -> CountryListState {
     searchProgressTask?.cancel()
     var next = current
     next.isSearching = false
-    switch result {
-    case let .success(countries):
-      next.content = countries.isEmpty ? .empty(query: request.term) : .loaded(countries)
-      if request.kind == .search {
-        emit(.announce(Self.announcement(forResultCount: countries.count)))
-      }
-    case let .failure(error):
-      next.content = .failed(error == .offline ? .offline : .countryListFailure)
+    next.content = countries.isEmpty ? .empty(query: request.term) : .loaded(countries)
+    if request.kind == .search {
+      emit(.announce(Self.announcement(forResultCount: countries.count)))
     }
+    return next
+  }
+
+  private func handleCountriesFailedToLoad(_ current: CountryListState, _ error: RequestError) -> CountryListState {
+    searchProgressTask?.cancel()
+    var next = current
+    next.isSearching = false
+    next.content = .failed(error == .offline ? .offline : .countryListFailure)
     return next
   }
 
@@ -153,7 +166,12 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     fetchTask = launchEffect { [repository] in
       try await repository.countries(matching: request.term, forceRefresh: request.forceRefresh)
     } then: { result in
-      .responseReceived(request, result.mapError { $0 as? RequestError ?? .unknown })
+      switch result {
+      case let .success(countries):
+        .countriesLoaded(countries, request: request)
+      case let .failure(error):
+        .countriesFailedToLoad(error as? RequestError ?? .unknown)
+      }
     }
   }
 

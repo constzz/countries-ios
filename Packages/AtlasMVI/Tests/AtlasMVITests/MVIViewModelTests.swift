@@ -1,7 +1,7 @@
-import AtlasMVI
 import AtlasMVITesting
 import Observation
 import Testing
+@testable import AtlasMVI
 
 /// The shared base every screen's view model subclasses, tested through a toy counter.
 @Suite("MVIViewModel")
@@ -40,7 +40,7 @@ struct MVIViewModelTests {
     #expect(viewModel.state.isWorkFinished)
   }
 
-  @Test("a cancelled launched task stops")
+  @Test("a cancelled launched task stops and delivers nothing")
   func cancelledWorkStops() async {
     let viewModel = CounterViewModel()
 
@@ -48,7 +48,26 @@ struct MVIViewModelTests {
     viewModel.send(.longWorkCancelled)
     await task.value
 
-    #expect(viewModel.state.isWorkCancelled)
+    #expect(!viewModel.state.isLongWorkStopped)
+  }
+
+  @Test("a subscribed publisher's values arrive as events")
+  func subscribedValuesArriveAsEvents() {
+    let viewModel = CounterViewModel()
+    viewModel.send(.inputOpened)
+
+    viewModel.input.send(5)
+
+    #expect(viewModel.state.value == 5)
+  }
+
+  @Test("an event goes through the event reduce")
+  func eventGoesThroughTheEventReduce() {
+    let viewModel = CounterViewModel()
+
+    viewModel.receive(.valueReceived(3))
+
+    #expect(viewModel.state.value == 3)
   }
 
   @Test("an emitted effect reaches the subscriber")

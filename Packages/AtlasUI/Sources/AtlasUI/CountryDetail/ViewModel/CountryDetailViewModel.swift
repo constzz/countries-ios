@@ -2,7 +2,12 @@ import AtlasDomain
 import AtlasMVI
 import Foundation
 
-final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect> {
+final class CountryDetailViewModel: MVIViewModel<
+  CountryDetailState,
+  CountryDetailAction,
+  CountryDetailEvent,
+  CountryDetailEffect
+> {
   private let countryCode: String
   private let repository: any CountriesRepository
   private let locale: Locale
@@ -27,9 +32,21 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       handleRetryTapped(current)
     case let .headerScrolled(underBar):
       handleHeaderScrolled(current, underBar: underBar)
-    case let .responseReceived(result):
-      handleResponse(current, result)
     }
+  }
+
+  override func reduce(_ current: CountryDetailState, _ event: CountryDetailEvent) -> CountryDetailState {
+    guard current.content == .loading else {
+      return current
+    }
+    var next = current
+    switch event {
+    case let .countryLoaded(details):
+      next.content = .loaded(values(for: details))
+    case let .countryFailedToLoad(error):
+      next.content = .failed(Self.errorCopy(for: error))
+    }
+    return next
   }
 
   // MARK: Handlers
@@ -66,23 +83,6 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     return next
   }
 
-  private func handleResponse(
-    _ current: CountryDetailState,
-    _ result: Result<CountryDetails, RequestError>
-  ) -> CountryDetailState {
-    guard current.content == .loading else {
-      return current
-    }
-    var next = current
-    switch result {
-    case let .success(details):
-      next.content = .loaded(values(for: details))
-    case let .failure(error):
-      next.content = .failed(Self.errorCopy(for: error))
-    }
-    return next
-  }
-
   // MARK: Fetching
 
   private func start(in current: CountryDetailState) -> CountryDetailState {
@@ -97,7 +97,12 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     fetchTask = launchEffect { [repository, countryCode] in
       try await repository.country(code: countryCode)
     } then: { result in
-      .responseReceived(result.mapError { $0 as? RequestError ?? .unknown })
+      switch result {
+      case let .success(details):
+        .countryLoaded(details)
+      case let .failure(error):
+        .countryFailedToLoad(error as? RequestError ?? .unknown)
+      }
     }
   }
 
