@@ -1,7 +1,7 @@
 import Foundation
 
 /// What VoiceOver says when a search finishes.
-enum SearchAnnouncement {
+enum CountryListSearchAnnouncement {
   static func text(forResultCount count: Int) -> String {
     if count == 0 {
       String(localized: .countryListSearchNoResults)
