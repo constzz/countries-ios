@@ -4,23 +4,15 @@ import Foundation
 
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
-  /// Holds the search pipe's terms back until typing pauses.
   private let debounced: (AnyPublisher<String, Never>) -> AnyPublisher<String, Never>
-  /// Starts the wait before "Searching…" shows. The wait it returns ends 500 ms after this call,
-  /// however late the task running it starts.
   private let makeSearchProgressWait: () -> @Sendable () async throws -> Void
-  /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
-  /// view, so `init` only stores dependencies.
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  /// - Parameters:
-  ///   - scheduler: where the 300 ms debounce waits. It must run each action later, on the main
-  ///     thread: an action run inside the `schedule` call would send its term in the middle of a
-  ///     `reduce`.
-  ///   - clock: what the 500 ms wait before "Searching…" shows is measured on.
+  /// - Parameter scheduler: must run each action later, never inside `schedule`, or a term would
+  ///   arrive in the middle of a `reduce`.
   init(
     repository: any CountriesRepository,
     scheduler: some Scheduler = DispatchQueue.main,
@@ -35,7 +27,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     super.init(initialState: CountryListState())
   }
 
-  /// The search field's input pipe: trim, debounce, then drop repeats of the last term.
   private func makeSearchInput() -> PassthroughSubject<String, Never> {
     let input = PassthroughSubject<String, Never>()
     let trimmed = input.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -81,9 +72,8 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  /// The pipe drops repeats of its own last term, not of the query already on screen: typing "a"
-  /// and deleting it within the debounce settles on the blank term the list already shows.
   private func handleSearchSettled(_ current: CountryListState, _ term: String) -> CountryListState {
+    // Typing "a" and deleting it within the debounce settles on the query already shown.
     guard term != current.query else {
       return current
     }
@@ -92,7 +82,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return start(.search, term: term, in: next)
   }
 
-  /// Shows "Searching…" if the search is still the latest request and its content is on screen.
   private func handleSearchProgressDue(_ current: CountryListState, _ requestID: Int) -> CountryListState {
     guard let request = current.request, request.id == requestID, request.kind == .search else {
       return current
@@ -111,8 +100,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     start(.refresh, term: current.query, in: current)
   }
 
-  /// Repeats the last request. Try Again sits on the error screen, so the retry replaces it with
-  /// loading, even for a refresh.
   private func handleRetryTapped(_ current: CountryListState) -> CountryListState {
     let last = current.request ?? CountriesRequest(id: 0, term: current.query, kind: .load)
     var next = start(last.kind, term: last.term, in: current)
@@ -122,7 +109,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  /// Applies the response to the latest request; responses to older ones are ignored.
   private func handleResponse(
     _ result: Result<[CountrySummary], RequestError>,
     for requestID: Int,
@@ -148,10 +134,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
 
   // MARK: Fetching
 
-  /// Issues a request that replaces any in flight. Rows or an empty result stay on screen while
-  /// it runs, and a search over them shows "Searching…" once it has run a while, or keeps it up
-  /// if it's already showing. With nothing to keep, the screen shows loading. A refresh shows the
-  /// system's own refresh control, so it changes nothing here.
   private func start(
     _ kind: CountriesRequest.Kind,
     term: String,
@@ -180,8 +162,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  /// Sends `.searchProgressDue` once `request` has run for 500 ms, unless its
-  /// response or a newer request cancels the wait first.
   private func scheduleSearchProgress(for request: CountriesRequest) {
     let wait = makeSearchProgressWait()
     searchProgressTask = launchEffect { [weak self] in
@@ -194,7 +174,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     }
   }
 
-  /// Cancels the fetch in flight and starts `request`. A cancelled fetch sends nothing back.
   private func fetch(_ request: CountriesRequest) {
     fetchTask?.cancel()
     fetchTask = launchEffect { [weak self, repository] in
@@ -212,7 +191,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
 
   // MARK: Text
 
-  /// What VoiceOver says when a search finishes.
   private static func announcement(forResultCount count: Int) -> String {
     if count == 0 {
       String(localized: .countryListSearchNoResults)
