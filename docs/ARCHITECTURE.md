@@ -70,7 +70,7 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
 
 ## Concurrency
 - Swift 6 language mode with complete strict concurrency in every target. Isolation is explicit: view models are `@MainActor`, and domain types and the repository are `Sendable`. Packages don't set a default actor isolation, and neither does the app target.
-- Everything is async/await. Combine appears in one place only: the search field's input pipe, where it debounces typing. No `@Published`, and no publishers in any API.
+- Everything is async/await. Combine appears only where the search field's input is debounced: the input pipe and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
@@ -82,6 +82,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
 - **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. An effect emitted while no view subscribes is dropped, so the view subscribes before it sends `.appeared`.
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
+- **Time comes from the base.** A view model debounces with `time.debounce(_:for:)` and waits with `time.wait(for:)`, whose deadline is fixed when it's called. `time` is `MVITime.current`, a task-local the base reads when the view model is created: `DispatchQueue.main` and `ContinuousClock` in the app. No view model takes a scheduler or a clock in its `init`.
 - **The view model prepares the text.** State and effects carry strings ready to show: the detail's rows are `CountryDetailValues`, which `CountryDetailViewModel` builds in its locale, and a search's announcement is the sentence VoiceOver reads. Views lay out text; they don't format domain values.
 - **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
 - **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.task`.
@@ -92,7 +93,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
 - No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
-- No test waits out the list's timers. The list view model takes a Combine scheduler for the search debounce, `DispatchQueue.main` by default, and a clock for the wait before "Searching…" shows, `ContinuousClock` by default. Tests pass a `TestScheduler` and a `TestClock`, whose time moves only when the test advances it.
+- No test waits out a timer. A suite whose view models use time adds the `.testTime` trait, which gives each test its own `TestScheduler` and `TestClock` as `MVITime.current`. The test moves them through `TestTime.scheduler` and `TestTime.clock`; nothing else moves them.
 - Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `AtlasUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
 - `Atlas.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 

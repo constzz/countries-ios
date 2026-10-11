@@ -4,12 +4,13 @@ import Testing
 
 /// Every action, sent to the view model with a test repository: the state it leaves and the
 /// requests it makes.
-@Suite("CountryListViewModel")
+@Suite("CountryListViewModel", .testTime)
 @MainActor
 struct CountryListViewModelTests {
   private let rows = Array(CountrySummary.samples.prefix(4))
-  /// Measures the 0.5 s before "Searching…" shows, and moves only when a test advances it.
-  private let clock = TestClock()
+  private var clock: TestClock {
+    TestTime.clock
+  }
 
   // MARK: Loading
 
@@ -82,7 +83,7 @@ struct CountryListViewModelTests {
   @Test("AC-1.4 a quick search never shows Searching")
   func quickSearchNeverShowsSearching() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository, clock: clock)
+    let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
     await repository.setResult(.success([rows[0]]))
 
@@ -141,8 +142,8 @@ struct CountryListViewModelTests {
   @Test("AC-1.2 typing updates the search text and feeds the search pipe")
   func typingFeedsTheSearchPipe() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    let scheduler = TestScheduler()
-    let viewModel = CountryListViewModel(repository: repository, scheduler: scheduler)
+    let scheduler = TestTime.scheduler
+    let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
 
     viewModel.send(.searchTextChanged("Ger"))
@@ -295,7 +296,7 @@ struct CountryListViewModelTests {
 
   /// A view model whose first load returned `rows` from `repository`.
   private func loadedViewModel(_ repository: SuspendingCountriesRepository) async -> CountryListViewModel {
-    let viewModel = CountryListViewModel(repository: repository, clock: clock)
+    let viewModel = CountryListViewModel(repository: repository)
     let load = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedTerms == [""] }
     await repository.respond(to: "", with: rows)

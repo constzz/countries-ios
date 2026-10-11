@@ -6,6 +6,7 @@ import Observation
 @Observable
 class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   private(set) var state: State
+  let time = MVITime.current
 
   /// The work launched by the `reduce` call in progress, so `send` can await it.
   @ObservationIgnored private var launchedWork: [Task<Void, Never>] = []

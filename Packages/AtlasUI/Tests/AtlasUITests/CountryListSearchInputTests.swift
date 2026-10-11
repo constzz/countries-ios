@@ -4,11 +4,13 @@ import Testing
 /// The search field's input pipe: trim, debounce 300 ms, drop duplicates. The debounce waits on a
 /// test scheduler, so each test moves the clock itself. A keystroke that must not search is
 /// followed by one that does, so a search it started would show in the calls before the last one.
-@Suite("CountryListViewModel search input")
+@Suite("CountryListViewModel search input", .testTime)
 @MainActor
 struct CountryListSearchInputTests {
   private let repository = MockCountriesRepository()
-  private let scheduler = TestScheduler()
+  private var scheduler: TestScheduler {
+    TestTime.scheduler
+  }
 
   @Test("AC-1.2 typing searches once, 300 ms after the last keystroke")
   func typingSearchesOnceAfterAPause() async {
@@ -55,7 +57,7 @@ struct CountryListSearchInputTests {
   }
 
   private func makeViewModel() -> CountryListViewModel {
-    CountryListViewModel(repository: repository, scheduler: scheduler)
+    CountryListViewModel(repository: repository)
   }
 
   /// Searches `last`, then expects the repository to have been called for `terms` and then `last`.

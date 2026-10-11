@@ -4,7 +4,7 @@ import Testing
 @testable import AtlasUI
 
 /// The test plan runs in US English, so the announcements are checked against English text.
-@Suite("CountryListViewModel announcements")
+@Suite("CountryListViewModel announcements", .testTime)
 @MainActor
 struct CountryListAnnouncementTests {
   private let rows = Array(CountrySummary.samples.prefix(4))

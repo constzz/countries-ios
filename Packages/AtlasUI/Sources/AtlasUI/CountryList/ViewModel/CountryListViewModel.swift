@@ -4,33 +4,20 @@ import Foundation
 
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
-  private let debounced: (AnyPublisher<String, Never>) -> AnyPublisher<String, Never>
-  private let makeSearchProgressWait: () -> @Sendable () async throws -> Void
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  /// - Parameter scheduler: must run each action later, never inside `schedule`, or a term would
-  ///   arrive in the middle of a `reduce`.
-  init(
-    repository: any CountriesRepository,
-    scheduler: some Scheduler = DispatchQueue.main,
-    clock: some Clock<Duration> = ContinuousClock()
-  ) {
+  init(repository: any CountriesRepository) {
     self.repository = repository
-    debounced = { $0.debounce(for: .milliseconds(300), scheduler: scheduler).eraseToAnyPublisher() }
-    makeSearchProgressWait = {
-      let deadline = clock.now.advanced(by: .milliseconds(500))
-      return { try await clock.sleep(until: deadline, tolerance: nil) }
-    }
     super.init(initialState: CountryListState())
   }
 
   private func makeSearchInput() -> PassthroughSubject<String, Never> {
     let input = PassthroughSubject<String, Never>()
     let trimmed = input.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-    debounced(trimmed.eraseToAnyPublisher())
+    time.debounce(trimmed, for: .milliseconds(300))
       .removeDuplicates()
       .sink { [weak self] term in self?.send(.searchSettled(term)) }
       .store(in: &subscriptions)
@@ -152,7 +139,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   }
 
   private func scheduleSearchProgress() {
-    let wait = makeSearchProgressWait()
+    let wait = time.wait(for: .milliseconds(500))
     searchProgressTask = launchEffect { [weak self] in
       do {
         try await wait()

@@ -2,8 +2,9 @@ import Combine
 import Foundation
 
 /// A Combine scheduler whose clock moves only when `advance(by:)` moves it. Actions run on the
-/// caller's thread, in time order.
-final class TestScheduler: Scheduler {
+/// caller's thread, in time order. Unchecked: tests use it from the main actor only, and the
+/// task-local that carries it needs `Sendable`.
+final class TestScheduler: Scheduler, @unchecked Sendable {
   typealias SchedulerTimeType = DispatchQueue.SchedulerTimeType
   typealias SchedulerOptions = DispatchQueue.SchedulerOptions
 
