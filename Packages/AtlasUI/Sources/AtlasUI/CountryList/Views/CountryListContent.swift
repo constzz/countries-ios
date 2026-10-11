@@ -9,8 +9,12 @@ struct CountryListContent: View {
   @Binding var selection: String?
   let send: (CountryListAction) -> Task<Void, Never>
 
+  private var searchText: Binding<String> {
+    Binding(get: { state.searchText }, set: { _ = send(.searchTextChanged($0)) })
+  }
+
   var body: some View {
-    List(rows, selection: $selection) { country in
+    List(state.rows, selection: $selection) { country in
       NavigationLink(value: country.code) {
         CountryRow(country: country)
       }
@@ -21,35 +25,10 @@ struct CountryListContent: View {
       await send(.refreshRequested).value
     }
     .loadState(
-      phase,
+      state.phase,
       loadingLabel: Text(.countryListLoading),
       retry: { _ = send(.retryTapped) }
     )
     .inlineProgress(state.isSearching, label: Text(.countryListSearchInProgress))
-  }
-
-  private var rows: [CountrySummary] {
-    if case let .loaded(rows) = state.content {
-      rows
-    } else {
-      []
-    }
-  }
-
-  private var phase: LoadPhase? {
-    switch state.content {
-    case .idle, .loading:
-      .loading
-    case .loaded:
-      nil
-    case let .empty(query):
-      .empty(query: query)
-    case let .failed(copy):
-      .failed(copy)
-    }
-  }
-
-  private var searchText: Binding<String> {
-    Binding(get: { state.searchText }, set: { _ = send(.searchTextChanged($0)) })
   }
 }

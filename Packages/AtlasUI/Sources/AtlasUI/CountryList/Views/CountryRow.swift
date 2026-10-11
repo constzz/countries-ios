@@ -8,6 +8,22 @@ struct CountryRow: View {
 
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
+  private var flag: some View {
+    Text(verbatim: country.emoji)
+      .font(Typography.Row.flag)
+      .accessibilityHidden(true)
+  }
+
+  private var details: some View {
+    VStack(alignment: .leading) {
+      Text(verbatim: country.name)
+        .font(Typography.Row.title)
+      Text(verbatim: country.continent.name)
+        .font(Typography.Row.subtitle)
+        .foregroundStyle(Palette.secondaryText)
+    }
+  }
+
   var body: some View {
     Group {
       // At accessibility sizes the flag beside the name leaves too little width, and names
@@ -26,21 +42,5 @@ struct CountryRow: View {
       }
     }
     .accessibilityElement(children: .combine)
-  }
-
-  private var flag: some View {
-    Text(verbatim: country.emoji)
-      .font(Typography.Row.flag)
-      .accessibilityHidden(true)
-  }
-
-  private var details: some View {
-    VStack(alignment: .leading) {
-      Text(verbatim: country.name)
-        .font(Typography.Row.title)
-      Text(verbatim: country.continent.name)
-        .font(Typography.Row.subtitle)
-        .foregroundStyle(Palette.secondaryText)
-    }
   }
 }

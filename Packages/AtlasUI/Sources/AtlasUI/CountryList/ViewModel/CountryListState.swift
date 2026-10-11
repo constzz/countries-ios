@@ -18,4 +18,25 @@ struct CountryListState: MVIState {
   var query = ""
   /// A search is running over the current content.
   var isSearching = false
+
+  var rows: [CountrySummary] {
+    if case let .loaded(rows) = content {
+      rows
+    } else {
+      []
+    }
+  }
+
+  var phase: LoadPhase? {
+    switch content {
+    case .idle, .loading:
+      .loading
+    case .loaded:
+      nil
+    case let .empty(query):
+      .empty(query: query)
+    case let .failed(copy):
+      .failed(copy)
+    }
+  }
 }

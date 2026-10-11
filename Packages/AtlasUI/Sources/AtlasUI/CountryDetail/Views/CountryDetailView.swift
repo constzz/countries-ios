@@ -10,7 +10,7 @@ struct CountryDetailView: View {
 
   var body: some View {
     CountryDetailContent(state: viewModel.state, send: viewModel.send)
-      .task {
+      .onAppear {
         viewModel.send(.appeared)
       }
       .onDisappear {

@@ -10,4 +10,24 @@ struct CountryDetailState: MVIState {
 
   var content: Content = .idle
   var isHeaderUnderBar = false
+
+  /// The country's name once the header's name is under the navigation bar.
+  var title: String {
+    if case let .loaded(values) = content, isHeaderUnderBar {
+      values.name
+    } else {
+      ""
+    }
+  }
+
+  var phase: LoadPhase? {
+    switch content {
+    case .idle, .loading:
+      .loading
+    case .loaded:
+      nil
+    case let .failed(copy):
+      .failed(copy)
+    }
+  }
 }

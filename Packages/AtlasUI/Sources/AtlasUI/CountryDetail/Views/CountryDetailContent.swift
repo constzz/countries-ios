@@ -26,10 +26,10 @@ struct CountryDetailContent: View {
     // color than the rows. The grouped background stays behind every state.
     .scrollContentBackground(.hidden)
     .background(Palette.groupedBackground)
-    .navigationTitle(Text(verbatim: title))
+    .navigationTitle(Text(verbatim: state.title))
     .navigationBarTitleDisplayMode(.inline)
     .loadState(
-      phase,
+      state.phase,
       loadingLabel: Text(.countryDetailLoading),
       retry: { _ = send(.retryTapped) }
     )
@@ -56,25 +56,6 @@ struct CountryDetailContent: View {
       Text(verbatim: value)
     } label: {
       label
-    }
-  }
-
-  private var title: String {
-    if case let .loaded(values) = state.content, state.isHeaderUnderBar {
-      values.name
-    } else {
-      ""
-    }
-  }
-
-  private var phase: LoadPhase? {
-    switch state.content {
-    case .idle, .loading:
-      .loading
-    case .loaded:
-      nil
-    case let .failed(copy):
-      .failed(copy)
     }
   }
 }
