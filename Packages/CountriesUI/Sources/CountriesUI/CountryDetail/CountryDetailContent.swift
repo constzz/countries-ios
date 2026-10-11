@@ -33,11 +33,7 @@ struct CountryDetailContent: View {
     .loadState(
       phase,
       subject: .country,
-      loadingLabel: Text(
-        "Loading Country…",
-        bundle: .module,
-        comment: "Label under the progress indicator while a country's details load."
-      ),
+      loadingLabel: Text(.countryDetailLoading),
       retry: { _ = send(.retryTapped) }
     )
   }
@@ -45,19 +41,10 @@ struct CountryDetailContent: View {
   private func rows(_ details: CountryDetails) -> some View {
     let values = CountryDetailValues(details, locale: locale)
     return Section {
-      row(Text("Capital", bundle: .module, comment: "Label of the row with a country's capital city."), values.capital)
-      row(
-        Text("Currencies", bundle: .module, comment: "Label of the row with the currencies a country uses."),
-        values.currencies
-      )
-      row(
-        Text("Languages", bundle: .module, comment: "Label of the row with the languages spoken in a country."),
-        values.languages
-      )
-      row(
-        Text("Continent", bundle: .module, comment: "Label of the row with the continent a country is on."),
-        values.continent
-      )
+      row(Text(.countryDetailCapital), values.capital)
+      row(Text(.countryDetailCurrencies), values.currencies)
+      row(Text(.countryDetailLanguages), values.languages)
+      row(Text(.countryDetailContinent), values.continent)
     } header: {
       CountryDetailHeader(country: details.summary, barBottom: barBottom) { isUnderBar in
         _ = send(.headerScrolled(underBar: isUnderBar))

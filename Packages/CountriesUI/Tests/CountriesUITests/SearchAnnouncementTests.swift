@@ -14,7 +14,7 @@ struct SearchAnnouncementTests {
 
   @Test("AC-1.12 no results is announced")
   func noResultsIsAnnounced() {
-    let expected = String(localized: "No countries found", bundle: .module)
+    let expected = String(localized: .countryListSearchNoResults)
     #expect(SearchAnnouncement.text(forResultCount: 0) == expected)
   }
 }

@@ -57,12 +57,12 @@ custom_rules:
     message: "Use a semantic token from DesignSystem (Colors.swift, Typography.swift) instead of a system color or text style."
     severity: error
 
-  localized_text_needs_bundle:
-    name: "Localized text needs bundle"
+  ui_copy_from_catalog_symbols:
+    name: "UI copy from catalog symbols"
     included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
-    regex: '\bText\(\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:tableName:[^,]+,\s*)?bundle:)|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView|NavigationLink|TextField|SecureField|Stepper|DatePicker|MultiDatePicker|ColorPicker|ProgressView|LabeledContent|DisclosureGroup|GroupBox|ControlGroup|ShareLink|Tab)\(\s*"|\.(?:navigationTitle|help|alert|confirmationDialog|badge|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|\bprompt:\s*"|\bString\(localized:\s*"(?:[^"\\]|\\.)*"(?!\s*,\s*(?:table:[^,]+,\s*)?bundle:)'
+    regex: '\b(?:Text|LocalizedStringKey|LocalizedStringResource)\(\s*"|\bString\(localized:\s*"|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView|NavigationLink|TextField|SecureField|Stepper|DatePicker|MultiDatePicker|ColorPicker|ProgressView|LabeledContent|DisclosureGroup|GroupBox|ControlGroup|ShareLink|Tab)\(\s*"|\.(?:navigationTitle|help|alert|confirmationDialog|badge|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|\bprompt:\s*"'
     excluded_match_kinds:
       - comment
       - doccomment
-    message: "Look up UI copy in the package's String Catalog: Text(\"…\", bundle: .module, comment: \"…\"), String(localized: \"…\", bundle: .module, comment: \"…\"), or pass a Text to SwiftUI APIs that take a title. Use Text(verbatim:) for API data."
+    message: "Add the copy to Localizable.xcstrings under a short key, such as countryList.title, with a translator comment, and use the symbol Xcode generates: Text(.countryListTitle), String(localized: .countryListTitle). Use Text(verbatim:) for API data."
     severity: error

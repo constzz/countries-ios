@@ -125,7 +125,7 @@ public protocol CountriesRepository: Sendable {
 | 1.7 | View model: "AC-1.7 rows keep their codes across refresh and filtering" |
 | 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; view model: "AC-1.8 refresh fetches from the network" |
 | 1.9 | `CountryListSnapshotTests`: `COUNTRY_LIST_LOADING`, `_LOADED`, `_SEARCHING`, `_EMPTY`, `_ERROR`, `_OFFLINE` |
-| 1.10 | `LocalizationTests` (every key current, commented and translated); "AC-1.10 error copy comes from the catalog"; `COUNTRY_LIST_LOADED_*_rtl` images |
+| 1.10 | `LocalizationTests` (every key added in the catalog, used, commented and translated); "AC-1.10 error copy comes from the catalog"; `COUNTRY_LIST_LOADED_*_rtl` images |
 | 1.11 | View model, with a mock repository that suspends until released: "AC-1.11 a stale response never replaces newer results", "AC-1.11 a new fetch cancels the one in flight", "AC-1.11 a cancelled request shows no error" |
 | 1.12 | View model: "AC-1.12 a search announces its result count", "AC-1.12 load and refresh announce nothing" (both read `effects`); "AC-1.12 the announcement text uses plural variants", "AC-1.12 no results is announced" |
 | 1.13 | Manual: Network Link Conditioner at 100% loss, the error state appears after about 15 s |
