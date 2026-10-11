@@ -29,7 +29,7 @@ custom_rules:
 
   no_hardcoded_colors:
     name: "No hard-coded colors"
-    included: '.*/Packages/CountriesUI/.*\.swift$'
+    included: '.*/Packages/AtlasUI/.*\.swift$'
     regex: '\b(Color|UIColor)\(\s*(red|hex|white)\s*:|#colorLiteral|\.(black|white)\b'
     excluded_match_kinds:
       - comment
@@ -40,14 +40,14 @@ custom_rules:
 
   no_apollo_in_ui:
     name: "No Apollo in UI"
-    included: '.*/Packages/CountriesUI/.*\.swift$'
+    included: '.*/Packages/AtlasUI/.*\.swift$'
     regex: '^\s*(@testable\s+)?import\s+Apollo'
-    message: "CountriesUI depends only on CountriesDomain. Apollo stays in CountriesData."
+    message: "AtlasUI depends only on AtlasDomain. Apollo stays in AtlasData."
     severity: error
 
   design_tokens_only:
     name: "Design tokens only"
-    included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
+    included: '.*/Packages/AtlasUI/Sources/.*\.swift$'
     excluded: '.*/DesignSystem/.*'
     regex: '\bColor\(\s*(\.|uiColor:)|\bColor\.(primary|secondary|accentColor|black|white|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|gray)\b|\bFont\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|footnote|caption|caption2|system|custom)\b|\.(foregroundStyle|foregroundColor|background|tint)\(\s*(\.|Color\.)(primary|secondary|tertiary|quaternary|quinary|red|orange|yellow|green|mint|teal|cyan|blue|indigo|purple|pink|brown|gray)\b|\.font\(\s*\.(largeTitle|title|title2|title3|headline|subheadline|body|callout|footnote|caption|caption2|system)\b'
     excluded_match_kinds:
@@ -59,7 +59,7 @@ custom_rules:
 
   ui_copy_from_catalog_symbols:
     name: "UI copy from catalog symbols"
-    included: '.*/Packages/CountriesUI/Sources/.*\.swift$'
+    included: '.*/Packages/AtlasUI/Sources/.*\.swift$'
     regex: '\b(?:Text|LocalizedStringKey|LocalizedStringResource)\(\s*"|\bString\(localized:\s*"|\b(?:Button|Label|Toggle|Picker|Link|Menu|Section|ContentUnavailableView|NavigationLink|TextField|SecureField|Stepper|DatePicker|MultiDatePicker|ColorPicker|ProgressView|LabeledContent|DisclosureGroup|GroupBox|ControlGroup|ShareLink|Tab)\(\s*"|\.(?:navigationTitle|help|alert|confirmationDialog|badge|accessibilityLabel|accessibilityHint|accessibilityValue)\(\s*"|\bprompt:\s*"'
     excluded_match_kinds:
       - comment

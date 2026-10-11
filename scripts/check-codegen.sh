@@ -9,7 +9,7 @@ set -eu
 cd "$(dirname "$0")/.."
 
 cli="${APOLLO_CLI:-./apollo-ios-cli}"
-generated=Packages/CountriesData/Sources/CountriesData/Generated
+generated=Packages/AtlasData/Sources/AtlasData/Generated
 
 if [ ! -x "$cli" ]; then
   echo "error: $cli not found. Install it as described in docs/DEVELOPMENT.md (Codegen)." >&2
