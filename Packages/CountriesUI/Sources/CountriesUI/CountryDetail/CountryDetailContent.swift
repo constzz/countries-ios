@@ -10,6 +10,8 @@ struct CountryDetailContent: View {
   /// Where the navigation bar ends, in global coordinates. A list's frame starts there, under the
   /// bar, on every iOS version this app supports. Layout, not screen state, so it stays here.
   @State private var barBottom: CGFloat = 0
+  /// The locale the rest of the screen's text uses, for "None" and the lists of values.
+  @Environment(\.locale) private var locale
 
   var body: some View {
     List {
@@ -41,7 +43,7 @@ struct CountryDetailContent: View {
   }
 
   private func rows(_ details: CountryDetails) -> some View {
-    let values = CountryDetailValues(details)
+    let values = CountryDetailValues(details, locale: locale)
     return Section {
       row(Text("Capital", bundle: .module, comment: "Label of the row with a country's capital city."), values.capital)
       row(

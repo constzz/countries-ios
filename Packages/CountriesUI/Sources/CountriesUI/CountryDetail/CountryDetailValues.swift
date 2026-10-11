@@ -11,7 +11,8 @@ struct CountryDetailValues: Equatable {
 }
 
 extension CountryDetailValues {
-  init(_ details: CountryDetails, locale: Locale = .current) {
+  /// - Parameter locale: the view's `\.locale`, so the values match the rest of the screen.
+  init(_ details: CountryDetails, locale: Locale) {
     let none = String(
       localized: "None",
       bundle: .module,
