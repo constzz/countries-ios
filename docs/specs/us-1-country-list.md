@@ -1,7 +1,7 @@
 # US-1: Country list
 
 > Delivered in [PR #2](https://github.com/constzz/countries-ios/pull/2) on 2026-10-10. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
-> **Changed since:** the repository reaches the screens through `RootView`'s `init`, and the `\.countriesRepository` environment entry is gone (US-2); placeholder states render on iPhone 17 Pro in light only (US-2); `AppEnvironment` reads the endpoint from the Info.plist, not `AppContainer` (PR #8).
+> **Changed since:** the repository reaches the screens through `RootView`'s `init`, and the `\.countriesRepository` environment entry is gone (US-2); placeholder states render on iPhone 17 Pro in light only (US-2); `AppEnvironment` reads the endpoint from the Info.plist, not `AppContainer` (PR #8); the search pipe debounces on an injected scheduler, `DispatchQueue.main` in the app, and its tests advance a `TestScheduler` (PR #12).
 
 *As a user, I can browse every country with its flag, name and continent, and search by name, so I can find a country quickly.*
 
