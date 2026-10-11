@@ -73,11 +73,12 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Localization and right-to-left
 The app ships in English but is localization-ready: adding a language is a catalog and project-setting change with no code changes ([development guide](DEVELOPMENT.md#adding-a-language)).
-- All user-facing copy lives in `CountriesUI/Resources/Localizable.xcstrings`, with a translator comment on every key. The English text is the key.
-- In views: `Text("Countries", bundle: .module)`. Outside views: `String(localized: "…", bundle: .module, comment: "…")`. Without `bundle: .module`, SwiftUI looks the key up in the app's bundle and the package's translations are never used. Lint flags `Text("…")` without a bundle in CountriesUI.
-- SwiftUI conveniences that take no bundle, such as `Button("…")`, `Label("…", systemImage:)`, `navigationTitle("…")` and `ContentUnavailableView("…", systemImage:)`, are replaced by their forms that take a `Text`.
+- All user-facing copy lives in `CountriesUI/Resources/Localizable.xcstrings`. Each string is added in the catalog editor (+) under a short key named for its screen and role, such as `countryList.title` or `error.retry`, with its English value and a translator comment. Translator comments live only in the catalog.
+- Xcode generates a symbol for each key: `countryList.title` becomes `.countryListTitle`. In views: `Text(.countryListTitle)`. Outside views: `String(localized: .countryListTitle)`. The symbols look strings up in the package's bundle, so code never passes `bundle: .module`, and a mistyped key doesn't compile. Lint flags literal keys in CountriesUI, such as `Text("…")` and `String(localized: "…")`.
+- SwiftUI conveniences that take a string key, such as `Button("…")`, `Label("…", systemImage:)`, `navigationTitle("…")` and `ContentUnavailableView("…", systemImage:)`, are replaced by their forms that take a `Text`.
 - Data from the API is shown with `Text(verbatim:)`. Country, capital and continent names stay in English, because search matches the English names.
-- Whole sentences with placeholders, never joined fragments: `Text("No countries match “\(query)”", bundle: .module)`. Quotation marks belong to the catalog string, so each language can use its own.
+- Whole sentences with placeholders, never joined fragments: a value such as `No countries match “%@”` makes the symbol a function, `Text(.countryListNoMatch(query))`, and so does a plural. Quotation marks belong to the catalog string, so each language can use its own.
+- Xcode never marks a key added in the catalog as stale, so the localization tests check that the code uses every key's symbol, alongside a comment and a value in every language for each key.
 - Lists of values use the locale's list format, `.formatted(.list(type: .and))`, never `joined(separator:)`.
 - Layout uses leading and trailing only, never left, right or fixed x-offsets, so SwiftUI mirrors it. Directional SF Symbols use the forward/backward names (`chevron.forward`), so they flip.
 - Before each UI pull request, run the app with the scheme's "Show non-localized strings", "Right-to-Left Pseudolanguage" and "Double-Length Pseudolanguage" options.
