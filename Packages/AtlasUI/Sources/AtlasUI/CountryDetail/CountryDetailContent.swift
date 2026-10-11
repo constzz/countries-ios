@@ -39,7 +39,7 @@ struct CountryDetailContent: View {
   }
 
   private func rows(_ details: CountryDetails) -> some View {
-    let values = CountryDetailValues(details, locale: locale)
+    let values = CountryDetailValuesMapper.map(details, locale: locale)
     return Section {
       row(Text(.countryDetailCapital), values.capital)
       row(Text(.countryDetailCurrencies), values.currencies)

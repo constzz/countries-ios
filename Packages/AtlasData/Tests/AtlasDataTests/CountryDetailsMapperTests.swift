@@ -2,16 +2,16 @@ import AtlasDomain
 import Testing
 @testable import AtlasData
 
-@Suite("CountryDetails mapping")
-struct CountryDetailsMappingTests {
+@Suite("CountryDetailsMapper")
+struct CountryDetailsMapperTests {
   @Test("AC-2.2 maps every field and reuses the summary mapper")
   func mapsEveryField() async throws {
     let country = try await country(JSONFixture.responseData("country-CH"))
 
-    let details = CountryDetails(country: country)
+    let details = CountryDetailsMapper.map(country)
 
     #expect(details == CountryDetails(
-      summary: CountrySummary(fragment: country.fragments.countryBasics),
+      summary: CountrySummaryMapper.map(country.fragments.countryBasics),
       capital: "Bern",
       currencies: ["CHE", "CHF", "CHW"],
       languages: [
@@ -27,7 +27,7 @@ struct CountryDetailsMappingTests {
 
   @Test("AC-2.3 Antarctica has no capital, currencies or languages")
   func antarcticaHasNoCapitalCurrenciesOrLanguages() async throws {
-    let details = try await CountryDetails(country: country(JSONFixture.responseData("country-AQ")))
+    let details = try await CountryDetailsMapper.map(country(JSONFixture.responseData("country-AQ")))
 
     #expect(details.summary.name == "Antarctica")
     #expect(details.capital == nil)
@@ -37,7 +37,7 @@ struct CountryDetailsMappingTests {
 
   @Test("AC-2.3 blank values are missing values")
   func blankValuesAreMissing() async throws {
-    let details = try await CountryDetails(country: country(JSONFixture.object("""
+    let details = try await CountryDetailsMapper.map(country(JSONFixture.object("""
     {
       "country": {
         "__typename": "Country",
