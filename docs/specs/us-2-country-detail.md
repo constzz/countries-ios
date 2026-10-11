@@ -37,8 +37,8 @@
 
 | Interaction | Action | Reduction |
 |---|---|---|
-| The detail appears (`.task`) | `.appeared` | From `.idle`: `.loading`, fetch the country. Otherwise nothing. |
-| The detail disappears (`.onDisappear`) | `.disappeared` | While `.loading`: cancel the fetch, back to `.idle`. Otherwise nothing. |
+| The detail appears (`.task`) | `.appeared` | Counts the appearance. From `.idle`: `.loading`, fetch the country. Otherwise nothing. |
+| The detail disappears (`.onDisappear`) | `.disappeared` | Counts the disappearance. Once the detail shows nowhere, while `.loading`: cancel the fetch, back to `.idle`. Otherwise nothing. |
 | Tapping Try Again | `.retryTapped` | From `.failed`: `.loading`, fetch again with the same cache policy |
 | A response arrives | `.responseReceived(id, result)` | Ignored unless it answers the latest request. Details → `.loaded`, an error → `.failed`. |
 | The header's name scrolls under the bar, or back out | `.headerScrolled(underBar:)` | `showsTitle = underBar` |
@@ -53,7 +53,7 @@
 
 ## Presentation: MVI
 The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rules in `docs/ARCHITECTURE.md`), the same way the list does. Each type has its own file in `CountryDetail/`.
-- **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, `requestID`, the latest request's id, and `showsTitle`, whether the header's name is under the navigation bar.
+- **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, `requestID`, the latest request's id, `showsTitle`, whether the header's name is under the navigation bar, and `appearances`, how many places show the detail: SwiftUI can show it in a new place before it removes it from the old one.
 - **Actions:** `CountryDetailAction: MVIAction`. The view sends `.appeared`, `.disappeared`, `.retryTapped` and `.headerScrolled(underBar:)`; the view model sends `.responseReceived(requestID:, Result<CountryDetails, CountriesError>)`.
 - **Effects:** `CountryDetailEffect: MVIEffect` is a caseless enum: the screen has no one-time UI events, so its view doesn't subscribe to `effects()`.
 - **View model:** `CountryDetailViewModel` subclasses `MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect>`. Its `init` stores the country `code` and the repository and does nothing else. `reduce(_:_:)` hands each action to a `handle…` method that reads `current`; the one fetch runs through `launchEffect`, a new one cancels the previous, and the result comes back as `.responseReceived`. A `CancellationError` sends nothing.
@@ -70,6 +70,7 @@ The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rule
 - **Operation:** `query Country($code: ID!) { country(code: $code) { ...CountryBasics capital currencies languages { code name } } }`. It reads `currencies`, not the joined `currency` string. Codegen output is committed with it, and `scripts/check-codegen.sh` passes.
 - **Mapping:** `CountryDetails(country:)` maps the query's country. The summary comes from `CountrySummary(fragment:)`, the same mapper the list uses. A capital that is null or blank becomes `nil`. Blank currency entries are dropped (Antarctica returns `[""]`), and so are languages with a blank name. The API's order is kept: it lists the main currency and language first.
 - **Repository:** `country(code:)` fetches with `.cacheFirst`. A `null` country throws `.notFound` and is logged to the `network` category. Transport and GraphQL failures map as in US-1 (`ApolloGraphQLClient`), and the 15 s request timeout applies.
+- **Cache:** a response with GraphQL errors is never written to Apollo's cache. `makeApolloClient` builds the client with an interceptor provider whose cache interceptor, `ErrorFreeCacheInterceptor`, skips those responses and otherwise does what Apollo's default one does.
 - **Fixtures,** captured from the live API on 2026-10-10: `country-AQ.json` (Antarctica: null capital, `[""]` currencies, no languages), `country-CH.json` (Switzerland: three currencies, three languages) and `country-unknown.json` (`{"country": null}` for `XX`). Codes are case-sensitive: `ch` also returns null, but codes always come from the list.
 
 ## Domain types
@@ -101,8 +102,8 @@ The UI test doubles gain the method.
 ## UI details
 - **Header:** the flag emoji at a size that scales with Dynamic Type (`@ScaledMetric` relative to `.largeTitle`), hidden from VoiceOver, above the name in a title font token, centered and wrapping, with the heading trait.
 - **Rows:** `LabeledContent` with the label from the catalog and the value as `Text(verbatim:)`, or the catalog's "None". At accessibility sizes `LabeledContent` stacks the value under its label by itself.
-- **Values:** `CountryDetailValues` turns details into the text of each row: the capital, or "None" from the catalog; currencies and language names joined with `.formatted(.list(type: .and))` in the current locale, or "None" when there are none; and the continent's name.
-- **Error copy:** `ErrorCopy` gains a subject: the list's generic failure stays "Couldn't Load Countries", the detail's is "Couldn't Load Country". Offline copy is shared. `.notFound` gets its own copy and `canRetry == false`, and `.loadState` shows no Try Again for it.
+- **Values:** `CountryDetailValues` turns details into the text of each row: the capital, or "None" from the catalog; currencies and language names joined with `.formatted(.list(type: .and))` in the view's locale (`\.locale`), or "None" when there are none; and the continent's name.
+- **Error copy:** `ErrorCopy` gains a subject: the list's generic failure stays "Couldn't Load Countries", the detail's is "Couldn't Load Country". Offline copy is shared. On the detail, `.notFound` gets its own copy and `canRetry == false`, and `.loadState` shows no Try Again for it. The list never gets `.notFound`; if it did, it would show its generic failure with Try Again, as in US-1.
 - **Background:** the detail keeps the system grouped background in every state. An empty `List` draws a plain background whatever its style, so loading and errors would sit on white and the screen would change color when the rows arrive. The list's own background is hidden with `.scrollContentBackground(.hidden)` and the `groupedBackground` token is drawn behind it.
 - **Tokens:** `Font.detailTitle` for the header name and `Font.detailFlag(size:)` for the flag, whose size is a `@ScaledMetric` relative to `.largeTitle`; `primaryText` for the name inside the section header, which the system would style as secondary; and `groupedBackground`. Nothing else is styled by hand.
 
@@ -111,7 +112,7 @@ The UI test doubles gain the method.
 |---|---|---|---|
 | No connection | `.offline` | Offline error | Try Again |
 | No response for 15 s, other transport or HTTP failure | `.network` | Error | Try Again |
-| GraphQL errors, or `data: null` | `.server` | Error | Try Again |
+| GraphQL errors, or `data: null` | `.server`, and nothing is cached | Error | Try Again, which reaches the network |
 | `country: null` (unknown code, or a restored code the API dropped) | `.notFound` | Not found | Select another country |
 | No capital (AQ, BV, HM, MO, UM) | `capital == nil` | "None" | none needed |
 | Currencies `[""]` (AQ) | `[]` | "None" | none needed |
@@ -120,6 +121,7 @@ The UI test doubles gain the method.
 | Longest name ("South Georgia and the South Sandwich Islands") | Header wraps; once scrolled away, the inline title truncates | Loaded | none needed |
 | The user selects another country while one loads | The old request is cancelled | The new country loads | none needed |
 | The detail disappears while loading (back on compact width, a size change) | Cancelled, back to `.idle` | Loads again when it reappears | none needed |
+| A size change shows the detail in its new place before it leaves the old one | The request keeps running | Loading, then the details | none needed |
 | A response to an older request arrives | Ignored by the reducer | Unchanged | none needed |
 | A search filters out the selected country | Selection unchanged | The detail stays | none needed |
 | A restored selection with no network | `.offline` | Offline error in the detail | Try Again |
@@ -130,12 +132,12 @@ The UI test doubles gain the method.
 | 2.1 | Manual on iPhone 17 Pro and iPad (A16) simulators; the `COUNTRY_DETAIL_*` and re-recorded `COUNTRY_LIST_*` images show the pushed detail and the disclosure indicators on compact width |
 | 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMappingTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `CountryDetailValuesTests`: "AC-2.2 every row shows its value"; view model: "AC-2.2 the title shows once the header's name is under the bar", "AC-2.2 the title hides when the header's name scrolls back"; manual: scroll the detail at the largest text size; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
 | 2.3 | Mapping: "AC-2.3 Antarctica has no capital, currencies or languages" (AQ fixture), "AC-2.3 blank values are missing values"; `CountryDetailValuesTests`: "AC-2.3 missing values read None"; `COUNTRY_DETAIL_MISSING_VALUES_*` |
-| 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure reaches the caller unchanged"; `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
+| 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure reaches the caller unchanged", "AC-2.4 a response with GraphQL errors stays out of the cache" (a real `ApolloClient` over `StubURLSession`); `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
 | 2.5 | Repository: "AC-2.5 a null country is not found" (unknown-code fixture); view model: "AC-2.5 an unknown code shows not found"; `ErrorCopyTests`: "AC-2.5 not found has its own copy and no retry"; `COUNTRY_DETAIL_NOT_FOUND_*` |
 | 2.6 | `CountryDetailSnapshotTests`: `COUNTRY_DETAIL_LOADING`, `_LOADED`, `_MISSING_VALUES`, `_LONG_NAME`, `_ERROR`, `_OFFLINE`, `_NOT_FOUND`; `CountryListSnapshotTests` re-recorded |
 | 2.7 | `LocalizationTests`; `CountryDetailValuesTests`: "AC-2.7 currencies and languages use the locale's list format" (`en_US`); `COUNTRY_DETAIL_LOADED_*_rtl` images |
 | 2.8 | Manual on iPad (A16) and iPhone 17 Pro: highlight, search and refresh with a selection, back on compact width; the iPad `COUNTRY_DETAIL_*` images show the highlight |
-| 2.9 | Manual: fold and unfold on the iPhone Duo simulator, rotate the iPad, resize an iPad window; relaunch from Xcode after backgrounding the app |
+| 2.9 | View model: "AC-2.9 showing the detail in a new place before leaving the old one keeps it loading"; manual: fold and unfold on the iPhone Duo simulator, rotate the iPad, resize an iPad window; relaunch from Xcode after backgrounding the app |
 | 2.10 | View model, with `SuspendingDetailsRepository`: "AC-2.10 disappearing cancels the request and shows no error", "AC-2.10 appearing after disappearing loads again", "AC-2.10 a stale response is ignored" |
 | 2.11 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
 
@@ -143,7 +145,8 @@ The UI test doubles gain the method.
 - **The detail loads only from its own query.** It takes the country `code` and nothing else, and shows a loading state until `CountryQuery` answers. Each screen has a query shaped for it, so the detail can gain fields without touching the list's query or models; the `CountryBasics` fragment is what the two share. Rejected: showing the list's summary (flag, name, continent) at once while the rest loads, which couples the detail to the list's data and gives the screen two loading shapes.
 - **`CountryDetails` holds a `CountrySummary`** rather than copies of its fields, so both screens describe the shared fields with one type and one mapper. Rejected: flat fields, which duplicate the summary's and let the two mappings drift.
 - **One view model per country, through `.id(code)`.** A new selection makes a new view and view model, so no state from the previous country can show, and the previous view's `.onDisappear` cancels its request. Rejected: one long-lived view model with `.task(id: code)` and a `.codeChanged` action, which must reset every field by hand and briefly shows the previous country.
-- **Leaving the detail cancels its request and returns it to `.idle`.** Flicking through countries on iPad would otherwise leave a request running for each, and `.idle` makes the next `.appeared` load again, so a size change that removes and re-adds the view never leaves it stuck on loading. Rejected: letting abandoned requests finish and dropping their results.
+- **Leaving the detail cancels its request and returns it to `.idle`.** Flicking through countries on iPad would otherwise leave a request running for each, and `.idle` makes the next `.appeared` load again, so a size change that removes and re-adds the view never leaves it stuck on loading. The view model counts appearances and cancels only once the detail shows nowhere: SwiftUI doesn't document the order of one place's `.onDisappear` and another's `.task`, and cancelling after the new place had appeared would leave it loading with nothing to restart it. Rejected: letting abandoned requests finish and dropping their results; and tying the request to the `.task` that sent `.appeared`, which has the same ordering problem.
+- **Responses with GraphQL errors stay out of the cache.** Apollo writes a response's data to its normalized cache even when the response also has errors, and a field that failed arrives as `null`. With `.cacheFirst`, Try Again and every later visit would then read a failed `country` as "Country Not Found", or a failed capital as "None", until relaunch. A cache interceptor that skips such responses is Apollo's documented extension point for this. Rejected: Try Again with `.networkOnly`, which fixes the retry but not the next visit.
 - **The selection lives in `RootView` as `@SceneStorage`,** the one source for the sidebar and the detail column, kept per window and restored after relaunch. Rejected: selection in the list's view model, which would tie the detail column to the list's state; and `@State` mirrored to `@SceneStorage`, two copies to keep in step.
 - **Rows are `NavigationLink(value:)` inside `List(selection:)`,** Apple's pattern for a split-view sidebar: the system highlights the row on regular width, pushes on compact width, clears the selection on back, and adds the disclosure indicator. Rejected: tap gestures that set the selection, which lose the highlight, the indicator and the accessibility traits of a link.
 - **A header with the flag and the name; the bar shows the name only once the header's name has scrolled under it.** That's the pattern of Contacts and the App Store. The header wraps the longest name and gives the flag room, and the bar names the screen once the header is gone. Revised during the story from "the name is also the inline title": SwiftUI hands the navigation bar its title a pass after it draws the content, so a title set when the details arrive showed up a few frames after the header's name, and the name showed twice. Measured on iOS 17, 26 and 27: a `List`'s SwiftUI frame starts at the bar's bottom edge, so the header's name is under the bar when its global `maxY` is above the list's global `minY`. The view sends `.headerScrolled(underBar:)` only when that flips. Rejected: a large title, which truncates long names and leaves the flag no place; the title drawn as a principal toolbar item, which arrives just as late; fading the content in to hide the lag; and "Flag" and "Name" rows, which make the most important fact look like any other value.
@@ -157,6 +160,4 @@ The UI test doubles gain the method.
 
 Settled during the story:
 - **Snapshots of a collapsed split view with a selection.** A `NavigationSplitView` that starts collapsed with a selection shows the detail pushed, with a back button, so compact presets render the same split view as the others.
-
-Open, settled during the story:
-- **`List(selection:)` with the selected row filtered out.** Expected: SwiftUI leaves the binding alone. Settled by the AC-2.8 manual check; if the list clears it, the binding the list gets ignores a `nil` while the selected code isn't among the rows. Going back always happens with the row on screen, so it still clears the selection.
+- **`List(selection:)` with the selected row filtered out.** SwiftUI leaves the binding alone. Measured on iOS 17.0, 26.0 and 27.0, on regular and compact width, with a split view hosted in a window: filtering the selected row out, emptying the list and bringing the row back never wrote to the binding. So the list takes the selection binding as it is. Rejected: a binding that ignores a `nil` while the selected code isn't among the rows, which would also swallow going back on compact width after a search had filtered the row out on regular width, leaving the user unable to leave the detail.
