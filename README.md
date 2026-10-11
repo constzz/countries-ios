@@ -1,6 +1,20 @@
 # Countries
 
+[![CI](https://github.com/constzz/countries-ios/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/ci.yml?query=branch%3Amain)
+[![Snapshots](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml?query=branch%3Amain)
+
 A SwiftUI app for browsing the world's countries, backed by the public [Countries GraphQL API](https://countries.trevorblades.com) through Apollo iOS. Search the list by name, then open a country to see its capital, currencies, languages and continent.
+
+## Screenshots
+These are reference images from the snapshot tests, so the Snapshots workflow checks on every pull request and every merge to main that the app still renders them.
+
+<p>
+  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_light.png" width="200" alt="The country list in light mode">
+  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_light.png" width="200" alt="Bolivia's details in light mode">
+  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_dark.png" width="200" alt="The country list in dark mode">
+  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_dark.png" width="200" alt="Bolivia's details in dark mode">
+</p>
+<img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPad11Landscape_light.png" width="816" alt="The list and Bolivia's details side by side on iPad">
 
 ## Build and run
 **Requirements:** Xcode 26.0.1 or later, iOS 17.0 or later.
@@ -12,9 +26,9 @@ Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 ### Tested with
 | Xcode | Simulator | Local | CI |
 |---|---|---|---|
-| 27.1 | iPhone 17 Pro, iOS 27.0 | ✓ (with snapshots) | every pull request |
-| 27.1 | iPhone 15 Pro, iOS 17.0 | ✓ | every pull request (downloads the iOS 17.0 runtime) |
-| 26.0.1 | iPhone 17 Pro, iOS 26.0 | ✓ | every pull request |
+| 27.1 | iPhone 17 Pro, iOS 27.0 | ✓ (with snapshots) | every pull request and push to main; snapshots in their own workflow |
+| 27.1 | iPhone 15 Pro, iOS 17.0 | ✓ | not run: no CI image has the iOS 17.0 runtime |
+| 26.0.1 | iPhone 17 Pro, iOS 26.0 | ✓ | every pull request and push to main |
 
 ### Commands
 | Task | Command |

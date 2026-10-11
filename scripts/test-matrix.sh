@@ -5,10 +5,15 @@
 #   xcode27-ios17  Xcode 27.1    iPhone 15 Pro, iOS 17.0   test plan without snapshots (deployment-target floor)
 #   xcode26-ios26  Xcode 26.0.1  iPhone 17 Pro, iOS 26.0   test plan without snapshots
 #
+# The xcode27-ios27 row also comes in two halves, which CI runs as separate checks:
+#
+#   xcode27-ios27-tests      the test plan without snapshots
+#   xcode27-ios27-snapshots  the snapshots only
+#
 # Each Xcode gets a clean build, which fails if it reports any warning. Xcode is selected per
 # run with DEVELOPER_DIR; xcode-select is never changed.
 #
-# Usage: scripts/test-matrix.sh [row ...]   (default: every row)
+# Usage: scripts/test-matrix.sh [row ...]   (default: the first three rows)
 # Environment:
 #   XCODE_27_PATH      Xcode 27.1   (default: "/Applications/Xcode 27.1.app")
 #   XCODE_26_PATH      Xcode 26.0.1 (default: "/Applications/Xcode.app")
@@ -58,24 +63,24 @@ build() {
   echo "    OK, 0 warnings"
 }
 
-# run_tests <label> <xcode path> <destination> <snapshots: yes|no>: runs the test plan on a built product.
+# run_tests <row> <label> <xcode path> <destination> <snapshots: yes|no|only>: runs the test plan
+# on a built product.
 run_tests() {
-  local label=$1 xcode=$2 destination=$3 snapshots=$4
-  local row="$label ${destination#platform=iOS Simulator,}"
-  local slug log result
-  slug=$(printf '%s' "$row" | tr -c '[:alnum:]' '-')
-  log="$WORK_DIR/$slug-test.log"
-  result="$WORK_DIR/$slug-test.xcresult"
-  local skip=()
-  [ "$snapshots" = yes ] || skip=(-skip-testing:"$SNAPSHOT_TARGET")
+  local row=$1 label=$2 xcode=$3 destination=$4 snapshots=$5
+  local log="$WORK_DIR/$row-test.log" result="$WORK_DIR/$row-test.xcresult"
+  local filter=()
+  case "$snapshots" in
+    no) filter=(-skip-testing:"$SNAPSHOT_TARGET") ;;
+    only) filter=(-only-testing:"$SNAPSHOT_TARGET") ;;
+  esac
 
-  echo "==> Test: $row"
+  echo "==> Test: $row (${destination#platform=iOS Simulator,})"
   DEVELOPER_DIR="$xcode/Contents/Developer" xcodebuild test-without-building \
     -scheme "$SCHEME" -testPlan "$SCHEME" \
     -destination "$destination" \
     -derivedDataPath "$WORK_DIR/$label-DerivedData" \
     -resultBundlePath "$result" -collect-test-diagnostics never \
-    ${skip[@]+"${skip[@]}"} >"$log" 2>&1 || fail "tests failed on $row" "$log"
+    ${filter[@]+"${filter[@]}"} >"$log" 2>&1 || fail "tests failed on $row" "$log"
 
   local summary
   summary=$(DEVELOPER_DIR="$xcode/Contents/Developer" xcrun xcresulttool get test-results summary --path "$result")
@@ -91,17 +96,21 @@ for row in "${rows[@]}"; do
   case "$row" in
     xcode27-ios27) label=xcode27 xcode=$XCODE_27_PATH snapshots=yes
       destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0" ;;
+    xcode27-ios27-tests) label=xcode27 xcode=$XCODE_27_PATH snapshots=no
+      destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0" ;;
+    xcode27-ios27-snapshots) label=xcode27 xcode=$XCODE_27_PATH snapshots=only
+      destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0" ;;
     xcode27-ios17) label=xcode27 xcode=$XCODE_27_PATH snapshots=no
       destination="platform=iOS Simulator,name=iPhone 15 Pro,OS=17.0" ;;
     xcode26-ios26) label=xcode26 xcode=$XCODE_26_PATH snapshots=no
       destination="platform=iOS Simulator,name=iPhone 17 Pro,OS=26.0.1" ;;
-    *) fail "unknown row '$row' (rows: xcode27-ios27 xcode27-ios17 xcode26-ios26)" ;;
+    *) fail "unknown row '$row' (rows: xcode27-ios27 xcode27-ios27-tests xcode27-ios27-snapshots xcode27-ios17 xcode26-ios26)" ;;
   esac
   case " $built " in
     *" $label "*) ;;
     *) build "$label" "$xcode" && built="$built $label" ;;
   esac
-  run_tests "$label" "$xcode" "$destination" "$snapshots"
+  run_tests "$row" "$label" "$xcode" "$destination" "$snapshots"
 done
 
 echo "Passed: ${rows[*]}"
