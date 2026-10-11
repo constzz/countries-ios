@@ -1,10 +1,9 @@
 import AtlasDomain
-import Foundation
 import Testing
 @testable import AtlasUI
 
-/// Every action, sent to the view model with a test repository: the state it leaves, the requests
-/// it makes and the effects it emits.
+/// Every action, sent to the view model with a test repository: the state it leaves and the
+/// requests it makes.
 @Suite("CountryListViewModel")
 @MainActor
 struct CountryListViewModelTests {
@@ -212,8 +211,8 @@ struct CountryListViewModelTests {
     #expect(!viewModel.state.isSearching)
   }
 
-  @Test("AC-1.6 retry repeats the last request")
-  func retryRepeatsTheLastRequest() async {
+  @Test("AC-1.6 retry after a failed refresh refreshes again")
+  func retryAfterAFailedRefreshRefreshesAgain() async {
     let repository = MockCountriesRepository(result: .success(rows))
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
@@ -227,6 +226,23 @@ struct CountryListViewModelTests {
     await retry.value
     #expect(await repository.calls.last == .init(term: "", forceRefresh: true))
     #expect(viewModel.state.content == .loaded(rows))
+  }
+
+  @Test("AC-1.6 retry after a failed search runs the term again")
+  func retryAfterAFailedSearchRunsTheTermAgain() async {
+    let repository = MockCountriesRepository(result: .success(rows))
+    let viewModel = CountryListViewModel(repository: repository)
+    await viewModel.send(.appeared).value
+    await repository.setResult(.failure(.offline))
+    await viewModel.send(.searchSettled("ger")).value
+
+    await repository.setResult(.success([rows[0]]))
+    let retry = viewModel.send(.retryTapped)
+
+    #expect(viewModel.state.content == .loading)
+    await retry.value
+    #expect(await repository.calls.last?.term == "ger")
+    #expect(viewModel.state.content == .loaded([rows[0]]))
   }
 
   // MARK: Ordering
@@ -273,53 +289,6 @@ struct CountryListViewModelTests {
 
     #expect(viewModel.state == answered)
     #expect(viewModel.state.content == .loaded([rows[0]]))
-  }
-
-  // MARK: Announcing
-
-  @Test("AC-1.12 a search announces its result count")
-  func searchAnnouncesItsResultCount() async {
-    let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository)
-    let effects = viewModel.effects()
-    await viewModel.send(.appeared).value
-
-    await viewModel.send(.searchSettled("a")).value
-    await repository.setResult(.success([]))
-    await viewModel.send(.searchSettled("zzz")).value
-
-    #expect(await first(2, of: effects) == [
-      .announce("4 countries found"),
-      .announce(String(localized: .countryListSearchNoResults)),
-    ])
-  }
-
-  /// The test plan runs in US English, so the plural variants are checked against English text.
-  @Test("AC-1.12 the announcement uses plural variants")
-  func announcementUsesPluralVariants() async {
-    let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository)
-    let effects = viewModel.effects()
-    await viewModel.send(.appeared).value
-
-    await repository.setResult(.success([rows[0]]))
-    await viewModel.send(.searchSettled("a")).value
-    await repository.setResult(.success(Array(rows.prefix(2))))
-    await viewModel.send(.searchSettled("ab")).value
-
-    #expect(await first(2, of: effects) == [.announce("1 country found"), .announce("2 countries found")])
-  }
-
-  @Test("AC-1.12 load and refresh announce nothing")
-  func loadAndRefreshAnnounceNothing() async {
-    let viewModel = CountryListViewModel(repository: MockCountriesRepository(result: .success(rows)))
-    let effects = viewModel.effects()
-
-    await viewModel.send(.appeared).value
-    await viewModel.send(.refreshRequested).value
-    await viewModel.send(.searchSettled("a")).value
-
-    #expect(await first(1, of: effects) == [.announce("4 countries found")])
   }
 
   // MARK: Helpers

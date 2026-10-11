@@ -10,7 +10,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
-  private var lastRequest: CountriesRequest?
 
   /// - Parameter scheduler: must run each action later, never inside `schedule`, or a term would
   ///   arrive in the middle of a `reduce`.
@@ -99,8 +98,8 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   }
 
   private func handleRetryTapped(_ current: CountryListState) -> CountryListState {
-    let last = lastRequest ?? CountriesRequest(term: current.query, kind: .load)
-    var next = start(last.kind, term: last.term, in: current)
+    // The cache never holds a failure, so going to the network repeats a failed load or search too.
+    var next = start(.refresh, term: current.query, in: current)
     if case .failed = next.content {
       next.content = .loading
     }
@@ -136,7 +135,6 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   ) -> CountryListState {
     var next = current
     let request = CountriesRequest(term: term, kind: kind)
-    lastRequest = request
     searchProgressTask?.cancel()
     switch (kind, current.content) {
     case (.search, .loaded), (.search, .empty):
