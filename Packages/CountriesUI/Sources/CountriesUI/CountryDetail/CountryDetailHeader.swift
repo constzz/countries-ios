@@ -14,10 +14,10 @@ struct CountryDetailHeader: View {
   var body: some View {
     VStack {
       Text(verbatim: country.emoji)
-        .font(.detailFlag(size: flagSize))
+        .font(Typography.Detail.flag(size: flagSize))
         .accessibilityHidden(true)
       Text(verbatim: country.name)
-        .font(.detailTitle)
+        .font(Typography.Detail.title)
         .multilineTextAlignment(.center)
         .accessibilityAddTraits(.isHeader)
         .onGeometryChange(for: Bool.self) { proxy in

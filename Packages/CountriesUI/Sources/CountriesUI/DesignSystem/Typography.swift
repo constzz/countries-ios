@@ -1,29 +1,33 @@
 import SwiftUI
 
-extension Font {
-  static var rowTitle: Font {
-    .body
+enum Typography {
+  enum Row {
+    static var title: Font {
+      .body
+    }
+
+    static var subtitle: Font {
+      .subheadline
+    }
+
+    /// A text style, so it scales with Dynamic Type.
+    static var flag: Font {
+      .title
+    }
   }
 
-  static var rowSubtitle: Font {
-    .subheadline
+  enum Detail {
+    static var title: Font {
+      .title.bold()
+    }
+
+    /// A fixed `size`: it doesn't scale with Dynamic Type.
+    static func flag(size: CGFloat) -> Font {
+      .system(size: size)
+    }
   }
 
   static var progressLabel: Font {
     .subheadline
-  }
-
-  /// A text style, so it scales with Dynamic Type.
-  static var rowFlag: Font {
-    .title
-  }
-
-  static var detailTitle: Font {
-    .title.bold()
-  }
-
-  /// A fixed `size`: it doesn't scale with Dynamic Type.
-  static func detailFlag(size: CGFloat) -> Font {
-    .system(size: size)
   }
 }

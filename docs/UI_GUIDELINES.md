@@ -6,21 +6,26 @@ Apple's [Human Interface Guidelines](https://developer.apple.com/design/human-in
 Screens never name a system color or text style directly. They use semantic tokens defined once in `CountriesUI/DesignSystem/`, named after their role:
 
 ```swift
-// DesignSystem/Colors.swift
-extension ShapeStyle where Self == HierarchicalShapeStyle {
+// DesignSystem/Palette.swift
+enum Palette {
   static var secondaryText: HierarchicalShapeStyle { .secondary }
 }
 
 // DesignSystem/Typography.swift
-extension Font {
-  static var rowTitle: Font { .body }
+enum Typography {
+  enum Row {
+    static var subtitle: Font { .subheadline }
+  }
 }
 
 // In a screen
-Text(country.name).font(.rowTitle)
+Text(verbatim: country.continent.name)
+  .font(Typography.Row.subtitle)
+  .foregroundStyle(Palette.secondaryText)
 ```
 
-- Tokens are static members, the same shape as SwiftUI's own `.tint` or `.headline`. There's no theme object in the environment: light and dark mode come from the system, and there is no runtime theme switching.
+- Tokens live in the `Palette` and `Typography` enums, not in extensions on SwiftUI's `ShapeStyle` or `Font`. As members of those types they would sit beside SwiftUI's own `.secondary` or `.title` in completion, where one is easily picked for the other.
+- There's no theme object in the environment: light and dark mode come from the system, and there is no runtime theme switching.
 - A token's value is always a system semantic color or a system text style, so dark mode, increased contrast and Dynamic Type keep working with no extra code.
 - Restyling a role is a one-line change in one file.
 - System components keep their own styling: `List`, `LabeledContent`, `ContentUnavailableView`, navigation and search bars get no tokens. Tokens cover only what the app styles itself.
@@ -30,7 +35,7 @@ Text(country.name).font(.rowTitle)
 - Color tokens map to system semantic colors: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
 - Text colors are `HierarchicalShapeStyle` tokens (`.secondary`), not `Color` tokens. Hierarchical styles resolve against their context, so secondary text stays readable inside a selected sidebar row.
 - No `preferredColorScheme`.
-- A grouped list keeps the `groupedBackground` token behind it in every state (`.scrollContentBackground(.hidden)`), because an empty `List` draws a plain background and the color would change when its rows arrive.
+- A grouped list keeps `Palette.groupedBackground` behind it in every state (`.scrollContentBackground(.hidden)`), because an empty `List` draws a plain background and the color would change when its rows arrive.
 - A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed as a token.
 - Lint rejects hard-coded colors anywhere in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
 

@@ -1,6 +1,6 @@
 import SwiftUI
 
-extension ShapeStyle where Self == HierarchicalShapeStyle {
+enum Palette {
   static var secondaryText: HierarchicalShapeStyle {
     .secondary
   }
@@ -9,9 +9,7 @@ extension ShapeStyle where Self == HierarchicalShapeStyle {
   static var primaryText: HierarchicalShapeStyle {
     .primary
   }
-}
 
-extension ShapeStyle where Self == Color {
   static var groupedBackground: Color {
     Color(.systemGroupedBackground)
   }

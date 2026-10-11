@@ -20,8 +20,8 @@ private struct InlineProgressView: View {
     HStack {
       ProgressView()
       label
-        .font(.progressLabel)
-        .foregroundStyle(.secondaryText)
+        .font(Typography.progressLabel)
+        .foregroundStyle(Palette.secondaryText)
     }
     .padding(.horizontal)
     .padding(.vertical, 8)
