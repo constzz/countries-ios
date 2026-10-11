@@ -6,7 +6,8 @@ import Foundation
 /// announce search results.
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
-  private let debounceInterval: DispatchQueue.SchedulerTimeType.Stride
+  /// Holds the search pipe's terms back until typing pauses.
+  private let debounced: (AnyPublisher<String, Never>) -> AnyPublisher<String, Never>
   private let searchProgressDelay: Duration
   /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
   /// view, so `init` only stores dependencies.
@@ -15,13 +16,15 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  init(
+  /// - Parameter scheduler: where the debounce waits. It must run its actions on the main thread.
+  init<S: Scheduler>(
     repository: any CountriesRepository,
-    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300),
+    debounceInterval: S.SchedulerTimeType.Stride = .milliseconds(300),
+    scheduler: S = DispatchQueue.main,
     searchProgressDelay: Duration = .milliseconds(500)
   ) {
     self.repository = repository
-    self.debounceInterval = debounceInterval
+    debounced = { $0.debounce(for: debounceInterval, scheduler: scheduler).eraseToAnyPublisher() }
     self.searchProgressDelay = searchProgressDelay
     super.init(initialState: CountryListState())
   }
@@ -29,9 +32,8 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   /// The search field's input pipe: trim, debounce, then drop repeats of the last term.
   private func makeSearchInput() -> PassthroughSubject<String, Never> {
     let input = PassthroughSubject<String, Never>()
-    input
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .debounce(for: debounceInterval, scheduler: DispatchQueue.main)
+    let trimmed = input.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+    debounced(trimmed.eraseToAnyPublisher())
       .removeDuplicates()
       .sink { [weak self] term in self?.send(.searchSettled(term)) }
       .store(in: &subscriptions)
