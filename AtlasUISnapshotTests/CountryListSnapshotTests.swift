@@ -12,8 +12,10 @@ import Testing
 struct CountryListSnapshotTests {
   @Test("AC-1.9 loading")
   func loading() async {
+    let sut = makeSUT(CountryListState(content: .loading))
+
     await assertSnapshots(
-      of: countryList(CountryListState(content: .loading)),
+      of: sut,
       named: "COUNTRY_LIST_LOADING",
       everyDevice: false
     )
@@ -21,8 +23,10 @@ struct CountryListSnapshotTests {
 
   @Test("AC-1.9 AC-1.10 loaded, with right-to-left")
   func loaded() async {
+    let sut = makeSUT(CountryListState(content: .loaded(CountrySummary.samples)))
+
     await assertSnapshots(
-      of: countryList(CountryListState(content: .loaded(CountrySummary.samples))),
+      of: sut,
       named: "COUNTRY_LIST_LOADED",
       rightToLeft: true
     )
@@ -36,19 +40,25 @@ struct CountryListSnapshotTests {
       query: "",
       isSearching: true
     )
-    await assertSnapshots(of: countryList(state), named: "COUNTRY_LIST_SEARCHING")
+    let sut = makeSUT(state)
+
+    await assertSnapshots(of: sut, named: "COUNTRY_LIST_SEARCHING")
   }
 
   @Test("AC-1.9 no match")
   func empty() async {
     let state = CountryListState(content: .empty(query: "zzz"), searchText: "zzz", query: "zzz")
-    await assertSnapshots(of: countryList(state), named: "COUNTRY_LIST_EMPTY", everyDevice: false)
+    let sut = makeSUT(state)
+
+    await assertSnapshots(of: sut, named: "COUNTRY_LIST_EMPTY", everyDevice: false)
   }
 
   @Test("AC-1.9 error")
   func error() async {
+    let sut = makeSUT(CountryListState(content: .failed(.failure(title: String(localized: .countryListErrorTitle)))))
+
     await assertSnapshots(
-      of: countryList(CountryListState(content: .failed(.failure(title: String(localized: .countryListErrorTitle))))),
+      of: sut,
       named: "COUNTRY_LIST_ERROR",
       everyDevice: false
     )
@@ -56,14 +66,16 @@ struct CountryListSnapshotTests {
 
   @Test("AC-1.9 offline")
   func offline() async {
+    let sut = makeSUT(CountryListState(content: .failed(.offline)))
+
     await assertSnapshots(
-      of: countryList(CountryListState(content: .failed(.offline))),
+      of: sut,
       named: "COUNTRY_LIST_OFFLINE",
       everyDevice: false
     )
   }
 
-  private func countryList(_ state: CountryListState) -> some View {
+  private func makeSUT(_ state: CountryListState) -> some View {
     RootSplitView {
       CountryListContent(state: state, selection: .constant(nil)) { _ in Task {} }
     } detail: {

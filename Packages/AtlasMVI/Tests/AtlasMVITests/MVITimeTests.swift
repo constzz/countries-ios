@@ -8,9 +8,10 @@ import Testing
 struct MVITimeTests {
   @Test("debounce emits the last value once the scheduler passes the interval")
   func debounceEmitsTheLastValue() {
+    let sut = MVITime.current
     let input = PassthroughSubject<String, Never>()
     var received: [String] = []
-    let subscription = MVITime.current.debounce(input, for: .milliseconds(300))
+    let subscription = sut.debounce(input, for: .milliseconds(300))
       .sink { received.append($0) }
 
     input.send("a")
@@ -27,14 +28,14 @@ struct MVITimeTests {
 
   @Test(".testTime gives each view model the test's scheduler and clock")
   func timeReachesViewModels() async {
-    let viewModel = CounterViewModel()
-    let request = viewModel.send(.valueRequested(1))
+    let sut = CounterViewModel()
+    let request = sut.send(.valueRequested(1))
 
     TestTime.clock.advance(by: .milliseconds(999))
-    #expect(viewModel.state.value == nil)
+    #expect(sut.state.value == nil)
     TestTime.clock.advance(by: .milliseconds(1))
     await request.value
 
-    #expect(viewModel.state.value == 1)
+    #expect(sut.state.value == 1)
   }
 }

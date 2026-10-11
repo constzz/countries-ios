@@ -23,69 +23,60 @@ struct CountryDetailViewModelTests {
 
   @Test("AC-2.4 appearing shows loading, then the details")
   func appearingShowsLoadingThenTheDetails() async {
-    let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
+    let (sut, repository) = makeSUT(countryCode: "CH")
 
-    let load = viewModel.send(.appeared)
+    let load = sut.send(.appeared)
 
-    #expect(viewModel.state.content == .loading)
+    #expect(sut.state.content == .loading)
     let isRequested = await eventually { await repository.requestedCodes == ["CH"] }
     #expect(isRequested)
     await repository.respond(to: 0, with: .success(details))
     await load.value
-    #expect(viewModel.state.content == .loaded(values))
+    #expect(sut.state.content == .loaded(values))
   }
 
   @Test("AC-2.4 appearing again loads nothing")
   func appearingAgainLoadsNothing() async {
-    let repository = MockCountriesRepository(detailResult: .success(details))
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
-    await viewModel.send(.appeared).value
+    let (sut, repository) = makeSUT(countryCode: "CH", detailResult: .success(details))
+    await sut.send(.appeared).value
 
-    await viewModel.send(.appeared).value
+    await sut.send(.appeared).value
 
-    #expect(viewModel.state.content == .loaded(values))
+    #expect(sut.state.content == .loaded(values))
     #expect(await repository.requestedCodes == ["CH"])
   }
 
   @Test("AC-2.4 a failure shows the error")
   func failureShowsTheError() async {
-    let viewModel = CountryDetailViewModel(
-      countryCode: "CH",
-      repository: MockCountriesRepository(detailResult: .failure(.offline))
-    )
+    let (sut, _) = makeSUT(countryCode: "CH", detailResult: .failure(.offline))
 
-    await viewModel.send(.appeared).value
+    await sut.send(.appeared).value
 
-    #expect(viewModel.state.content == .failed(.offline))
+    #expect(sut.state.content == .failed(.offline))
   }
 
   @Test("AC-2.4 retry repeats the request")
   func retryRepeatsTheRequest() async {
-    let repository = MockCountriesRepository(detailResult: .failure(.network))
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
-    await viewModel.send(.appeared).value
+    let (sut, repository) = makeSUT(countryCode: "CH", detailResult: .failure(.network))
+    await sut.send(.appeared).value
     await repository.setDetailResult(.success(details))
 
-    let retry = viewModel.send(.retryTapped)
+    let retry = sut.send(.retryTapped)
 
-    #expect(viewModel.state.content == .loading)
+    #expect(sut.state.content == .loading)
     await retry.value
-    #expect(viewModel.state.content == .loaded(values))
+    #expect(sut.state.content == .loaded(values))
     #expect(await repository.requestedCodes == ["CH", "CH"])
   }
 
   @Test("AC-2.5 an unknown code shows not found")
   func unknownCodeShowsNotFound() async {
-    let viewModel = CountryDetailViewModel(
-      countryCode: "XX",
-      repository: MockCountriesRepository(detailResult: .failure(.notFound))
-    )
+    let (sut, _) = makeSUT(countryCode: "XX", detailResult: .failure(.notFound))
 
-    await viewModel.send(.appeared).value
+    await sut.send(.appeared).value
 
-    guard case let .failed(copy) = viewModel.state.content else {
-      Issue.record("Expected not found, got \(viewModel.state.content)")
+    guard case let .failed(copy) = sut.state.content else {
+      Issue.record("Expected not found, got \(sut.state.content)")
       return
     }
     #expect(copy.title == String(localized: .countryDetailNotFoundTitle))
@@ -95,85 +86,76 @@ struct CountryDetailViewModelTests {
 
   @Test("AC-2.2 the title shows once the header's name is under the bar")
   func titleShowsOnceTheHeaderIsUnderTheBar() async {
-    let viewModel = CountryDetailViewModel(
-      countryCode: "CH",
-      repository: MockCountriesRepository(detailResult: .success(details))
-    )
-    await viewModel.send(.appeared).value
-    #expect(!viewModel.state.isHeaderUnderBar)
+    let (sut, _) = makeSUT(countryCode: "CH", detailResult: .success(details))
+    await sut.send(.appeared).value
+    #expect(!sut.state.isHeaderUnderBar)
 
-    viewModel.send(.headerScrolled(underBar: true))
+    sut.send(.headerScrolled(underBar: true))
 
-    #expect(viewModel.state.isHeaderUnderBar)
+    #expect(sut.state.isHeaderUnderBar)
   }
 
   @Test("AC-2.2 the title hides when the header's name scrolls back")
   func titleHidesWhenTheHeaderScrollsBack() async {
-    let viewModel = CountryDetailViewModel(
-      countryCode: "CH",
-      repository: MockCountriesRepository(detailResult: .success(details))
-    )
-    await viewModel.send(.appeared).value
-    viewModel.send(.headerScrolled(underBar: true))
+    let (sut, _) = makeSUT(countryCode: "CH", detailResult: .success(details))
+    await sut.send(.appeared).value
+    sut.send(.headerScrolled(underBar: true))
 
-    viewModel.send(.headerScrolled(underBar: false))
+    sut.send(.headerScrolled(underBar: false))
 
-    #expect(!viewModel.state.isHeaderUnderBar)
+    #expect(!sut.state.isHeaderUnderBar)
   }
 
   // MARK: Cancelling
 
   @Test("AC-2.10 disappearing cancels the request and shows no error")
   func disappearingCancelsTheRequest() async {
-    let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
-    let load = viewModel.send(.appeared)
+    let (sut, repository) = makeSUT(countryCode: "CH")
+    let load = sut.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
 
-    viewModel.send(.disappeared)
+    sut.send(.disappeared)
 
-    #expect(viewModel.state.content == .idle)
+    #expect(sut.state.content == .idle)
     let isCancelled = await eventually { await repository.cancelledCount == 1 }
     #expect(isCancelled)
     await load.value
-    #expect(viewModel.state.content == .idle)
+    #expect(sut.state.content == .idle)
   }
 
   @Test("AC-2.10 appearing after disappearing loads again")
   func appearingAfterDisappearingLoadsAgain() async {
-    let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
-    viewModel.send(.appeared)
+    let (sut, repository) = makeSUT(countryCode: "CH")
+    sut.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
-    viewModel.send(.disappeared)
+    sut.send(.disappeared)
 
-    let reload = viewModel.send(.appeared)
+    let reload = sut.send(.appeared)
 
-    #expect(viewModel.state.content == .loading)
+    #expect(sut.state.content == .loading)
     let isRequested = await eventually { await repository.requestedCodes == ["CH", "CH"] }
     #expect(isRequested)
     await repository.respond(to: 1, with: .success(details))
     await reload.value
-    #expect(viewModel.state.content == .loaded(values))
+    #expect(sut.state.content == .loaded(values))
   }
 
   @Test("AC-2.10 a stale response is ignored")
   func staleResponseIsIgnored() async {
-    let repository = SuspendingDetailsRepository(honorsCancellation: false)
-    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
-    let staleLoad = viewModel.send(.appeared)
+    let (sut, repository) = makeSUT(countryCode: "CH", honorsCancellation: false)
+    let staleLoad = sut.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
-    viewModel.send(.disappeared)
-    let reload = viewModel.send(.appeared)
+    sut.send(.disappeared)
+    let reload = sut.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH", "CH"] }
 
     await repository.respond(to: 0, with: .failure(.network))
     await staleLoad.value
 
-    #expect(viewModel.state.content == .loading)
+    #expect(sut.state.content == .loading)
     await repository.respond(to: 1, with: .success(details))
     await reload.value
-    #expect(viewModel.state.content == .loaded(values))
+    #expect(sut.state.content == .loaded(values))
   }
 
   // MARK: Text
@@ -213,18 +195,33 @@ struct CountryDetailViewModelTests {
 
   // MARK: Helpers
 
+  /// A view model whose repository answers every request with `detailResult`.
+  private func makeSUT(
+    countryCode: String,
+    detailResult: Result<CountryDetails, RequestError>,
+    locale: Locale = .autoupdatingCurrent
+  ) -> (sut: CountryDetailViewModel, repository: MockCountriesRepository) {
+    let repository = MockCountriesRepository(detailResult: detailResult)
+    return (CountryDetailViewModel(countryCode: countryCode, repository: repository, locale: locale), repository)
+  }
+
+  /// A view model whose repository holds each request until the test answers it.
+  private func makeSUT(
+    countryCode: String,
+    honorsCancellation: Bool = true
+  ) -> (sut: CountryDetailViewModel, repository: SuspendingDetailsRepository) {
+    let repository = SuspendingDetailsRepository(honorsCancellation: honorsCancellation)
+    return (CountryDetailViewModel(countryCode: countryCode, repository: repository), repository)
+  }
+
   /// What the detail shows once `details` loads, or `nil` if it didn't load.
   private func loadedValues(
     _ details: CountryDetails,
     locale: Locale = .autoupdatingCurrent
   ) async -> CountryDetailValues? {
-    let viewModel = CountryDetailViewModel(
-      countryCode: details.id,
-      repository: MockCountriesRepository(detailResult: .success(details)),
-      locale: locale
-    )
-    await viewModel.send(.appeared).value
-    guard case let .loaded(values) = viewModel.state.content else {
+    let (sut, _) = makeSUT(countryCode: details.id, detailResult: .success(details), locale: locale)
+    await sut.send(.appeared).value
+    guard case let .loaded(values) = sut.state.content else {
       return nil
     }
     return values

@@ -5,9 +5,10 @@ import Testing
 struct CountrySummaryTests {
   @Test("AC-1.7 a summary's id is its code")
   func idIsCode() {
-    let summary = CountrySummary(
+    let sut = CountrySummary(
       code: "CH", name: "Switzerland", emoji: "🇨🇭", continent: Continent(code: "EU", name: "Europe")
     )
-    #expect(summary.id == "CH")
+
+    #expect(sut.id == "CH")
   }
 }

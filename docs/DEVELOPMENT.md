@@ -62,6 +62,9 @@ A spec says what and why, not how. Types, signatures, file layout and reducer lo
 
 Commits follow Conventional Commits and show the flow: `test(list): …` (red), `feat(list): …` (green), `refactor(list): …`. Keep them small and focused.
 
+### Test shape
+The object a test acts on is named `sut`. A suite builds it in a private `makeSUT(…)` at the end of the suite, which also creates its test doubles and returns the ones a test checks: `let (sut, repository) = makeSUT(result: .success(rows))`. A test that doesn't check them binds `_`, and variants differ by argument label, such as `makeSUT(loadedWith:)`. A value built without doubles (a domain value, `MVITime.current`) is named `sut` where it's made, and static functions such as the mappers are called directly.
+
 ### Definition of Done
 - Every AC has a test (or, for setup work, a verification command), and the spec's ACs are ticked.
 - `scripts/lint.sh` is clean.
