@@ -10,6 +10,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var subscriptions: Set<AnyCancellable> = []
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
+  private var lastRequest: CountriesRequest?
 
   /// - Parameter scheduler: must run each action later, never inside `schedule`, or a term would
   ///   arrive in the middle of a `reduce`.
@@ -45,14 +46,14 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       handleSearchTextChanged(current, text)
     case let .searchSettled(term):
       handleSearchSettled(current, term)
-    case let .searchProgressDue(requestID):
-      handleSearchProgressDue(current, requestID)
+    case .searchProgressDue:
+      handleSearchProgressDue(current)
     case .refreshRequested:
       handleRefreshRequested(current)
     case .retryTapped:
       handleRetryTapped(current)
-    case let .responseReceived(requestID, result):
-      handleResponse(result, for: requestID, in: current)
+    case let .responseReceived(request, result):
+      handleResponse(current, request, result)
     }
   }
 
@@ -82,10 +83,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return start(.search, term: term, in: next)
   }
 
-  private func handleSearchProgressDue(_ current: CountryListState, _ requestID: Int) -> CountryListState {
-    guard let request = current.request, request.id == requestID, request.kind == .search else {
-      return current
-    }
+  private func handleSearchProgressDue(_ current: CountryListState) -> CountryListState {
     switch current.content {
     case .loaded, .empty:
       var next = current
@@ -101,7 +99,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   }
 
   private func handleRetryTapped(_ current: CountryListState) -> CountryListState {
-    let last = current.request ?? CountriesRequest(id: 0, term: current.query, kind: .load)
+    let last = lastRequest ?? CountriesRequest(term: current.query, kind: .load)
     var next = start(last.kind, term: last.term, in: current)
     if case .failed = next.content {
       next.content = .loading
@@ -110,13 +108,10 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   }
 
   private func handleResponse(
-    _ result: Result<[CountrySummary], RequestError>,
-    for requestID: Int,
-    in current: CountryListState
+    _ current: CountryListState,
+    _ request: CountriesRequest,
+    _ result: Result<[CountrySummary], RequestError>
   ) -> CountryListState {
-    guard let request = current.request, request.id == requestID else {
-      return current
-    }
     searchProgressTask?.cancel()
     var next = current
     next.isSearching = false
@@ -140,17 +135,13 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     in current: CountryListState
   ) -> CountryListState {
     var next = current
-    let request = CountriesRequest(
-      id: (current.request?.id ?? 0) + 1,
-      term: term,
-      kind: kind
-    )
-    next.request = request
+    let request = CountriesRequest(term: term, kind: kind)
+    lastRequest = request
     searchProgressTask?.cancel()
     switch (kind, current.content) {
     case (.search, .loaded), (.search, .empty):
       if !current.isSearching {
-        scheduleSearchProgress(for: request)
+        scheduleSearchProgress()
       }
     case (.refresh, _), (.load, .loaded), (.load, .empty):
       next.isSearching = false
@@ -162,7 +153,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  private func scheduleSearchProgress(for request: CountriesRequest) {
+  private func scheduleSearchProgress() {
     let wait = makeSearchProgressWait()
     searchProgressTask = launchEffect { [weak self] in
       do {
@@ -170,7 +161,10 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       } catch {
         return
       }
-      self?.send(.searchProgressDue(requestID: request.id))
+      guard !Task.isCancelled else {
+        return
+      }
+      self?.send(.searchProgressDue)
     }
   }
 
@@ -185,7 +179,10 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
       } catch {
         result = .failure(error as? RequestError ?? .unknown)
       }
-      await self?.send(.responseReceived(requestID: request.id, result)).value
+      guard !Task.isCancelled else {
+        return
+      }
+      await self?.send(.responseReceived(request, result)).value
     }
   }
 

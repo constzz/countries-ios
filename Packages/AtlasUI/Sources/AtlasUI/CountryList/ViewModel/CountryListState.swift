@@ -17,6 +17,4 @@ struct CountryListState: MVIState {
   var query = ""
   /// A search is running over the current content.
   var isSearching = false
-  /// The latest request. Only its response is applied.
-  var request: CountriesRequest?
 }

@@ -13,6 +13,6 @@ enum CountryListAction: MVIAction {
   /// The search pipe settled on a trimmed term.
   case searchSettled(String)
   /// A search is still running long enough after it started to show its progress.
-  case searchProgressDue(requestID: Int)
-  case responseReceived(requestID: Int, Result<[CountrySummary], RequestError>)
+  case searchProgressDue
+  case responseReceived(CountriesRequest, Result<[CountrySummary], RequestError>)
 }

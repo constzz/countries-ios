@@ -3,7 +3,6 @@ struct CountriesRequest: Equatable {
     case load, search, refresh
   }
 
-  let id: Int
   let term: String
   let kind: Kind
 
