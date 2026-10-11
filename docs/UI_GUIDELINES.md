@@ -30,6 +30,7 @@ Text(country.name).font(.rowTitle)
 - Color tokens map to system semantic colors: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
 - Text colors are `HierarchicalShapeStyle` tokens (`.secondary`), not `Color` tokens. Hierarchical styles resolve against their context, so secondary text stays readable inside a selected sidebar row.
 - No `preferredColorScheme`.
+- A grouped list keeps the `groupedBackground` token behind it in every state (`.scrollContentBackground(.hidden)`), because an empty `List` draws a plain background and the color would change when its rows arrive.
 - A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed as a token.
 - Lint rejects hard-coded colors anywhere in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
 
@@ -47,7 +48,7 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 - Full-screen loading only on the first load. Searches and refreshes keep the current rows visible with inline progress.
 - Empty and error states are built on `ContentUnavailableView`. A search with no results uses `ContentUnavailableView.search(text:)`.
 - Errors offer a retry that repeats the last request. The offline error has its own message.
-- The `.loadState(_:retry:)` modifier renders the shared states, so both screens behave the same way.
+- The `.loadState(_:subject:loadingLabel:retry:)` view modifier renders the shared states, so both screens behave the same way. `subject` names what failed to load in the generic error's title.
 - Missing values render as "None".
 
 ## Views
@@ -57,8 +58,9 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Navigation
 - `NavigationSplitView`: the country list in the sidebar, the selected country in the detail column. On compact width (iPhone, folded iPhone Duo) it collapses into a push stack by itself.
-- The sidebar is a `List(selection:)` keyed by the country `code`, with `.searchable` and `.refreshable`.
-- Selection lives in the root view, not in either view model:
+- The sidebar is a `List(selection:)` keyed by the country `code`, each row a `NavigationLink(value:)`, with `.searchable` and `.refreshable`.
+- The detail column shows `CountryDetailView(code:repository:).id(code)`: a new view and view model for each country.
+- Selection lives in the root view as `@SceneStorage`, not in either view model:
   - on regular width the selected row stays highlighted, and before any selection the detail column shows a "Select a country" placeholder;
   - if a search filters out the selected country, its detail stays visible, and refresh keeps the selection;
   - going back on compact width clears the selection;
@@ -71,11 +73,12 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Localization and right-to-left
 The app ships in English but is localization-ready: adding a language is a catalog and project-setting change with no code changes ([development guide](DEVELOPMENT.md#adding-a-language)).
-- All user-facing copy lives in `CountriesUI/Resources/Localizable.xcstrings`, with a translator comment on every key. The English text is the key.
-- In views: `Text("Countries", bundle: .module)`. Outside views: `String(localized: "…", bundle: .module, comment: "…")`. Without `bundle: .module`, SwiftUI looks the key up in the app's bundle and the package's translations are never used. Lint flags `Text("…")` without a bundle in CountriesUI.
-- SwiftUI conveniences that take no bundle, such as `Button("…")`, `Label("…", systemImage:)`, `navigationTitle("…")` and `ContentUnavailableView("…", systemImage:)`, are replaced by their forms that take a `Text`.
+- All user-facing copy lives in `CountriesUI/Resources/Localizable.xcstrings`. Each string is added in the catalog editor (+) under a short key named for its screen and role, such as `countryList.title` or `error.retry`, with its English value and a translator comment. Translator comments live only in the catalog.
+- Xcode generates a symbol for each key: `countryList.title` becomes `.countryListTitle`. In views: `Text(.countryListTitle)`. Outside views: `String(localized: .countryListTitle)`. The symbols look strings up in the package's bundle, so code never passes `bundle: .module`, and a mistyped key doesn't compile. Lint flags literal keys in CountriesUI, such as `Text("…")` and `String(localized: "…")`.
+- SwiftUI conveniences that take a string key, such as `Button("…")`, `Label("…", systemImage:)`, `navigationTitle("…")` and `ContentUnavailableView("…", systemImage:)`, are replaced by their forms that take a `Text`.
 - Data from the API is shown with `Text(verbatim:)`. Country, capital and continent names stay in English, because search matches the English names.
-- Whole sentences with placeholders, never joined fragments: `Text("No countries match “\(query)”", bundle: .module)`. Quotation marks belong to the catalog string, so each language can use its own.
+- Whole sentences with placeholders, never joined fragments: a value such as `No countries match “%@”` makes the symbol a function, `Text(.countryListNoMatch(query))`, and so does a plural. Quotation marks belong to the catalog string, so each language can use its own.
+- Xcode never marks a key added in the catalog as stale, so the localization tests check that the code uses every key's symbol, alongside a comment and a value in every language for each key.
 - Lists of values use the locale's list format, `.formatted(.list(type: .and))`, never `joined(separator:)`.
 - Layout uses leading and trailing only, never left, right or fixed x-offsets, so SwiftUI mirrors it. Directional SF Symbols use the forward/backward names (`chevron.forward`), so they flip.
 - Before each UI pull request, run the app with the scheme's "Show non-localized strings", "Right-to-Left Pseudolanguage" and "Double-Length Pseudolanguage" options.

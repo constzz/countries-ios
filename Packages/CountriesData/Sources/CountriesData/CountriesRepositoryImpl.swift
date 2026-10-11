@@ -11,8 +11,24 @@ public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
 /// How long a request may wait for data before it fails, instead of URLSession's 60 s.
 private let requestTimeout: TimeInterval = 15
 
-func makeApolloClient(endpoint: URL) -> ApolloClient {
-  ApolloClient(url: endpoint, defaultRequestConfiguration: RequestConfiguration(requestTimeout: requestTimeout))
+/// The client with an in-memory cache that never stores a response with GraphQL errors. Tests pass
+/// a `session` that answers without the network.
+func makeApolloClient(
+  endpoint: URL,
+  session: any ApolloURLSession = URLSession(configuration: .default)
+) -> ApolloClient {
+  let store = ApolloStore(cache: InMemoryNormalizedCache())
+  let transport = RequestChainNetworkTransport(
+    urlSession: session,
+    interceptorProvider: CountriesInterceptorProvider(),
+    store: store,
+    endpointURL: endpoint
+  )
+  return ApolloClient(
+    networkTransport: transport,
+    store: store,
+    defaultRequestConfiguration: RequestConfiguration(requestTimeout: requestTimeout)
+  )
 }
 
 struct CountriesRepositoryImpl: CountriesRepository {
@@ -38,5 +54,15 @@ struct CountriesRepositoryImpl: CountriesRepository {
     return data.countries
       .map { CountrySummary(fragment: $0.fragments.countryBasics) }
       .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+  }
+
+  func country(code: String) async throws -> CountryDetails {
+    let query = CountriesAPI.CountryQuery(code: code)
+    guard let country = try await client.fetch(query, cachePolicy: .cacheFirst).country else {
+      let operation = CountriesAPI.CountryQuery.operationName
+      Logger.network.error("\(operation, privacy: .public) found no country \(code, privacy: .public)")
+      throw CountriesError.notFound
+    }
+    return CountryDetails(country: country)
   }
 }

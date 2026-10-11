@@ -91,10 +91,83 @@ struct CountriesRepositoryTests {
     }
   }
 
+  // MARK: One country
+
+  @Test("AC-2.2 fetches the country by code, cache first")
+  func fetchesTheCountryByCode() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-CH")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(details.currencies == ["CHE", "CHF", "CHW"])
+    let query = try #require(await client.queries.first as? CountriesAPI.CountryQuery)
+    #expect(query.code == "CH")
+    #expect(await client.cachePolicies == [.cacheFirst])
+  }
+
+  @Test("AC-2.5 a null country is not found")
+  func nullCountryIsNotFound() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-unknown")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    await #expect(throws: CountriesError.notFound) {
+      try await repository.country(code: "XX")
+    }
+  }
+
+  @Test("AC-2.4 a failure reaches the caller unchanged")
+  func countryFailurePropagates() async {
+    let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
+
+    await #expect(throws: CountriesError.offline) {
+      try await repository.country(code: "CH")
+    }
+  }
+
+  // MARK: Client
+
   @Test("AC-1.13 requests time out after 15 s")
   func requestsTimeOut() throws {
     let endpoint = try #require(URL(string: "https://countries.example/graphql"))
     let client = makeApolloClient(endpoint: endpoint)
     #expect(client.defaultRequestConfiguration.requestTimeout == 15)
+  }
+
+  @Test("AC-2.2 a country already fetched comes from the cache")
+  func fetchedCountryComesFromTheCache() async throws {
+    let session = try StubURLSession(bodies: [JSONFixture.responseBody("country-CH")])
+    let repository = try apolloRepository(session)
+
+    _ = try await repository.country(code: "CH")
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(await session.requestCount == 1)
+  }
+
+  /// Apollo writes a response's data even when it has errors, and a failed field arrives as null:
+  /// read back, it would make Try Again show "Country Not Found".
+  @Test("AC-2.4 a response with GraphQL errors stays out of the cache")
+  func responseWithErrorsStaysOutOfTheCache() async throws {
+    let failed = Data(#"{ "data": { "country": null }, "errors": [{ "message": "Internal error" }] }"#.utf8)
+    let session = try StubURLSession(bodies: [failed, JSONFixture.responseBody("country-CH")])
+    let repository = try apolloRepository(session)
+    await #expect(throws: CountriesError.server) {
+      try await repository.country(code: "CH")
+    }
+
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(await session.requestCount == 2)
+  }
+
+  /// The repository over a real `ApolloClient`, cache included, whose requests `session` answers.
+  private func apolloRepository(_ session: StubURLSession) throws -> CountriesRepositoryImpl {
+    let endpoint = try #require(URL(string: "https://countries.example/graphql"))
+    let client = makeApolloClient(endpoint: endpoint, session: session)
+    return CountriesRepositoryImpl(client: ApolloGraphQLClient(client: client))
   }
 }

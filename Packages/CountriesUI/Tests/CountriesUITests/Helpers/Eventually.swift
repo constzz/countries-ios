@@ -1,12 +1,15 @@
-/// Polls `condition` until it holds or `timeout` passes, and returns whether it held. It runs on
-/// the caller's actor, so the condition can read main-actor state.
+/// Polls `condition` until it holds, up to `attempts` times about 5 ms apart, and returns whether it
+/// held. It runs on the caller's actor, so the condition can read main-actor state.
+///
+/// It counts attempts rather than watching a deadline: on a busy CI machine the main actor can
+/// stall for seconds, and a deadline that passed during a stall would end the wait before the work
+/// the test waits for had its turn.
 func eventually(
   isolation _: isolated (any Actor)? = #isolation,
-  timeout: Duration = .seconds(2),
+  attempts: Int = 400,
   _ condition: () async -> Bool
 ) async -> Bool {
-  let deadline = ContinuousClock.now + timeout
-  while ContinuousClock.now < deadline {
+  for _ in 0 ..< attempts {
     if await condition() {
       return true
     }

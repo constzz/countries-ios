@@ -5,37 +5,28 @@ import SwiftUI
 /// snapshots can show any state.
 struct CountryListContent: View {
   let state: CountryListState
+  /// The selected country's code, owned by the root view.
+  @Binding var selection: String?
   let send: (CountryListAction) -> Task<Void, Never>
 
   var body: some View {
-    List(rows) { country in
-      CountryRow(country: country)
+    List(rows, selection: $selection) { country in
+      NavigationLink(value: country.code) {
+        CountryRow(country: country)
+      }
     }
-    .navigationTitle(Text("Countries", bundle: .module, comment: "The app's name, shown as the root screen's title."))
-    .searchable(
-      text: searchText,
-      prompt: Text(
-        "Search by name",
-        bundle: .module,
-        comment: "Placeholder in the search field above the country list."
-      )
-    )
+    .navigationTitle(Text(.countryListTitle))
+    .searchable(text: searchText, prompt: Text(.countryListSearchPrompt))
     .refreshable {
       await send(.refreshRequested).value
     }
     .loadState(
       phase,
-      loadingLabel: Text(
-        "Loading Countries…",
-        bundle: .module,
-        comment: "Label under the progress indicator while the country list loads."
-      ),
+      subject: .countries,
+      loadingLabel: Text(.countryListLoading),
       retry: { _ = send(.retryTapped) }
     )
-    .inlineProgress(
-      state.isSearching,
-      label: Text("Searching…", bundle: .module, comment: "Shown above the country list while a search runs.")
-    )
+    .inlineProgress(state.isSearching, label: Text(.countryListSearchInProgress))
   }
 
   private var rows: [CountrySummary] {

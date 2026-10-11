@@ -1,8 +1,189 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld countries found" : {
+    "countryDetail.capital" : {
+      "comment" : "Label of the row with a country's capital city.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capital"
+          }
+        }
+      }
+    },
+    "countryDetail.continent" : {
+      "comment" : "Label of the row with the continent a country is on.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continent"
+          }
+        }
+      }
+    },
+    "countryDetail.currencies" : {
+      "comment" : "Label of the row with the currencies a country uses.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currencies"
+          }
+        }
+      }
+    },
+    "countryDetail.error.title" : {
+      "comment" : "Title of the error state when a country's details failed to load for any reason but being offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Load Country"
+          }
+        }
+      }
+    },
+    "countryDetail.languages" : {
+      "comment" : "Label of the row with the languages spoken in a country.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Languages"
+          }
+        }
+      }
+    },
+    "countryDetail.loading" : {
+      "comment" : "Label under the progress indicator while a country's details load.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Country…"
+          }
+        }
+      }
+    },
+    "countryDetail.none" : {
+      "comment" : "Value of a country detail row that has no value, such as the capital of Antarctica.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
+    },
+    "countryDetail.notFound.message" : {
+      "comment" : "Message of the state shown when the selected country no longer exists.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This country isn’t available. Choose another one."
+          }
+        }
+      }
+    },
+    "countryDetail.notFound.title" : {
+      "comment" : "Title of the state shown when the selected country no longer exists.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Country Not Found"
+          }
+        }
+      }
+    },
+    "countryDetail.placeholder" : {
+      "comment" : "Placeholder in the detail column when no country is selected.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Country"
+          }
+        }
+      }
+    },
+    "countryList.error.title" : {
+      "comment" : "Title of the error state when the country list failed to load for any reason but being offline.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Load Countries"
+          }
+        }
+      }
+    },
+    "countryList.loading" : {
+      "comment" : "Label under the progress indicator while the country list loads.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Countries…"
+          }
+        }
+      }
+    },
+    "countryList.search.inProgress" : {
+      "comment" : "Shown above the country list while a search runs.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching…"
+          }
+        }
+      }
+    },
+    "countryList.search.noResults" : {
+      "comment" : "VoiceOver announcement after a search that matched no country.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No countries found"
+          }
+        }
+      }
+    },
+    "countryList.search.prompt" : {
+      "comment" : "Placeholder in the search field above the country list.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search by name"
+          }
+        }
+      }
+    },
+    "countryList.search.resultCount" : {
       "comment" : "VoiceOver announcement after a search: the number of countries that match. Varies by plural.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "variations" : {
@@ -24,30 +205,9 @@
         }
       }
     },
-    "Connect to the internet and try again." : {
-      "comment" : "Message of the error state when the device has no internet connection.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connect to the internet and try again."
-          }
-        }
-      }
-    },
-    "Couldn’t Load Countries" : {
-      "comment" : "Title of the error state when the country list failed to load for any reason but being offline.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Couldn’t Load Countries"
-          }
-        }
-      }
-    },
-    "Countries" : {
+    "countryList.title" : {
       "comment" : "The app's name, shown as the root screen's title.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -57,63 +217,9 @@
         }
       }
     },
-    "Loading Countries…" : {
-      "comment" : "Label under the progress indicator while the country list loads.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading Countries…"
-          }
-        }
-      }
-    },
-    "No countries found" : {
-      "comment" : "VoiceOver announcement after a search that matched no country.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No countries found"
-          }
-        }
-      }
-    },
-    "Search by name" : {
-      "comment" : "Placeholder in the search field above the country list.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search by name"
-          }
-        }
-      }
-    },
-    "Searching…" : {
-      "comment" : "Shown above the country list while a search runs.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Searching…"
-          }
-        }
-      }
-    },
-    "Select a Country" : {
-      "comment" : "Placeholder in the detail column when no country is selected.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select a Country"
-          }
-        }
-      }
-    },
-    "Something went wrong. Try again in a moment." : {
-      "comment" : "Message of the error state when the country list failed to load for any reason but being offline.",
+    "error.generic.message" : {
+      "comment" : "Message of the error state when the countries or a country failed to load, unless offline.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -123,24 +229,38 @@
         }
       }
     },
-    "Try Again" : {
-      "comment" : "Button on an error state that repeats the failed request.",
+    "error.offline.message" : {
+      "comment" : "Message of the error state when the device has no internet connection.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Try Again"
+            "value" : "Connect to the internet and try again."
           }
         }
       }
     },
-    "You’re Offline" : {
+    "error.offline.title" : {
       "comment" : "Title of the error state when the device has no internet connection.",
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "You’re Offline"
+          }
+        }
+      }
+    },
+    "error.retry" : {
+      "comment" : "Button on an error state that repeats the failed request.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try Again"
           }
         }
       }

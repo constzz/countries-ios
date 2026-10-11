@@ -42,6 +42,10 @@ actor SuspendingCountriesRepository: CountriesRepository {
     }
   }
 
+  func country(code _: String) async throws -> CountryDetails {
+    throw CountriesError.unknown
+  }
+
   /// Answers the oldest request for `term` still waiting.
   func respond(to term: String, with countries: [CountrySummary]) {
     guard let index = pending.firstIndex(where: { $0.term == term }) else {

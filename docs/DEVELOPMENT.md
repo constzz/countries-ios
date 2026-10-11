@@ -28,7 +28,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 - **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project file stays in the "Xcode 16.0" format (`objectVersion = 77` in `project.pbxproj`; Project → File inspector → Project Format), because Xcode 26.0.1 knows no format newer than "Xcode 16.3". Check it after every project-file change.
 - **Concurrency:** async/await everywhere. Combine only in the search input pipe.
 - **Logging:** `os.Logger`, never `print`.
-- **UI:** every user-facing string goes through the String Catalog with `bundle: .module`, layouts use leading/trailing only, and every UI change ships snapshot tests ([UI guidelines](UI_GUIDELINES.md)).
+- **UI:** every user-facing string is a String Catalog key, used through the symbol Xcode generates for it, layouts use leading/trailing only, and every UI change ships snapshot tests ([UI guidelines](UI_GUIDELINES.md)).
 - **Dependencies:** Apollo iOS is the only third-party library, pinned to an exact version. Tests use no third-party packages.
 
 ## Story workflow
@@ -68,7 +68,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 - CI is green: pull requests run the Xcode 26.0.1 and Xcode 27.1 / iOS 27.0 rows of `scripts/test-matrix.sh`, and every push to main also runs the iOS 17.0 row. Locally, run only the tests a change touches.
 - Previews cover every state in light, dark and the largest accessibility size.
 - Every UI change ships snapshots of each affected state on every preset, in light and dark, inspected before committing.
-- Every new string is in the String Catalog with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
+- Every new string is in the String Catalog under a short key with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
 - The README requirements map and decisions are up to date.
 
 ## Test matrix

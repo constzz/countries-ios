@@ -5,13 +5,15 @@ import SwiftUI
 /// view model's effects.
 struct CountryListView: View {
   @State private var viewModel: CountryListViewModel
+  @Binding private var selection: String?
 
-  init(repository: any CountriesRepository) {
+  init(repository: any CountriesRepository, selection: Binding<String?>) {
     _viewModel = State(initialValue: CountryListViewModel(repository: repository))
+    _selection = selection
   }
 
   var body: some View {
-    CountryListContent(state: viewModel.state, send: viewModel.send)
+    CountryListContent(state: viewModel.state, selection: $selection, send: viewModel.send)
       .task {
         // Subscribe first: an effect emitted while no one listens is dropped.
         let effects = viewModel.effects()

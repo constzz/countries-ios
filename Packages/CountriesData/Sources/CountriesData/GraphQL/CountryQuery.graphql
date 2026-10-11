@@ -1,0 +1,12 @@
+# The country detail. `country` is null when no country has the code.
+query Country($code: ID!) {
+  country(code: $code) {
+    ...CountryBasics
+    capital
+    currencies
+    languages {
+      code
+      name
+    }
+  }
+}
