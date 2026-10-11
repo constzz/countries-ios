@@ -12,7 +12,11 @@ import Testing
 struct CountryListSnapshotTests {
   @Test("AC-1.9 loading")
   func loading() async {
-    await assertSnapshots(of: countryList(CountryListState(content: .loading)), named: "COUNTRY_LIST_LOADING")
+    await assertSnapshots(
+      of: countryList(CountryListState(content: .loading)),
+      named: "COUNTRY_LIST_LOADING",
+      everyDevice: false
+    )
   }
 
   @Test("AC-1.9 AC-1.10 loaded, with right-to-left")
@@ -38,17 +42,25 @@ struct CountryListSnapshotTests {
   @Test("AC-1.9 no match")
   func empty() async {
     let state = CountryListState(content: .empty(query: "zzz"), searchText: "zzz", query: "zzz")
-    await assertSnapshots(of: countryList(state), named: "COUNTRY_LIST_EMPTY")
+    await assertSnapshots(of: countryList(state), named: "COUNTRY_LIST_EMPTY", everyDevice: false)
   }
 
   @Test("AC-1.9 error")
   func error() async {
-    await assertSnapshots(of: countryList(CountryListState(content: .failed(.network))), named: "COUNTRY_LIST_ERROR")
+    await assertSnapshots(
+      of: countryList(CountryListState(content: .failed(.network))),
+      named: "COUNTRY_LIST_ERROR",
+      everyDevice: false
+    )
   }
 
   @Test("AC-1.9 offline")
   func offline() async {
-    await assertSnapshots(of: countryList(CountryListState(content: .failed(.offline))), named: "COUNTRY_LIST_OFFLINE")
+    await assertSnapshots(
+      of: countryList(CountryListState(content: .failed(.offline))),
+      named: "COUNTRY_LIST_OFFLINE",
+      everyDevice: false
+    )
   }
 
   private func countryList(_ state: CountryListState) -> some View {

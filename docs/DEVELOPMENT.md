@@ -67,7 +67,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 - `scripts/lint.sh` is clean.
 - CI is green: the CI workflow runs the Xcode 26.0.1 and Xcode 27.1 / iOS 27.0 rows of `scripts/test-matrix.sh`, and the Snapshots workflow compares the snapshots on Xcode 27.1 / iOS 27.0. No CI image has the iOS 17.0 runtime, so that row runs only locally, before the story's pull request. Locally, run only the tests a change touches.
 - Previews cover every state in light, dark and the largest accessibility size.
-- Every UI change ships snapshots of each affected state on every preset, in light and dark, inspected before committing.
+- Every UI change ships snapshots of each affected state on every preset, in light and dark (placeholder states on iPhone 17 Pro in light), inspected before committing.
 - Every new string is in the String Catalog under a short key with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
 - The README requirements map and decisions are up to date.
 

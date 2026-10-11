@@ -81,7 +81,7 @@ Each requirement of the task traces to an acceptance criterion and the test that
 | The detail loads from its own query | US-2 / AC-2.4 | `CountriesRepositoryTests`, `CountryDetailViewModelTests` |
 
 ## How to see each state
-- Snapshot images: every screen state on every device, in light and dark, in [`CountriesUISnapshotTests/snapshots`](CountriesUISnapshotTests/snapshots).
+- Snapshot images: every screen state, on every device in light and dark (placeholder states on iPhone in light), in [`CountriesUISnapshotTests/snapshots`](CountriesUISnapshotTests/snapshots).
 - SwiftUI previews for each screen.
 - In the app: search "zzz" for the empty state; select Antarctica for "None" values; turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
 
@@ -92,7 +92,7 @@ Each requirement of the task traces to an acceptance criterion and the test that
 - **One request at a time.** A new load, search, refresh or retry cancels the one in flight, and `reduce` ignores any response that doesn't answer the latest request.
 - **The detail loads from its own query.** It takes only the country code and shows loading until `CountryQuery` answers; both queries share the `CountryBasics` fragment and its mapper, so each screen can change its fields alone. Rejected: showing the list's summary at once while the rest loads, which couples the two screens.
 - **Selection lives in the root view, per window.** `@SceneStorage` holds the selected code, so each window restores it after relaunch, and size changes keep it. Rows are `NavigationLink`s in `List(selection:)`, so the split view highlights, pushes and clears the selection itself, and each country gets a new detail view and view model.
-- **Snapshots of every state on every device**, light and dark, drawn at @1x and matched within 2 of 255 per color channel, because Liquid Glass over a search field holding text varies by that much between runs ([details](docs/specs/us-1-country-list.md#decisions)).
+- **Snapshots of every state on every device**, light and dark, except placeholder states (loading, empty, error, offline, not found), which render on iPhone in light because the system view looks the same everywhere. Images are drawn at @1x and matched within 2 of 255 per color channel, because Liquid Glass over a search field holding text varies by that much between runs ([details](docs/specs/us-1-country-list.md#decisions)).
 
 ## Left out
 - A custom EnvironmentValues entry. Dependencies come in through `init`, and two shallow screens have no value the environment would carry better: locale, Dynamic Type and color scheme are SwiftUI's own. The custom ViewModifier, `.loadState`, is in, and both screens use it.

@@ -90,7 +90,8 @@ The app ships in English but is localization-ready: adding a language is a catal
 
 ## Snapshot tests
 Every UI change ships snapshot tests for each state it affects, recorded and inspected before committing.
-- One call such as `assertSnapshots(of: view, named: "COUNTRY_LIST_EMPTY")` renders every device preset in light and dark. A test can't forget a device.
+- One call such as `assertSnapshots(of: view, named: "COUNTRY_LIST_LOADED")` renders every device preset in light and dark, plus accessibility XXXL on iPhone 17 Pro. A test can't forget a device.
+- A state that only centers a system placeholder or progress view (loading, empty, error, offline, not found) passes `everyDevice: false`: iPhone 17 Pro in light, plus accessibility XXXL. Other presets and dark mode would show the same system view in a different place.
 
   | Preset | Size (pt) | Notes |
   |---|---|---|

@@ -13,7 +13,7 @@ import Testing
 struct CountryDetailSnapshotTests {
   @Test("AC-2.4 AC-2.6 loading")
   func loading() async {
-    await assertSnapshots(of: countryDetail(.loading), named: "COUNTRY_DETAIL_LOADING")
+    await assertSnapshots(of: countryDetail(.loading), named: "COUNTRY_DETAIL_LOADING", everyDevice: false)
   }
 
   @Test("AC-2.2 AC-2.6 AC-2.7 loaded, with right-to-left")
@@ -37,17 +37,17 @@ struct CountryDetailSnapshotTests {
 
   @Test("AC-2.4 AC-2.6 error")
   func error() async {
-    await assertSnapshots(of: countryDetail(.failed(.network)), named: "COUNTRY_DETAIL_ERROR")
+    await assertSnapshots(of: countryDetail(.failed(.network)), named: "COUNTRY_DETAIL_ERROR", everyDevice: false)
   }
 
   @Test("AC-2.4 AC-2.6 offline")
   func offline() async {
-    await assertSnapshots(of: countryDetail(.failed(.offline)), named: "COUNTRY_DETAIL_OFFLINE")
+    await assertSnapshots(of: countryDetail(.failed(.offline)), named: "COUNTRY_DETAIL_OFFLINE", everyDevice: false)
   }
 
   @Test("AC-2.5 AC-2.6 not found")
   func notFound() async {
-    await assertSnapshots(of: countryDetail(.failed(.notFound)), named: "COUNTRY_DETAIL_NOT_FOUND")
+    await assertSnapshots(of: countryDetail(.failed(.notFound)), named: "COUNTRY_DETAIL_NOT_FOUND", everyDevice: false)
   }
 
   /// Bolivia's row is selected in every state, so the iPad images show the highlight.
