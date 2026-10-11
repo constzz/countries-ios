@@ -1,7 +1,7 @@
 # US-0: Project setup
 
 > Delivered in [PR #1](https://github.com/constzz/countries-ios/pull/1) on 2026-10-10. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
-> **Changed since:** snapshots are drawn at @1x and matched within 2 of 255 per channel (US-1); the repository reaches the screens through `RootView`'s `init`, with no environment entry (US-2); a fourth local package, `AtlasMVI`, holds the MVI layer and its test helpers, and AtlasUI depends on it (PR #13).
+> **Changed since:** snapshots are drawn at @1x and matched within 2 of 255 per channel (US-1); the repository reaches the screens through `RootView`'s `init`, with no environment entry (US-2); a fourth local package, `AtlasMVI`, holds the MVI layer and its test helpers, and AtlasUI depends on it (PR #13); AC-0.8 is ticked: its verification commands pass, and the project still opens in Xcode 26.0.1.
 
 *As a reviewer or developer, I can clone the repo, open it in Xcode, and run the app, its tests and its linters, so every feature story lands on a working, warning-free baseline.*
 
@@ -25,7 +25,7 @@
 - [x] **AC-0.5** The documented codegen command regenerates the committed Swift files with no diff.
 - [x] **AC-0.6** `AtlasUI` has no dependency on Apollo, and no public API of `AtlasData` exposes a generated type.
 - [x] **AC-0.7** CI runs lint, build and tests on the pull request and passes.
-- [ ] **AC-0.8** `scripts/test-matrix.sh` passes on every row: Xcode 27.1 on iOS 27.0 and on iOS 17.0, and Xcode 26.0.1 on iOS 26.0, with warnings as errors. The project still opens in Xcode 26.0.1 after being saved in Xcode 27.1.
+- [x] **AC-0.8** `scripts/test-matrix.sh` passes on every row: Xcode 27.1 on iOS 27.0 and on iOS 17.0, and Xcode 26.0.1 on iOS 26.0, with warnings as errors. The project still opens in Xcode 26.0.1 after being saved in Xcode 27.1.
 - [x] **AC-0.9** Snapshots of the placeholder screen pass on every device preset (iPhone 17 Pro, iPhone Duo folded and unfolded, iPad 11-inch portrait and landscape) in light and dark, plus accessibility XXXL on iPhone 17 Pro. They run only on Xcode 27.1 with the iOS 27.0 simulator and are skipped elsewhere with a visible reason. Two consecutive recordings produce byte-identical PNGs.
 - [x] **AC-0.10** The placeholder title comes from `Localizable.xcstrings`, and its right-to-left snapshot is mirrored. The localization tests pass, and a `Text("…")` with a literal key in `AtlasUI` fails lint.
 - [ ] **AC-0.11** The app installs as "Atlas" with the bundle ID `$(BUNDLE_ID_PREFIX).atlas`, an app icon with light, dark and tinted variants, and a system-background launch screen. Every commit is authored as Kostiantyn Bezzemelnyi.

@@ -1,7 +1,7 @@
 # US-2: Country detail
 
 > Delivered in [PR #3](https://github.com/constzz/countries-ios/pull/3) on 2026-10-11. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
-> **Changed since:** the detail keeps no request id: a cancelled fetch sends nothing back, so `.responseReceived` carries only the result, and a response to an older request never reaches the reducer; `showsTitle` is `isHeaderUnderBar`; the view model builds the rows' text, so `.loaded` holds `CountryDetailValues`, formatted in the view model's locale rather than the view's `\.locale`; `.failed` holds the `ErrorCopy` the view model chose, so not found is a `.failed` copy the view model writes, with no Try Again; the view model and view take `countryCode:`; the result arrives as an event, `.countryLoaded` or `.countryFailedToLoad`, not as the action `.responseReceived`; `.appeared` is sent from `.onAppear`, not `.task`; the state exposes `title` and `phase` for the view (PR #13).
+> **Changed since:** the detail keeps no request id: a cancelled fetch sends nothing back, so `.responseReceived` carries only the result, and a response to an older request never reaches the reducer; `showsTitle` is `isHeaderUnderBar`; the view model builds the rows' text, so `.loaded` holds `CountryDetailValues`, formatted in the view model's locale rather than the view's `\.locale`; `.failed` holds the `ErrorCopy` the view model chose, so not found is a `.failed` copy the view model writes, with no Try Again; the view model and view take `countryCode:`; the result arrives as an event, `.countryLoaded` or `.countryFailedToLoad`, not as the action `.responseReceived`; `.appeared` is sent from `.onAppear`, not `.task`; the state exposes `title` and `phase` for the view (PR #13); AC-2.1, AC-2.8, AC-2.9 and AC-2.11 are ticked: they were checked by hand, as Verification describes.
 
 *As a user, I can tap a country to see its name, flag, capital, currencies, languages and continent.*
 
@@ -14,17 +14,17 @@
 **Non-goals:** pull-to-refresh on the detail, currency and language names in the user's language (the API's codes and English names are shown as they are), native language names, subdivisions and phone codes, sharing or copying values, UI tests.
 
 ## Acceptance criteria
-- [ ] **AC-2.1** Selecting a row shows that country's detail: pushed on compact width, in the detail column on regular width. On compact width each row shows a disclosure indicator.
+- [x] **AC-2.1** Selecting a row shows that country's detail: pushed on compact width, in the detail column on regular width. On compact width each row shows a disclosure indicator.
 - [x] **AC-2.2** The detail shows a header with the flag and the name, then Capital, Currencies, Languages and Continent rows. The navigation bar shows the name, inline, only once the header's name has scrolled under it, so the name never shows twice and never lags behind the header. Long names and long lists wrap.
 - [x] **AC-2.3** Missing values render as "None": no capital, no currencies (blank entries are dropped) or no languages. Antarctica shows "None" in all three rows.
 - [x] **AC-2.4** The detail shows a loading state until its own query returns; nothing is prefilled from the list. A failure shows an error state with a Try Again button, which repeats the request. Offline has its own message.
 - [x] **AC-2.5** A code the API doesn't know shows a "Country Not Found" state, with no Try Again.
 - [x] **AC-2.6** Snapshots cover the loading, loaded, missing-values, long-name, error, offline and not-found states. Loaded, missing values and long name render on every device preset in light and dark; loading, error, offline and not found render on iPhone 17 Pro in light. Every state also renders at accessibility XXXL on iPhone 17 Pro. On regular width the detail fills the detail column beside the list, with the country's row highlighted; on compact width it shows pushed. The list snapshots whose rows changed are re-recorded.
 - [x] **AC-2.7** All detail copy comes from the String Catalog: row labels, "None", loading, error and not-found messages. Currencies and languages use the locale's list format. The localization tests pass, and the loaded state's right-to-left snapshots (iPhone 17 Pro and iPad landscape) are mirrored.
-- [ ] **AC-2.8** On regular width the selected row stays highlighted. If a search filters it out, its detail stays visible, and a refresh keeps it. Going back on compact width clears the selection.
-- [ ] **AC-2.9** Folding or unfolding the iPhone Duo, and rotating or resizing an iPad window, keep the selected country. After relaunch, each window restores its selection.
+- [x] **AC-2.8** On regular width the selected row stays highlighted. If a search filters it out, its detail stays visible, and a refresh keeps it. Going back on compact width clears the selection.
+- [x] **AC-2.9** Folding or unfolding the iPhone Duo, and rotating or resizing an iPad window, keep the selected country. After relaunch, each window restores its selection.
 - [x] **AC-2.10** Leaving the detail, or selecting another country, cancels its request in flight. A cancelled request never shows an error, the detail loads again when it reappears, and a stale response never replaces the current state.
-- [ ] **AC-2.11** VoiceOver reads the header as the country's name, marked as a heading, without the flag, and each row as its label then its value.
+- [x] **AC-2.11** VoiceOver reads the header as the country's name, marked as a heading, without the flag, and each row as its label then its value.
 
 ## Screen contract
 | State | UI |
