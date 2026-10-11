@@ -23,7 +23,7 @@ Foundation only. It defines what the app works with, independent of where the da
 - `CountriesRepository: Sendable`:
   - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, sorted by name;
   - `country(code:) async throws -> CountryDetails`.
-- `CountriesError: Error, Equatable, Sendable`:
+- `RequestError: Error, Equatable, Sendable`, why any request in the app failed. No case belongs to one feature, so a new repository throws it too:
 
   | Case | When |
   |---|---|
@@ -45,7 +45,7 @@ Implements the repository with Apollo iOS.
   - mappers, one per GraphQL shape: `CountrySummaryMapper`, reused by `CountryDetailsMapper`;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
   - `GraphQLClient`, the seam over `ApolloClient`. Tests replace it with a fake that returns fixture data.
-- The Apollo adapter maps transport errors and GraphQL errors to `CountriesError` and logs the real cause.
+- The Apollo adapter maps transport errors and GraphQL errors to `RequestError` and logs the real cause.
 
 ### AtlasUI
 SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo.

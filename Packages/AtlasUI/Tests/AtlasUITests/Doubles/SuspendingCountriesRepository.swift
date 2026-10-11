@@ -42,7 +42,7 @@ actor SuspendingCountriesRepository: CountriesRepository {
   }
 
   func country(code _: String) async throws -> CountryDetails {
-    throw CountriesError.unknown
+    throw RequestError.unknown
   }
 
   /// Answers the oldest request for `term` still waiting.

@@ -73,10 +73,10 @@ struct CountriesRepositoryTests {
     let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
     let repository = CountriesRepositoryImpl(client: client)
 
-    await #expect(throws: CountriesError.server) {
+    await #expect(throws: RequestError.server) {
       try await repository.countries(matching: " ", forceRefresh: false)
     }
-    await #expect(throws: CountriesError.server) {
+    await #expect(throws: RequestError.server) {
       try await repository.countries(matching: "", forceRefresh: true)
     }
     #expect(await client.cachePolicies == [.cacheFirst, .networkOnly, .networkOnly])
@@ -86,7 +86,7 @@ struct CountriesRepositoryTests {
   func errorsPropagate() async {
     let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
 
-    await #expect(throws: CountriesError.offline) {
+    await #expect(throws: RequestError.offline) {
       try await repository.countries(matching: "", forceRefresh: false)
     }
   }
@@ -112,7 +112,7 @@ struct CountriesRepositoryTests {
     let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-unknown")))
     let repository = CountriesRepositoryImpl(client: client)
 
-    await #expect(throws: CountriesError.notFound) {
+    await #expect(throws: RequestError.notFound) {
       try await repository.country(code: "XX")
     }
   }
@@ -121,7 +121,7 @@ struct CountriesRepositoryTests {
   func countryFailurePropagates() async {
     let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
 
-    await #expect(throws: CountriesError.offline) {
+    await #expect(throws: RequestError.offline) {
       try await repository.country(code: "CH")
     }
   }
@@ -154,7 +154,7 @@ struct CountriesRepositoryTests {
     let failed = Data(#"{ "data": { "country": null }, "errors": [{ "message": "Internal error" }] }"#.utf8)
     let session = try StubURLSession(bodies: [failed, JSONFixture.responseBody("country-CH")])
     let repository = try apolloRepository(session)
-    await #expect(throws: CountriesError.server) {
+    await #expect(throws: RequestError.server) {
       try await repository.country(code: "CH")
     }
 

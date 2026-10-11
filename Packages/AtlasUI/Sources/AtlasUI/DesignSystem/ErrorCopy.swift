@@ -15,7 +15,7 @@ struct ErrorCopy: Equatable {
   /// Whether Try Again could help.
   var canRetry = true
 
-  init(_ error: CountriesError, subject: Subject) {
+  init(_ error: RequestError, subject: Subject) {
     switch error {
     case .offline:
       title = String(localized: .errorOfflineTitle)

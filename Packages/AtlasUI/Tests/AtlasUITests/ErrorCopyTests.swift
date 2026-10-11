@@ -19,9 +19,9 @@ struct ErrorCopyTests {
   /// The list never gets `.notFound`; if it did, its generic failure would fit.
   @Test(
     "AC-1.10 error copy comes from the catalog",
-    arguments: [CountriesError.network, .server, .decoding, .notFound, .unknown]
+    arguments: [RequestError.network, .server, .decoding, .notFound, .unknown]
   )
-  func errorCopyComesFromTheCatalog(error: CountriesError) {
+  func errorCopyComesFromTheCatalog(error: RequestError) {
     let copy = ErrorCopy(error, subject: .countries)
 
     #expect(copy.title == String(localized: .countryListErrorTitle))
@@ -30,8 +30,8 @@ struct ErrorCopyTests {
     #expect(copy.canRetry)
   }
 
-  @Test("AC-2.4 the detail's error names a country", arguments: [CountriesError.network, .server, .decoding, .unknown])
-  func detailErrorNamesACountry(error: CountriesError) {
+  @Test("AC-2.4 the detail's error names a country", arguments: [RequestError.network, .server, .decoding, .unknown])
+  func detailErrorNamesACountry(error: RequestError) {
     let copy = ErrorCopy(error, subject: .country)
 
     #expect(copy.title == String(localized: .countryDetailErrorTitle))

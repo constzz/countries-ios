@@ -14,5 +14,5 @@ enum CountryListAction: MVIAction {
   case searchSettled(String)
   /// A search is still running long enough after it started to show its progress.
   case searchProgressDue(requestID: Int)
-  case responseReceived(requestID: Int, Result<[CountrySummary], CountriesError>)
+  case responseReceived(requestID: Int, Result<[CountrySummary], RequestError>)
 }

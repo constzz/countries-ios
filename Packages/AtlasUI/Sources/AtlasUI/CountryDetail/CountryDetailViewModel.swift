@@ -64,7 +64,7 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
 
   private func handleResponse(
     _ current: CountryDetailState,
-    _ result: Result<CountryDetails, CountriesError>
+    _ result: Result<CountryDetails, RequestError>
   ) -> CountryDetailState {
     guard current.content == .loading else {
       return current
@@ -94,13 +94,13 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
   private func fetch() {
     fetchTask?.cancel()
     fetchTask = launchEffect { [weak self, repository, code] in
-      let result: Result<CountryDetails, CountriesError>
+      let result: Result<CountryDetails, RequestError>
       do {
         result = try await .success(repository.country(code: code))
       } catch is CancellationError {
         return
       } catch {
-        result = .failure(error as? CountriesError ?? .unknown)
+        result = .failure(error as? RequestError ?? .unknown)
       }
       guard !Task.isCancelled else {
         return

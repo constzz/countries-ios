@@ -5,7 +5,7 @@ import SwiftUI
 enum LoadPhase: Equatable {
   case loading
   case empty(query: String)
-  case failed(CountriesError)
+  case failed(RequestError)
 }
 
 extension View {

@@ -7,7 +7,7 @@ struct CountryListState: MVIState {
     case loading
     case loaded([CountrySummary])
     case empty(query: String)
-    case failed(CountriesError)
+    case failed(RequestError)
   }
 
   var content: Content = .idle

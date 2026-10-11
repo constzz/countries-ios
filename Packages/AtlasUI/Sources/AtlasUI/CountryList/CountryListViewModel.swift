@@ -124,7 +124,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
 
   /// Applies the response to the latest request; responses to older ones are ignored.
   private func handleResponse(
-    _ result: Result<[CountrySummary], CountriesError>,
+    _ result: Result<[CountrySummary], RequestError>,
     for requestID: Int,
     in current: CountryListState
   ) -> CountryListState {
@@ -198,13 +198,13 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private func fetch(_ request: CountriesRequest) {
     fetchTask?.cancel()
     fetchTask = launchEffect { [weak self, repository] in
-      let result: Result<[CountrySummary], CountriesError>
+      let result: Result<[CountrySummary], RequestError>
       do {
         result = try await .success(repository.countries(matching: request.term, forceRefresh: request.forceRefresh))
       } catch is CancellationError {
         return
       } catch {
-        result = .failure(error as? CountriesError ?? .unknown)
+        result = .failure(error as? RequestError ?? .unknown)
       }
       await self?.send(.responseReceived(requestID: request.id, result)).value
     }

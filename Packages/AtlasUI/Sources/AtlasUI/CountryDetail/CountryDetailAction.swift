@@ -11,5 +11,5 @@ enum CountryDetailAction: MVIAction {
 
   // MARK: Sent by the view model
 
-  case responseReceived(Result<CountryDetails, CountriesError>)
+  case responseReceived(Result<CountryDetails, RequestError>)
 }

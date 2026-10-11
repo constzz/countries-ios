@@ -5,7 +5,7 @@ struct CountryDetailState: MVIState {
     case idle
     case loading
     case loaded(CountryDetails)
-    case failed(CountriesError)
+    case failed(RequestError)
   }
 
   var content: Content = .idle

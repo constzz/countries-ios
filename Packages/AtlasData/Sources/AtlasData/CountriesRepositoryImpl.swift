@@ -23,7 +23,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
       }
       guard !data.countries.isEmpty else {
         Logger.network.error("\(CountriesAPI.CountriesQuery.operationName, privacy: .public) returned no countries")
-        throw CountriesError.server
+        throw RequestError.server
       }
     }
     // The API sorts by code.
@@ -37,7 +37,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
     guard let country = try await client.fetch(query, cachePolicy: .cacheFirst).country else {
       let operation = CountriesAPI.CountryQuery.operationName
       Logger.network.error("\(operation, privacy: .public) found no country \(code, privacy: .public)")
-      throw CountriesError.notFound
+      throw RequestError.notFound
     }
     return CountryDetailsMapper.map(country)
   }
