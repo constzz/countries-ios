@@ -91,24 +91,12 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     return next
   }
 
-  /// Cancels the fetch in flight and starts a new one. A cancelled fetch sends nothing back, even
-  /// if its response already arrived: the cancel and the check before sending both run on the main
-  /// actor.
   private func fetch() {
     fetchTask?.cancel()
-    fetchTask = launchEffect { [weak self, repository, countryCode] in
-      let result: Result<CountryDetails, RequestError>
-      do {
-        result = try await .success(repository.country(code: countryCode))
-      } catch is CancellationError {
-        return
-      } catch {
-        result = .failure(error as? RequestError ?? .unknown)
-      }
-      guard !Task.isCancelled else {
-        return
-      }
-      await self?.send(.responseReceived(result)).value
+    fetchTask = launchEffect { [repository, countryCode] in
+      try await repository.country(code: countryCode)
+    } then: { result in
+      .responseReceived(result.mapError { $0 as? RequestError ?? .unknown })
     }
   }
 

@@ -18,7 +18,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
 
   /// Returns the state after `action`. The only place the state changes: hand each action to a
   /// `handle…` method that reads `current`, never `state`, and return at once. Start async work
-  /// with `launchEffect(_:)` and send its result back as an action.
+  /// with `launchEffect(_:then:)`, which sends its result back as an action.
   func reduce(_ current: State, _: Action) -> State {
     current
   }
@@ -47,6 +47,30 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
     let task = Task(operation: work)
     launchedWork.append(task)
     return task
+  }
+
+  /// Runs `work`, then sends the action `then` makes from its result. A cancelled task sends
+  /// nothing, even if its result has already arrived: the cancel and the check before sending both
+  /// run on the main actor.
+  @discardableResult
+  final func launchEffect<Value>(
+    _ work: @escaping @MainActor () async throws -> Value,
+    then action: @escaping @MainActor (Result<Value, any Error>) -> Action
+  ) -> Task<Void, Never> {
+    launchEffect { [weak self] in
+      let result: Result<Value, any Error>
+      do {
+        result = try await .success(work())
+      } catch is CancellationError {
+        return
+      } catch {
+        result = .failure(error)
+      }
+      guard !Task.isCancelled else {
+        return
+      }
+      await self?.send(action(result)).value
+    }
   }
 
   /// Sends a one-time UI event to every subscriber. With none, it's dropped: no screen is on

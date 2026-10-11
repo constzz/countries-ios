@@ -140,34 +140,19 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
 
   private func scheduleSearchProgress() {
     let wait = time.wait(for: .milliseconds(500))
-    searchProgressTask = launchEffect { [weak self] in
-      do {
-        try await wait()
-      } catch {
-        return
-      }
-      guard !Task.isCancelled else {
-        return
-      }
-      self?.send(.searchProgressDue)
+    searchProgressTask = launchEffect {
+      try await wait()
+    } then: { _ in
+      .searchProgressDue
     }
   }
 
   private func fetch(_ request: CountriesRequest) {
     fetchTask?.cancel()
-    fetchTask = launchEffect { [weak self, repository] in
-      let result: Result<[CountrySummary], RequestError>
-      do {
-        result = try await .success(repository.countries(matching: request.term, forceRefresh: request.forceRefresh))
-      } catch is CancellationError {
-        return
-      } catch {
-        result = .failure(error as? RequestError ?? .unknown)
-      }
-      guard !Task.isCancelled else {
-        return
-      }
-      await self?.send(.responseReceived(request, result)).value
+    fetchTask = launchEffect { [repository] in
+      try await repository.countries(matching: request.term, forceRefresh: request.forceRefresh)
+    } then: { result in
+      .responseReceived(request, result.mapError { $0 as? RequestError ?? .unknown })
     }
   }
 
