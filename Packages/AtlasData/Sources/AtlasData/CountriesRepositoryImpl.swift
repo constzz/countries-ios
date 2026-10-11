@@ -30,7 +30,11 @@ func makeApolloClient(
 }
 
 struct CountriesRepositoryImpl: CountriesRepository {
-  let client: any GraphQLClient
+  private let client: any GraphQLClient
+
+  init(client: any GraphQLClient) {
+    self.client = client
+  }
 
   func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary] {
     let filter: GraphQLNullable<CountriesAPI.CountryFilterInput> = SearchPattern.regex(for: term)

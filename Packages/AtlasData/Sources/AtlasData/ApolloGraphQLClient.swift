@@ -5,7 +5,11 @@ import os
 
 /// Fetches through `ApolloClient` and maps every failure to `CountriesError`, logging its cause.
 struct ApolloGraphQLClient: GraphQLClient {
-  let client: ApolloClient
+  private let client: ApolloClient
+
+  init(client: ApolloClient) {
+    self.client = client
+  }
 
   func fetch<Query: GraphQLQuery>(
     _ query: Query,
