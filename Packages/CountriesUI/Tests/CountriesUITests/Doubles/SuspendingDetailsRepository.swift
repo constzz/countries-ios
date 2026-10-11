@@ -1,7 +1,7 @@
 import CountriesDomain
 
-/// Holds every `country(code:)` request until the test answers it, oldest first, or until its
-/// task is cancelled. The list's requests fail at once.
+/// Holds every `country(code:)` request until the test answers it by its index, or until its task
+/// is cancelled. The list's requests fail at once.
 actor SuspendingDetailsRepository: CountriesRepository {
   private struct Pending {
     let id: Int
@@ -42,12 +42,14 @@ actor SuspendingDetailsRepository: CountriesRepository {
     }
   }
 
-  /// Answers the oldest request still waiting.
-  func respond(with result: Result<CountryDetails, CountriesError>) {
-    guard !pending.isEmpty else {
+  /// Answers request `index`, counting from 0 in the order they came, if it's still waiting. A
+  /// cancellation reaches the repository a moment late, so answering "the oldest request" could
+  /// answer one already cancelled.
+  func respond(to index: Int, with result: Result<CountryDetails, CountriesError>) {
+    guard let position = pending.firstIndex(where: { $0.id == index }) else {
       return
     }
-    pending.removeFirst().continuation.resume(with: result.mapError { $0 as any Error })
+    pending.remove(at: position).continuation.resume(with: result.mapError { $0 as any Error })
   }
 
   private func cancel(_ id: Int) {

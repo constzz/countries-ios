@@ -21,7 +21,7 @@ struct CountryDetailViewModelTests {
     #expect(viewModel.state.content == .loading)
     let isRequested = await eventually { await repository.requestedCodes == ["CH"] }
     #expect(isRequested)
-    await repository.respond(with: .success(details))
+    await repository.respond(to: 0, with: .success(details))
     await load.value
     #expect(viewModel.state.content == .loaded(details))
   }
@@ -138,7 +138,7 @@ struct CountryDetailViewModelTests {
     #expect(viewModel.state.content == .loading)
     let isRequested = await eventually { await repository.requestedCodes == ["CH", "CH"] }
     #expect(isRequested)
-    await repository.respond(with: .success(details))
+    await repository.respond(to: 1, with: .success(details))
     await reload.value
     #expect(viewModel.state.content == .loaded(details))
   }
@@ -153,11 +153,11 @@ struct CountryDetailViewModelTests {
     let reload = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH", "CH"] }
 
-    await repository.respond(with: .failure(.network))
+    await repository.respond(to: 0, with: .failure(.network))
     await staleLoad.value
 
     #expect(viewModel.state.content == .loading)
-    await repository.respond(with: .success(details))
+    await repository.respond(to: 1, with: .success(details))
     await reload.value
     #expect(viewModel.state.content == .loaded(details))
   }
