@@ -17,7 +17,20 @@ extension View {
     loadingLabel: Text,
     retry: @escaping () -> Void
   ) -> some View {
-    overlay {
+    modifier(LoadStateModifier(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry))
+  }
+}
+
+/// The loading, empty and failed states both screens show over their content, so they look and
+/// behave the same.
+private struct LoadStateModifier: ViewModifier {
+  let phase: LoadPhase?
+  let subject: ErrorCopy.Subject
+  let loadingLabel: Text
+  let retry: () -> Void
+
+  func body(content: Content) -> some View {
+    content.overlay {
       if let phase {
         LoadStateView(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry)
       }
