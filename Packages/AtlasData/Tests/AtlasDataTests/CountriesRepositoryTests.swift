@@ -1,0 +1,173 @@
+import Apollo
+import AtlasDomain
+import Foundation
+import Testing
+@testable import AtlasData
+
+@Suite("CountriesRepository")
+struct CountriesRepositoryTests {
+  @Test("AC-1.1 returns every country sorted by name")
+  func returnsEveryCountrySortedByName() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("countries")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let countries = try await repository.countries(matching: "", forceRefresh: false)
+
+    #expect(countries.count == 250)
+    let names = countries.map(\.name)
+    #expect(names == names.sorted { $0.localizedStandardCompare($1) == .orderedAscending })
+    #expect(names.prefix(3) == ["Afghanistan", "Åland", "Albania"])
+    #expect(countries.first { $0.code == "CH" }?.continent == Continent(code: "EU", name: "Europe"))
+  }
+
+  @Test("AC-1.3 sends the pattern as a name regex filter")
+  func sendsThePatternAsANameRegexFilter() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    _ = try await repository.countries(matching: " Ger(", forceRefresh: false)
+
+    let query = try #require(await client.queries.first as? CountriesAPI.CountriesQuery)
+    let expected = CountriesAPI.CountryFilterInput(name: .some(.init(regex: .some(#"[gG][eE][rR]\("#))))
+    #expect(query.filter == .some(expected))
+  }
+
+  @Test("AC-1.3 a blank term sends no filter")
+  func blankTermSendsNoFilter() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("countries")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    _ = try await repository.countries(matching: "  ", forceRefresh: false)
+
+    let query = try #require(await client.queries.first as? CountriesAPI.CountriesQuery)
+    #expect(query.filter == .none)
+  }
+
+  @Test("AC-1.8 force refresh fetches network-only, otherwise the cache comes first")
+  func forceRefreshFetchesNetworkOnly() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("countries")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    _ = try await repository.countries(matching: "", forceRefresh: false)
+    _ = try await repository.countries(matching: "", forceRefresh: true)
+
+    #expect(await client.cachePolicies == [.cacheFirst, .networkOnly])
+  }
+
+  @Test("AC-1.6 a blank term with no countries refetches from the network")
+  func blankTermWithNoCountriesRefetches() async throws {
+    let client = try FakeGraphQLClient(results: [
+      .success(JSONFixture.object(#"{ "countries": [] }"#)),
+      .success(JSONFixture.responseData("countries")),
+    ])
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let countries = try await repository.countries(matching: "", forceRefresh: false)
+
+    #expect(countries.count == 250)
+    #expect(await client.cachePolicies == [.cacheFirst, .networkOnly])
+  }
+
+  @Test("AC-1.6 a blank term with no countries from the network is a server error")
+  func blankTermWithNoCountriesIsAServerError() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.object(#"{ "countries": [] }"#)))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    await #expect(throws: CountriesError.server) {
+      try await repository.countries(matching: " ", forceRefresh: false)
+    }
+    await #expect(throws: CountriesError.server) {
+      try await repository.countries(matching: "", forceRefresh: true)
+    }
+    #expect(await client.cachePolicies == [.cacheFirst, .networkOnly, .networkOnly])
+  }
+
+  @Test("AC-1.6 errors reach the caller unchanged")
+  func errorsPropagate() async {
+    let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
+
+    await #expect(throws: CountriesError.offline) {
+      try await repository.countries(matching: "", forceRefresh: false)
+    }
+  }
+
+  // MARK: One country
+
+  @Test("AC-2.2 fetches the country by code, cache first")
+  func fetchesTheCountryByCode() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-CH")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(details.currencies == ["CHE", "CHF", "CHW"])
+    let query = try #require(await client.queries.first as? CountriesAPI.CountryQuery)
+    #expect(query.code == "CH")
+    #expect(await client.cachePolicies == [.cacheFirst])
+  }
+
+  @Test("AC-2.5 a null country is not found")
+  func nullCountryIsNotFound() async throws {
+    let client = try FakeGraphQLClient(result: .success(JSONFixture.responseData("country-unknown")))
+    let repository = CountriesRepositoryImpl(client: client)
+
+    await #expect(throws: CountriesError.notFound) {
+      try await repository.country(code: "XX")
+    }
+  }
+
+  @Test("AC-2.4 a failure reaches the caller unchanged")
+  func countryFailurePropagates() async {
+    let repository = CountriesRepositoryImpl(client: FakeGraphQLClient(result: .failure(.offline)))
+
+    await #expect(throws: CountriesError.offline) {
+      try await repository.country(code: "CH")
+    }
+  }
+
+  // MARK: Client
+
+  @Test("AC-1.13 requests time out after 15 s")
+  func requestsTimeOut() throws {
+    let endpoint = try #require(URL(string: "https://countries.example/graphql"))
+    let client = makeApolloClient(endpoint: endpoint)
+    #expect(client.defaultRequestConfiguration.requestTimeout == 15)
+  }
+
+  @Test("AC-2.2 a country already fetched comes from the cache")
+  func fetchedCountryComesFromTheCache() async throws {
+    let session = try StubURLSession(bodies: [JSONFixture.responseBody("country-CH")])
+    let repository = try apolloRepository(session)
+
+    _ = try await repository.country(code: "CH")
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(await session.requestCount == 1)
+  }
+
+  /// Apollo writes a response's data even when it has errors, and a failed field arrives as null:
+  /// read back, it would make Try Again show "Country Not Found".
+  @Test("AC-2.4 a response with GraphQL errors stays out of the cache")
+  func responseWithErrorsStaysOutOfTheCache() async throws {
+    let failed = Data(#"{ "data": { "country": null }, "errors": [{ "message": "Internal error" }] }"#.utf8)
+    let session = try StubURLSession(bodies: [failed, JSONFixture.responseBody("country-CH")])
+    let repository = try apolloRepository(session)
+    await #expect(throws: CountriesError.server) {
+      try await repository.country(code: "CH")
+    }
+
+    let details = try await repository.country(code: "CH")
+
+    #expect(details.summary.name == "Switzerland")
+    #expect(await session.requestCount == 2)
+  }
+
+  /// The repository over a real `ApolloClient`, cache included, whose requests `session` answers.
+  private func apolloRepository(_ session: StubURLSession) throws -> CountriesRepositoryImpl {
+    let endpoint = try #require(URL(string: "https://countries.example/graphql"))
+    let client = makeApolloClient(endpoint: endpoint, session: session)
+    return CountriesRepositoryImpl(client: ApolloGraphQLClient(client: client))
+  }
+}

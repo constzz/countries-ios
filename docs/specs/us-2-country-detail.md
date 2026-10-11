@@ -6,7 +6,7 @@
 - **Domain:** `CountryDetails`, `Language`, and `CountriesRepository.country(code:)`.
 - **Data:** `CountryQuery($code:)` on the `CountryBasics` fragment, the detail mapper, which reuses `CountrySummaryMapper`, `null` → `.notFound`, the repository method, and JSON fixtures captured from the live API (Antarctica, Switzerland, an unknown code).
 - **UI:** `CountryDetailViewModel` on the shared MVI base, the detail screen as a `List` of `LabeledContent` rows under a flag-and-name header, loading, error and not-found through `.loadState`, selectable list rows that fill the split view's detail column (pushed on compact width), the selection kept in `RootView` and restored with `@SceneStorage`, `RootView` taking the repository in its `init` in place of the `\.countriesRepository` environment entry, previews and snapshots of every detail state, and the list snapshots re-recorded for their new disclosure indicators and selection highlight.
-- **App:** `CountriesApp` passes the container's repository to `RootView(repository:)` instead of the environment. `AppContainer` is unchanged; its repository gains the new method.
+- **App:** `AtlasApp` passes the container's repository to `RootView(repository:)` instead of the environment. `AppContainer` is unchanged; its repository gains the new method.
 
 **Non-goals:** pull-to-refresh on the detail, currency and language names in the user's language (the API's codes and English names are shown as they are), native language names, subdivisions and phone codes, sharing or copying values, UI tests.
 
@@ -52,7 +52,7 @@
 | Relaunch | Restored from `@SceneStorage`, per window |
 
 ## Presentation: MVI
-The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rules in `docs/ARCHITECTURE.md`), the same way the list does. Each type has its own file in `CountryDetail/`.
+The screen conforms to the shared MVI types in `AtlasUI/Architecture/` (rules in `docs/ARCHITECTURE.md`), the same way the list does. Each type has its own file in `CountryDetail/`.
 - **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, `requestID`, the latest request's id, and `showsTitle`, whether the header's name is under the navigation bar.
 - **Actions:** `CountryDetailAction: MVIAction`. The view sends `.appeared`, `.disappeared`, `.retryTapped` and `.headerScrolled(underBar:)`; the view model sends `.responseReceived(requestID:, Result<CountryDetails, CountriesError>)`.
 - **Effects:** `CountryDetailEffect: MVIEffect` is a caseless enum: the screen has no one-time UI events, so its view doesn't subscribe to `effects()`.
@@ -62,7 +62,7 @@ The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rule
 
 ### Selection and navigation
 - `RootView` owns the selection as `@SceneStorage("selectedCountryCode") var selection: String?`, so each window keeps its own and restores it after relaunch. Neither view model holds it.
-- `CountriesSplitView` takes the sidebar and the detail column. The detail column shows the selected country's `CountryDetailView`, or the `SelectCountryPlaceholder` when nothing is selected.
+- `RootSplitView` takes the sidebar and the detail column. The detail column shows the selected country's `CountryDetailView`, or the `SelectCountryPlaceholder` when nothing is selected.
 - The list is `List(rows, selection: $selection)` with each row a `NavigationLink(value: country.code)`. The split view highlights the selected row on regular width, pushes the detail on compact width, and clears the selection when the user goes back there.
 - `CountryListView` and `CountryListContent` take a `Binding<String?>` for the selection. The list's state and view model don't change.
 

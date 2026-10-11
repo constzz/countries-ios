@@ -5,16 +5,16 @@ This document describes the target shape of the app. Each story builds its own s
 ## Packages
 
 ```
-                      CountriesApp
-     (@main AppLauncher, App, AppContainer: composition root)
-              │               │               │
-              ▼               ▼               ▼
-        CountriesUI ──► CountriesDomain ◄── CountriesData ──► Apollo iOS
+                       Atlas
+  (@main AppLauncher, AtlasApp, AppContainer: composition root)
+           │             │              │
+           ▼             ▼              ▼
+        AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
 ```
 
 The dependency direction is `UI → Domain ← Data`. The app target is the only place that sees all three.
 
-### CountriesDomain
+### AtlasDomain
 Foundation only. It defines what the app works with, independent of where the data comes from.
 - `Sendable` value models:
   - `CountrySummary`: `code` (also its `id`), `name`, `emoji`, `continent`.
@@ -33,9 +33,9 @@ Foundation only. It defines what the app works with, independent of where the da
   | `.notFound` | `country(code:)` returned null |
   | `.decoding`, `.unknown` | everything else |
 
-  Cancellation (`CancellationError`, `URLError.cancelled`) is not a failure: it never becomes an error state. The domain error carries no user-facing text; the copy lives in CountriesUI.
+  Cancellation (`CancellationError`, `URLError.cancelled`) is not a failure: it never becomes an error state. The domain error carries no user-facing text; the copy lives in AtlasUI.
 
-### CountriesData
+### AtlasData
 Implements the repository with Apollo iOS.
 - Operations `CountriesQuery($filter:)` and `CountryQuery($code:)`, both built on the fragment `CountryBasics { code name emoji continent { code name } }`. Each screen has its own query, so the detail screen can gain fields without touching the list.
 - Apollo's generated code is embedded in this target with `internal` access. No public API can expose a generated type: the compiler rejects it.
@@ -47,18 +47,18 @@ Implements the repository with Apollo iOS.
   - `GraphQLClient`, the seam over `ApolloClient`. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `CountriesError` and logs the real cause.
 
-### CountriesUI
-SwiftUI screens and their view models. It imports only CountriesDomain, never Apollo.
+### AtlasUI
+SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo.
 - `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
 - `CountryList/` and `CountryDetail/`, one folder per feature.
 - `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
-### CountriesApp
-`AppLauncher`, the `@main` entry point; the `CountriesApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through CountriesData's public factory, and `CountriesApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
+### Atlas
+`AppLauncher`, the `@main` entry point; the `AtlasApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through AtlasData's public factory, and `AtlasApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves AtlasData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `AtlasApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
-- Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
+- Never skip a layer, and map at each boundary: generated types stay in AtlasData, and domain types are what crosses into the UI.
 - Protocols are `public`; implementations are `internal`.
 - A mapper is a `final class …Mapper` with a `private init()` and one `static func map`, tested on its own. It is never an initializer in an extension on the type it builds, where it would sit among that type's own initializers.
 - Dependencies come in through `init`. No singletons.
@@ -71,7 +71,7 @@ SwiftUI screens and their view models. It imports only CountriesDomain, never Ap
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
-MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in `CountriesUI/Architecture/`; there's no third-party framework.
+MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in `AtlasUI/Architecture/`; there's no third-party framework.
 - **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Effect>`.
 - **One type per file.** Every top-level type has its own file, named after it, in its feature folder. That includes helper values such as `CountriesRequest`.
 - **State** is one value with everything the screen shows.
@@ -88,8 +88,8 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
 - No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
-- Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `CountriesUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
-- `CountriesApp.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
+- Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `AtlasUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
+- `Atlas.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 
 ## Logging
-`os.Logger`, with a `network` category in CountriesData, called from the Apollo adapter's error mapping. User input such as search terms is logged as `.private`. `print` is banned by lint.
+`os.Logger`, with a `network` category in AtlasData, called from the Apollo adapter's error mapping. User input such as search terms is logged as `.private`. `print` is banned by lint.

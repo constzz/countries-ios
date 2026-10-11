@@ -19,9 +19,9 @@
   "testTargets" : [
     {
       "target" : {
-        "containerPath" : "container:CountriesApp.xcodeproj",
+        "containerPath" : "container:Atlas.xcodeproj",
         "identifier" : "C0A100000000000000000062",
-        "name" : "CountriesUISnapshotTests"
+        "name" : "AtlasUISnapshotTests"
       }
     }
   ],

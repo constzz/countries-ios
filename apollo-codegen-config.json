@@ -2,18 +2,18 @@
   "schemaNamespace" : "CountriesAPI",
   "input" : {
     "schemaSearchPaths" : [
-      "Packages/CountriesData/Sources/CountriesData/GraphQL/schema.graphqls"
+      "Packages/AtlasData/Sources/AtlasData/GraphQL/schema.graphqls"
     ],
     "operationSearchPaths" : [
-      "Packages/CountriesData/Sources/CountriesData/GraphQL/**/*.graphql"
+      "Packages/AtlasData/Sources/AtlasData/GraphQL/**/*.graphql"
     ]
   },
   "output" : {
     "schemaTypes" : {
-      "path" : "Packages/CountriesData/Sources/CountriesData/Generated",
+      "path" : "Packages/AtlasData/Sources/AtlasData/Generated",
       "moduleType" : {
         "embeddedInTarget" : {
-          "name" : "CountriesData",
+          "name" : "AtlasData",
           "accessModifier" : "internal"
         }
       }
@@ -42,6 +42,6 @@
     },
     "downloadTimeout" : 60,
     "headers" : [],
-    "outputPath" : "Packages/CountriesData/Sources/CountriesData/GraphQL/schema.graphqls"
+    "outputPath" : "Packages/AtlasData/Sources/AtlasData/GraphQL/schema.graphqls"
   }
 }
