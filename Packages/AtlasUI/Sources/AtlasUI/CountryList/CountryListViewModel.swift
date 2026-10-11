@@ -6,8 +6,11 @@ import Foundation
 /// announce search results.
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
-  private let debounceInterval: DispatchQueue.SchedulerTimeType.Stride
-  private let searchProgressDelay: Duration
+  /// Holds the search pipe's terms back until typing pauses.
+  private let debounced: (AnyPublisher<String, Never>) -> AnyPublisher<String, Never>
+  /// Starts the wait before "Searching…" shows. The wait it returns ends 500 ms after this call,
+  /// however late the task running it starts.
+  private let makeSearchProgressWait: () -> @Sendable () async throws -> Void
   /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
   /// view, so `init` only stores dependencies.
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
@@ -15,23 +18,30 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
+  /// - Parameters:
+  ///   - scheduler: where the 300 ms debounce waits. It must run each action later, on the main
+  ///     thread: an action run inside the `schedule` call would send its term in the middle of a
+  ///     `reduce`.
+  ///   - clock: what the 500 ms wait before "Searching…" shows is measured on.
   init(
     repository: any CountriesRepository,
-    debounceInterval: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(300),
-    searchProgressDelay: Duration = .milliseconds(500)
+    scheduler: some Scheduler = DispatchQueue.main,
+    clock: some Clock<Duration> = ContinuousClock()
   ) {
     self.repository = repository
-    self.debounceInterval = debounceInterval
-    self.searchProgressDelay = searchProgressDelay
+    debounced = { $0.debounce(for: .milliseconds(300), scheduler: scheduler).eraseToAnyPublisher() }
+    makeSearchProgressWait = {
+      let deadline = clock.now.advanced(by: .milliseconds(500))
+      return { try await clock.sleep(until: deadline, tolerance: nil) }
+    }
     super.init(initialState: CountryListState())
   }
 
   /// The search field's input pipe: trim, debounce, then drop repeats of the last term.
   private func makeSearchInput() -> PassthroughSubject<String, Never> {
     let input = PassthroughSubject<String, Never>()
-    input
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .debounce(for: debounceInterval, scheduler: DispatchQueue.main)
+    let trimmed = input.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+    debounced(trimmed.eraseToAnyPublisher())
       .removeDuplicates()
       .sink { [weak self] term in self?.send(.searchSettled(term)) }
       .store(in: &subscriptions)
@@ -172,12 +182,13 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  /// Sends `.searchProgressDue` once `request` has run for `searchProgressDelay`, unless its
+  /// Sends `.searchProgressDue` once `request` has run for 500 ms, unless its
   /// response or a newer request cancels the wait first.
   private func scheduleSearchProgress(for request: CountriesRequest) {
-    searchProgressTask = launchEffect { [weak self, searchProgressDelay] in
+    let wait = makeSearchProgressWait()
+    searchProgressTask = launchEffect { [weak self] in
       do {
-        try await Task.sleep(for: searchProgressDelay)
+        try await wait()
       } catch {
         return
       }

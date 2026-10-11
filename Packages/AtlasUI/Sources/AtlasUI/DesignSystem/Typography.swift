@@ -21,7 +21,7 @@ enum Typography {
       .title.bold()
     }
 
-    /// A fixed `size`: it doesn't scale with Dynamic Type.
+    /// Exactly `size` points: the font adds no Dynamic Type scaling of its own.
     static func flag(size: CGFloat) -> Font {
       .system(size: size)
     }
