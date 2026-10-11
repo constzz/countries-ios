@@ -3,32 +3,6 @@ import AtlasDomain
 import Foundation
 import os
 
-public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
-  CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint)))
-}
-
-/// How long a request may wait for data before it fails, instead of URLSession's 60 s.
-private let requestTimeout: TimeInterval = 15
-
-/// The client with an in-memory cache that never stores a response with GraphQL errors.
-func makeApolloClient(
-  endpoint: URL,
-  session: any ApolloURLSession = URLSession(configuration: .default)
-) -> ApolloClient {
-  let store = ApolloStore(cache: InMemoryNormalizedCache())
-  let transport = RequestChainNetworkTransport(
-    urlSession: session,
-    interceptorProvider: CountriesInterceptorProvider(),
-    store: store,
-    endpointURL: endpoint
-  )
-  return ApolloClient(
-    networkTransport: transport,
-    store: store,
-    defaultRequestConfiguration: RequestConfiguration(requestTimeout: requestTimeout)
-  )
-}
-
 struct CountriesRepositoryImpl: CountriesRepository {
   private let client: any GraphQLClient
 
