@@ -1,7 +1,6 @@
 import CountriesDomain
 
 extension CountrySummary {
-  /// Maps the fields every country screen selects.
   init(fragment: CountriesAPI.CountryBasics) {
     self.init(
       code: fragment.code,

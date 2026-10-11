@@ -1,6 +1,6 @@
 import Apollo
 
-/// The seam between the repository and Apollo, so tests can answer queries with fixtures.
+/// The seam between the repository and Apollo.
 protocol GraphQLClient: Sendable {
   /// The query's data. Throws `CountriesError`, or `CancellationError` when cancelled.
   func fetch<Query: GraphQLQuery>(
