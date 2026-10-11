@@ -16,15 +16,16 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  /// - Parameter scheduler: where the debounce waits. It must run its actions on the main thread.
-  init<S: Scheduler>(
+  /// - Parameter scheduler: where the 300 ms debounce waits. It must run each action later, on the
+  ///   main thread: an action run inside the `schedule` call would send its term in the middle of
+  ///   a `reduce`.
+  init(
     repository: any CountriesRepository,
-    debounceInterval: S.SchedulerTimeType.Stride = .milliseconds(300),
-    scheduler: S = DispatchQueue.main,
+    scheduler: some Scheduler = DispatchQueue.main,
     searchProgressDelay: Duration = .milliseconds(500)
   ) {
     self.repository = repository
-    debounced = { $0.debounce(for: debounceInterval, scheduler: scheduler).eraseToAnyPublisher() }
+    debounced = { $0.debounce(for: .milliseconds(300), scheduler: scheduler).eraseToAnyPublisher() }
     self.searchProgressDelay = searchProgressDelay
     super.init(initialState: CountryListState())
   }
