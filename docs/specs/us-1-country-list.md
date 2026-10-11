@@ -61,7 +61,7 @@ The screen conforms to the shared MVI types in `CountriesUI/Architecture/` (rule
 ## Data layer
 - **Operation:** `query Countries($filter: CountryFilterInput) { countries(filter: $filter) { ...CountryBasics } }`. A blank term sends no filter.
 - **`SearchPattern`** (internal, pure) turns a term into a regex for the `name` filter: trim whitespace (blank means no filter), escape `\ ^ $ . | ? * + ( ) [ ] { }`, and wrap each cased letter as `[xX]`. Letters whose case mapping isn't one-to-one, such as `ß`, pass through unchanged. The API's regex is case-sensitive, so this makes the search case-insensitive, and an unescaped `(` would return a server error.
-- **Mapping:** `CountrySummary(fragment: CountryBasics)` maps code, name, emoji and continent (code and name). One mapper per GraphQL shape; US-2 reuses it.
+- **Mapping:** `CountrySummaryMapper` maps the `CountryBasics` fragment's code, name, emoji and continent (code and name). One mapper per GraphQL shape; US-2 reuses it.
 - **Repository:** `countries(matching:forceRefresh:)` fetches with `.cacheFirst`, or `.networkOnly` when `forceRefresh` is true, maps every country and sorts by name with `localizedStandardCompare`. Every country has a name, so an empty list for a blank term is a bad response: if it came from the cache, the repository fetches again from the network, and if the network also returns none, it throws `.server`.
 - **`GraphQLClient`** (internal protocol): `fetch<Q: GraphQLQuery>(_:cachePolicy:) async throws -> Q.Data`. The Apollo adapter maps a response with GraphQL errors or no data to `.server`, and transport failures as below. Tests use `FakeGraphQLClient`, which returns `Q.Data` built from JSON fixtures captured from the live API.
 - **Error mapping** (a pure helper): `URLError.notConnectedToInternet` and `.networkConnectionLost` → `.offline`; `.timedOut` and other transport or HTTP failures → `.network`; `CancellationError` and `URLError.cancelled` → rethrown as `CancellationError`; `JSONResponseParsingError`, `JSONDecodingError` and `GraphQLExecutionError` → `.decoding`; anything else → `.unknown`. Each mapped failure is logged to the `network` category with its real cause; the search term is `.private`.
@@ -116,7 +116,7 @@ public protocol CountriesRepository: Sendable {
 ## Test plan
 | AC | Tests |
 |---|---|
-| 1.1 | `CountrySummaryMappingTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); view model: "AC-1.1 a response shows the loaded rows", "AC-1.1 appearing loads every country" |
+| 1.1 | `CountrySummaryMapperTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); view model: "AC-1.1 a response shows the loaded rows", "AC-1.1 appearing loads every country" |
 | 1.2 | View model, short injected interval and recorded mock calls: "AC-1.2 typing searches once after a pause", "AC-1.2 an unchanged term issues no search", "AC-1.2 returning to the settled term issues no search" |
 | 1.3 | `SearchPatternTests`: "AC-1.3 letters match either case", "AC-1.3 regex metacharacters are escaped", "AC-1.3 a blank term means no filter"; repository: "AC-1.3 sends the pattern as a name regex filter" |
 | 1.4 | View model: "AC-1.4 the first load shows loading", "AC-1.4 a search keeps rows visible and shows Searching after 0.5 s", "AC-1.4 a quick search never shows Searching", "AC-1.4 Searching stays up when a newer search replaces a running one", "AC-1.4 a refresh keeps rows visible" |
