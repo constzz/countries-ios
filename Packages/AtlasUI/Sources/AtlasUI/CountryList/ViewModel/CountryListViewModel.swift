@@ -138,7 +138,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     case let .success(countries):
       next.content = countries.isEmpty ? .empty(query: request.term) : .loaded(countries)
       if request.kind == .search {
-        emit(.announce(resultCount: countries.count))
+        emit(.announce(Self.announcement(forResultCount: countries.count)))
       }
     case let .failure(error):
       next.content = .failed(error)
@@ -207,6 +207,17 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
         result = .failure(error as? RequestError ?? .unknown)
       }
       await self?.send(.responseReceived(requestID: request.id, result)).value
+    }
+  }
+
+  // MARK: Text
+
+  /// What VoiceOver says when a search finishes.
+  private static func announcement(forResultCount count: Int) -> String {
+    if count == 0 {
+      String(localized: .countryListSearchNoResults)
+    } else {
+      String(localized: .countryListSearchResultCount(count))
     }
   }
 }

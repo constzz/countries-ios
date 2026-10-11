@@ -1,13 +1,22 @@
 import AtlasDomain
+import Foundation
 import Testing
 @testable import AtlasUI
 
 /// Every action, sent to the view model with a test repository: the state it leaves and the
-/// requests it makes.
+/// requests it makes. The test plan runs in US English, so the text is checked against English.
 @Suite("CountryDetailViewModel")
 @MainActor
 struct CountryDetailViewModelTests {
   private let details = CountryDetails.switzerland
+  private let values = CountryDetailValues(
+    name: "Switzerland",
+    flag: "🇨🇭",
+    capital: "Bern",
+    currencies: "CHE, CHF, and CHW",
+    languages: "German, French, and Italian",
+    continent: "Europe"
+  )
 
   // MARK: Loading
 
@@ -23,7 +32,7 @@ struct CountryDetailViewModelTests {
     #expect(isRequested)
     await repository.respond(to: 0, with: .success(details))
     await load.value
-    #expect(viewModel.state.content == .loaded(details))
+    #expect(viewModel.state.content == .loaded(values))
   }
 
   @Test("AC-2.4 appearing again loads nothing")
@@ -34,7 +43,7 @@ struct CountryDetailViewModelTests {
 
     await viewModel.send(.appeared).value
 
-    #expect(viewModel.state.content == .loaded(details))
+    #expect(viewModel.state.content == .loaded(values))
     #expect(await repository.requestedCodes == ["CH"])
   }
 
@@ -61,7 +70,7 @@ struct CountryDetailViewModelTests {
 
     #expect(viewModel.state.content == .loading)
     await retry.value
-    #expect(viewModel.state.content == .loaded(details))
+    #expect(viewModel.state.content == .loaded(values))
     #expect(await repository.requestedCodes == ["CH", "CH"])
   }
 
@@ -140,7 +149,7 @@ struct CountryDetailViewModelTests {
     #expect(isRequested)
     await repository.respond(to: 1, with: .success(details))
     await reload.value
-    #expect(viewModel.state.content == .loaded(details))
+    #expect(viewModel.state.content == .loaded(values))
   }
 
   @Test("AC-2.10 a stale response is ignored")
@@ -159,6 +168,60 @@ struct CountryDetailViewModelTests {
     #expect(viewModel.state.content == .loading)
     await repository.respond(to: 1, with: .success(details))
     await reload.value
-    #expect(viewModel.state.content == .loaded(details))
+    #expect(viewModel.state.content == .loaded(values))
+  }
+
+  // MARK: Text
+
+  @Test("AC-2.2 every row shows its value")
+  func everyRowShowsItsValue() async {
+    #expect(await loadedValues(.southGeorgia) == CountryDetailValues(
+      name: "South Georgia and the South Sandwich Islands",
+      flag: "🇬🇸",
+      capital: "King Edward Point",
+      currencies: "GBP",
+      languages: "English",
+      continent: "Antarctica"
+    ))
+  }
+
+  @Test("AC-2.3 missing values read None")
+  func missingValuesReadNone() async {
+    let values = await loadedValues(.antarctica)
+
+    let none = String(localized: .countryDetailNone)
+    #expect(values?.capital == none)
+    #expect(values?.currencies == none)
+    #expect(values?.languages == none)
+    #expect(values?.continent == "Antarctica")
+  }
+
+  @Test("AC-2.7 currencies and languages use the view model's locale's list format")
+  func listsUseTheLocalesListFormat() async {
+    let english = await loadedValues(.switzerland)
+    let german = await loadedValues(.switzerland, locale: Locale(identifier: "de_DE"))
+
+    #expect(english?.currencies == "CHE, CHF, and CHW")
+    #expect(english?.languages == "German, French, and Italian")
+    #expect(german?.currencies == "CHE, CHF und CHW")
+  }
+
+  // MARK: Helpers
+
+  /// What the detail shows once `details` loads, or `nil` if it didn't load.
+  private func loadedValues(
+    _ details: CountryDetails,
+    locale: Locale = .autoupdatingCurrent
+  ) async -> CountryDetailValues? {
+    let viewModel = CountryDetailViewModel(
+      code: details.id,
+      repository: MockCountriesRepository(detailResult: .success(details)),
+      locale: locale
+    )
+    await viewModel.send(.appeared).value
+    guard case let .loaded(values) = viewModel.state.content else {
+      return nil
+    }
+    return values
   }
 }

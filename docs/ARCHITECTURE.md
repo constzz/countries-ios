@@ -53,7 +53,6 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
 - `CountryList/` and `CountryDetail/`, one folder per feature, each grouped the same way:
   - `ViewModel/`: the view model, its state, actions and effects, and the values the state holds;
   - `Views/`: the screen's view, the view that draws its state, and their subviews;
-  - `Formatting/`: types that turn domain values into the text the screen shows or announces;
   - `Previews/`: the previews and the sample data they share with the snapshot and unit tests.
 - `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
@@ -83,6 +82,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
 - **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. An effect emitted while no view subscribes is dropped, so the view subscribes before it sends `.appeared`.
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
+- **The view model prepares the text.** State and effects carry strings ready to show: the detail's rows are `CountryDetailValues`, which `CountryDetailViewModel` builds in its locale, and a search's announcement is the sentence VoiceOver reads. Views lay out text; they don't format domain values.
 - **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
 - **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.task`.
 - **One request at a time** per screen: a new fetch cancels the one in flight, and a response to a cancelled fetch is never applied.

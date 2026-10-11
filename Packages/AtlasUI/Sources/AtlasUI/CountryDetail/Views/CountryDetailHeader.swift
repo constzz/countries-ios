@@ -1,11 +1,11 @@
-import AtlasDomain
 import SwiftUI
 
 /// The top of the detail: the flag above the name. VoiceOver reads it as a heading with the name,
 /// without the flag. It reports when the name scrolls under the navigation bar, whose bottom edge is
 /// at `barBottom` in global coordinates, so the bar can show the name instead.
 struct CountryDetailHeader: View {
-  let country: CountrySummary
+  let name: String
+  let flag: String
   let barBottom: CGFloat
   let scrolledUnderBar: (Bool) -> Void
 
@@ -13,10 +13,10 @@ struct CountryDetailHeader: View {
 
   var body: some View {
     VStack {
-      Text(verbatim: country.emoji)
+      Text(verbatim: flag)
         .font(Typography.Detail.flag(size: flagSize))
         .accessibilityHidden(true)
-      Text(verbatim: country.name)
+      Text(verbatim: name)
         .font(Typography.Detail.title)
         .multilineTextAlignment(.center)
         .accessibilityAddTraits(.isHeader)

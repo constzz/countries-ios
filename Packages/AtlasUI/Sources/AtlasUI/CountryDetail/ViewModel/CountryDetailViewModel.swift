@@ -1,15 +1,18 @@
 import AtlasDomain
+import Foundation
 
 final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect> {
   private let code: String
   private let repository: any CountriesRepository
+  private let locale: Locale
   private var fetchTask: Task<Void, Never>?
 
   /// Stores the dependencies and does nothing else: SwiftUI builds a view's initial `@State` value
   /// every time it creates the view.
-  init(code: String, repository: any CountriesRepository) {
+  init(code: String, repository: any CountriesRepository, locale: Locale = .autoupdatingCurrent) {
     self.code = code
     self.repository = repository
+    self.locale = locale
     super.init(initialState: CountryDetailState())
   }
 
@@ -72,7 +75,7 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     var next = current
     switch result {
     case let .success(details):
-      next.content = .loaded(details)
+      next.content = .loaded(values(for: details))
     case let .failure(error):
       next.content = .failed(error)
     }
@@ -107,5 +110,26 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       }
       await self?.send(.responseReceived(result)).value
     }
+  }
+
+  // MARK: Text
+
+  /// A missing value reads "None", and lists use the locale's list format. Values from the API are
+  /// shown as the API spells them.
+  private func values(for details: CountryDetails) -> CountryDetailValues {
+    var noneResource = LocalizedStringResource.countryDetailNone
+    noneResource.locale = locale
+    let none = String(localized: noneResource)
+    func list(_ items: [String]) -> String {
+      items.isEmpty ? none : items.formatted(.list(type: .and).locale(locale))
+    }
+    return CountryDetailValues(
+      name: details.summary.name,
+      flag: details.summary.emoji,
+      capital: details.capital ?? none,
+      currencies: list(details.currencies),
+      languages: list(details.languages.map(\.name)),
+      continent: details.summary.continent.name
+    )
   }
 }

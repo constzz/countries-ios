@@ -24,8 +24,8 @@ struct CountryListView: View {
 
   private func handle(_ effect: CountryListEffect) {
     switch effect {
-    case let .announce(resultCount):
-      AccessibilityNotification.Announcement(CountryListSearchAnnouncement.text(forResultCount: resultCount)).post()
+    case let .announce(text):
+      AccessibilityNotification.Announcement(text).post()
     }
   }
 }

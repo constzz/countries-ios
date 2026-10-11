@@ -10,12 +10,11 @@ struct CountryDetailContent: View {
   /// Where the navigation bar ends, in global coordinates. A list's frame starts there, under the
   /// bar, on every iOS version this app supports. Layout, not screen state, so it stays here.
   @State private var barBottom: CGFloat = 0
-  @Environment(\.locale) private var locale
 
   var body: some View {
     List {
-      if case let .loaded(details) = state.content {
-        rows(details)
+      if case let .loaded(values) = state.content {
+        rows(values)
       }
     }
     .onGeometryChange(for: CGFloat.self) { proxy in
@@ -37,15 +36,14 @@ struct CountryDetailContent: View {
     )
   }
 
-  private func rows(_ details: CountryDetails) -> some View {
-    let values = CountryDetailValuesMapper.map(details, locale: locale)
-    return Section {
+  private func rows(_ values: CountryDetailValues) -> some View {
+    Section {
       row(Text(.countryDetailCapital), values.capital)
       row(Text(.countryDetailCurrencies), values.currencies)
       row(Text(.countryDetailLanguages), values.languages)
       row(Text(.countryDetailContinent), values.continent)
     } header: {
-      CountryDetailHeader(country: details.summary, barBottom: barBottom) { isUnderBar in
+      CountryDetailHeader(name: values.name, flag: values.flag, barBottom: barBottom) { isUnderBar in
         _ = send(.headerScrolled(underBar: isUnderBar))
       }
       .textCase(nil)
@@ -63,8 +61,8 @@ struct CountryDetailContent: View {
   }
 
   private var title: String {
-    if case let .loaded(details) = state.content, state.isHeaderUnderBar {
-      details.summary.name
+    if case let .loaded(values) = state.content, state.isHeaderUnderBar {
+      values.name
     } else {
       ""
     }
