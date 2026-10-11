@@ -63,7 +63,7 @@ struct CountryDetailContent: View {
   }
 
   private var title: String {
-    if case let .loaded(details) = state.content, state.showsTitle {
+    if case let .loaded(details) = state.content, state.isHeaderUnderBar {
       details.summary.name
     } else {
       ""

@@ -86,11 +86,11 @@ struct CountryDetailViewModelTests {
       repository: MockCountriesRepository(detailResult: .success(details))
     )
     await viewModel.send(.appeared).value
-    #expect(!viewModel.state.showsTitle)
+    #expect(!viewModel.state.isHeaderUnderBar)
 
     viewModel.send(.headerScrolled(underBar: true))
 
-    #expect(viewModel.state.showsTitle)
+    #expect(viewModel.state.isHeaderUnderBar)
   }
 
   @Test("AC-2.2 the title hides when the header's name scrolls back")
@@ -104,7 +104,7 @@ struct CountryDetailViewModelTests {
 
     viewModel.send(.headerScrolled(underBar: false))
 
-    #expect(!viewModel.state.showsTitle)
+    #expect(!viewModel.state.isHeaderUnderBar)
   }
 
   // MARK: Cancelling

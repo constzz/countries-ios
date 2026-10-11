@@ -58,7 +58,7 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
 
   private func handleHeaderScrolled(_ current: CountryDetailState, underBar: Bool) -> CountryDetailState {
     var next = current
-    next.showsTitle = underBar
+    next.isHeaderUnderBar = underBar
     return next
   }
 
