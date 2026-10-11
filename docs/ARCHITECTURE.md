@@ -50,7 +50,11 @@ Implements the repository with Apollo iOS.
 ### AtlasUI
 SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo.
 - `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
-- `CountryList/` and `CountryDetail/`, one folder per feature.
+- `CountryList/` and `CountryDetail/`, one folder per feature, each grouped the same way:
+  - `ViewModel/`: the view model, its state, actions and effects, and the values the state holds;
+  - `Views/`: the screen's view, the view that draws its state, and their subviews;
+  - `Formatting/`: types that turn domain values into the text the screen shows or announces;
+  - `Previews/`: the previews and the sample data they share with the snapshot and unit tests.
 - `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
@@ -73,7 +77,7 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
 ## Presentation
 MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in `AtlasUI/Architecture/`; there's no third-party framework.
 - **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Effect>`.
-- **One type per file.** Every top-level type has its own file, named after it, in its feature folder. That includes helper values such as `CountriesRequest`.
+- **One type per file.** Every top-level type has its own file, named after it, in its feature's subfolder for that role. That includes helper values such as `CountriesRequest`.
 - **State** is one value with everything the screen shows.
 - **Actions** are one enum of everything that can happen, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`, plus the view model's own, such as `.responseReceived`.
 - **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
