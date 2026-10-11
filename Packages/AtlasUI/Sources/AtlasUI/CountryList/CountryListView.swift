@@ -1,8 +1,6 @@
 import AtlasDomain
 import SwiftUI
 
-/// The country list screen: owns its view model, starts loading when it appears and handles the
-/// view model's effects.
 struct CountryListView: View {
   @State private var viewModel: CountryListViewModel
   @Binding private var selection: String?

@@ -2,8 +2,6 @@ import AtlasDomain
 import Combine
 import Foundation
 
-/// The country list's view model. Its handlers feed the search pipe, run one fetch at a time and
-/// announce search results.
 final class CountryListViewModel: MVIViewModel<CountryListState, CountryListAction, CountryListEffect> {
   private let repository: any CountriesRepository
   /// Holds the search pipe's terms back until typing pauses.

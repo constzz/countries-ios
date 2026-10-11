@@ -5,7 +5,6 @@ import Foundation
 /// JSON response. A real `ApolloClient` over it runs its whole request chain, cache included,
 /// without the network.
 actor StubURLSession: ApolloURLSession {
-  /// How many requests reached the session.
   private(set) var requestCount = 0
   private var bodies: [Data]
 

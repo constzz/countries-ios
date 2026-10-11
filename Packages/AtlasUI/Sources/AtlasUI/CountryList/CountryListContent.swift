@@ -5,7 +5,7 @@ import SwiftUI
 /// snapshots can show any state.
 struct CountryListContent: View {
   let state: CountryListState
-  /// The selected country's code, owned by the root view.
+  /// The selected country's code.
   @Binding var selection: String?
   let send: (CountryListAction) -> Task<Void, Never>
 

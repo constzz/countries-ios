@@ -8,9 +8,7 @@ actor SuspendingDetailsRepository: CountriesRepository {
     let continuation: CheckedContinuation<CountryDetails, any Error>
   }
 
-  /// The codes requested, in order.
   private(set) var requestedCodes: [String] = []
-  /// How many requests were cancelled.
   private(set) var cancelledCount = 0
   private var pending: [Pending] = []
   private var cancelledIDs: Set<Int> = []

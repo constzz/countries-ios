@@ -1,14 +1,11 @@
 import AtlasDomain
 
-/// Everything the country list shows, as one value.
 struct CountryListState: MVIState {
   enum Content: Equatable {
-    /// Nothing requested yet.
     case idle
     /// A request with nothing to keep on screen.
     case loading
     case loaded([CountrySummary])
-    /// The search for `query` matched no country.
     case empty(query: String)
     case failed(CountriesError)
   }

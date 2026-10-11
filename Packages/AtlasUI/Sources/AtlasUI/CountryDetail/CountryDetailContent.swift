@@ -1,8 +1,8 @@
 import AtlasDomain
 import SwiftUI
 
-/// Draws a country detail state and sends what the user does. It owns no state, so previews and
-/// snapshots can show any state.
+/// Draws a country detail state and sends what the user does. It holds no screen state, so
+/// previews and snapshots can show any state.
 struct CountryDetailContent: View {
   let state: CountryDetailState
   let send: (CountryDetailAction) -> Task<Void, Never>
@@ -10,7 +10,6 @@ struct CountryDetailContent: View {
   /// Where the navigation bar ends, in global coordinates. A list's frame starts there, under the
   /// bar, on every iOS version this app supports. Layout, not screen state, so it stays here.
   @State private var barBottom: CGFloat = 0
-  /// The locale the rest of the screen's text uses, for "None" and the lists of values.
   @Environment(\.locale) private var locale
 
   var body: some View {
@@ -63,8 +62,6 @@ struct CountryDetailContent: View {
     }
   }
 
-  /// The country's name once the header's name is under the bar; until then the header shows it,
-  /// and before the details load there's only a code.
   private var title: String {
     if case let .loaded(details) = state.content, state.showsTitle {
       details.summary.name

@@ -3,7 +3,6 @@ import AtlasDomain
 import Foundation
 import os
 
-/// Creates a repository backed by the Countries GraphQL API at `endpoint`.
 public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
   CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint)))
 }

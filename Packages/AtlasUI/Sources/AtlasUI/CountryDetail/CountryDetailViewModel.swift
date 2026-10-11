@@ -1,7 +1,5 @@
 import AtlasDomain
 
-/// The country detail's view model. It loads one country, by its code, from its own query, and
-/// cancels the request when the detail disappears.
 final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect> {
   private let code: String
   private let repository: any CountriesRepository
@@ -85,7 +83,6 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
 
   // MARK: Fetching
 
-  /// Shows loading and fetches the country, replacing any request in flight.
   private func start(in current: CountryDetailState) -> CountryDetailState {
     var next = current
     next.requestID += 1

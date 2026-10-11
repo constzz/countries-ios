@@ -1,4 +1,3 @@
-/// The text of each detail row.
 struct CountryDetailValues: Equatable {
   let capital: String
   let currencies: String

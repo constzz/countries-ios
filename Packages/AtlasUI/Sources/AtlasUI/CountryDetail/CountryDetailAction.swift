@@ -1,6 +1,5 @@
 import AtlasDomain
 
-/// Everything that can happen on the country detail, named after what happened.
 enum CountryDetailAction: MVIAction {
   // MARK: Sent by the view
 

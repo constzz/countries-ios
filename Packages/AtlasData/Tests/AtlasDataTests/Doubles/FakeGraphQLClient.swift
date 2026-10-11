@@ -10,7 +10,6 @@ actor FakeGraphQLClient: GraphQLClient {
   private(set) var cachePolicies: [CachePolicy.Query.SingleResponse] = []
   private var results: [Result<JSONObject, CountriesError>]
 
-  /// Answers every query with `result`.
   init(result: Result<JSONObject, CountriesError>) {
     self.init(results: [result])
   }

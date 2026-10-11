@@ -1,11 +1,8 @@
-/// A country's summary, plus its capital, currencies and languages.
 public struct CountryDetails: Identifiable, Hashable, Sendable {
   public let summary: CountrySummary
-  /// `nil` when the country has none.
   public let capital: String?
-  /// ISO 4217 codes, main currency first.
+  /// ISO 4217 codes.
   public let currencies: [String]
-  /// Main language first.
   public let languages: [Language]
 
   public var id: String {
