@@ -1,12 +1,14 @@
 # US-2: Country detail
 
+> Delivered in [PR #3](https://github.com/constzz/countries-ios/pull/3) on 2026-10-11. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
+
 *As a user, I can tap a country to see its name, flag, capital, currencies, languages and continent.*
 
 ## Scope
-- **Domain:** `CountryDetails`, `Language`, and `CountriesRepository.country(code:)`.
-- **Data:** `CountryQuery($code:)` on the `CountryBasics` fragment, the detail mapper, which reuses `CountrySummaryMapper`, `null` → `.notFound`, the repository method, and JSON fixtures captured from the live API (Antarctica, Switzerland, an unknown code).
-- **UI:** `CountryDetailViewModel` on the shared MVI base, the detail screen as a `List` of `LabeledContent` rows under a flag-and-name header, loading, error and not-found through `.loadState`, selectable list rows that fill the split view's detail column (pushed on compact width), the selection kept in `RootView` and restored with `@SceneStorage`, `RootView` taking the repository in its `init` in place of the `\.countriesRepository` environment entry, previews and snapshots of every detail state, and the list snapshots re-recorded for their new disclosure indicators and selection highlight.
-- **App:** `AtlasApp` passes the container's repository to `RootView(repository:)` instead of the environment. `AppContainer` is unchanged; its repository gains the new method.
+- **Domain:** country details with their languages, and the repository's method that fetches one country by code.
+- **Data:** the country query, which shares the list's fragment and summary mapper, the detail mapper, not-found for an unknown code, and an Apollo cache that never stores a response with GraphQL errors.
+- **UI:** the detail screen on the shared MVI base, with loading, error and not-found states; selectable list rows that fill the split view's detail column, or push the detail on compact width; the selection kept per window and restored after relaunch; the repository passed to `RootView` through its `init` in place of the `\.countriesRepository` environment entry; previews and snapshots of every detail state, and the list snapshots re-recorded for their disclosure indicators and selection highlight.
+- **App:** `AtlasApp` passes the container's repository to `RootView(repository:)` instead of the environment.
 
 **Non-goals:** pull-to-refresh on the detail, currency and language names in the user's language (the API's codes and English names are shown as they are), native language names, subdivisions and phone codes, sharing or copying values, UI tests.
 
@@ -35,78 +37,6 @@
 | `.failed(other)` | "Couldn't Load Country", "Something went wrong. Try again in a moment.", Try Again |
 | Detail column, no selection | "Select a Country" placeholder (from US-1) |
 
-| Interaction | Action | Reduction |
-|---|---|---|
-| The detail appears (`.task`) | `.appeared` | From `.idle`: `.loading`, fetch the country. Otherwise nothing. |
-| The detail disappears (`.onDisappear`) | `.disappeared` | While `.loading`: cancel the fetch, back to `.idle`. Otherwise nothing. |
-| Tapping Try Again | `.retryTapped` | From `.failed`: `.loading`, fetch again with the same cache policy |
-| A response arrives | `.responseReceived(id, result)` | Ignored unless it answers the latest request. Details → `.loaded`, an error → `.failed`. |
-| The header's name scrolls under the bar, or back out | `.headerScrolled(underBar:)` | `showsTitle = underBar` |
-
-| Interaction | Selection (in `RootView`) |
-|---|---|
-| Tapping a row | `selection = code`; the detail column shows that country, or it's pushed on compact width |
-| Going back on compact width | `selection = nil` |
-| A search or refresh without the selected row | Unchanged; the detail stays |
-| Folding, unfolding, rotating, resizing | Unchanged |
-| Relaunch | Restored from `@SceneStorage`, per window |
-
-## Presentation: MVI
-The screen conforms to the shared MVI types in `AtlasUI/Architecture/` (rules in `docs/ARCHITECTURE.md`), the same way the list does. Each type has its own file in `CountryDetail/`.
-- **State:** `CountryDetailState: MVIState`: `content` (`idle | loading | loaded(CountryDetails) | failed(CountriesError)`), where not-found is `failed(.notFound)`, `requestID`, the latest request's id, and `showsTitle`, whether the header's name is under the navigation bar.
-- **Actions:** `CountryDetailAction: MVIAction`. The view sends `.appeared`, `.disappeared`, `.retryTapped` and `.headerScrolled(underBar:)`; the view model sends `.responseReceived(requestID:, Result<CountryDetails, CountriesError>)`.
-- **Effects:** `CountryDetailEffect: MVIEffect` is a caseless enum: the screen has no one-time UI events, so its view doesn't subscribe to `effects()`.
-- **View model:** `CountryDetailViewModel` subclasses `MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect>`. Its `init` stores the country `code` and the repository and does nothing else. `reduce(_:_:)` hands each action to a `handle…` method that reads `current`; the one fetch runs through `launchEffect`, a new one cancels the previous, and the result comes back as `.responseReceived`. A `CancellationError` sends nothing.
-- **Views:** `CountryDetailView` owns the view model in `@State`, created in its `init(code:repository:)`, sends `.appeared` from `.task` and `.disappeared` from `.onDisappear`. `CountryDetailContent` draws a given state and sends actions; previews and snapshots render it.
-- **One view model per country:** the detail column shows `CountryDetailView(code:repository:).id(code)`, so selecting another country makes a new view with a new view model, and the previous one's `.onDisappear` cancels its request.
-
-### Selection and navigation
-- `RootView` owns the selection as `@SceneStorage("selectedCountryCode") var selection: String?`, so each window keeps its own and restores it after relaunch. Neither view model holds it.
-- `RootSplitView` takes the sidebar and the detail column. The detail column shows the selected country's `CountryDetailView`, or the `SelectCountryPlaceholder` when nothing is selected.
-- The list is `List(rows, selection: $selection)` with each row a `NavigationLink(value: country.code)`. The split view highlights the selected row on regular width, pushes the detail on compact width, and clears the selection when the user goes back there.
-- `CountryListView` and `CountryListContent` take a `Binding<String?>` for the selection. The list's state and view model don't change.
-
-## Data layer
-- **Operation:** `query Country($code: ID!) { country(code: $code) { ...CountryBasics capital currencies languages { code name } } }`. It reads `currencies`, not the joined `currency` string. Codegen output is committed with it, and `scripts/check-codegen.sh` passes.
-- **Mapping:** `CountryDetailsMapper` maps the query's country. The summary comes from `CountrySummaryMapper`, the same mapper the list uses. A capital that is null or blank becomes `nil`. Blank currency entries are dropped (Antarctica returns `[""]`), and so are languages with a blank name. The API's order is kept: it lists the main currency and language first.
-- **Repository:** `country(code:)` fetches with `.cacheFirst`. A `null` country throws `.notFound` and is logged to the `network` category. Transport and GraphQL failures map as in US-1 (`ApolloGraphQLClient`), and the 15 s request timeout applies.
-- **Cache:** a response with GraphQL errors is never written to Apollo's cache. `makeApolloClient` builds the client with an interceptor provider whose cache interceptor, `ErrorFreeCacheInterceptor`, skips those responses and otherwise does what Apollo's default one does.
-- **Fixtures,** captured from the live API on 2026-10-10: `country-AQ.json` (Antarctica: null capital, `[""]` currencies, no languages), `country-CH.json` (Switzerland: three currencies, three languages) and `country-unknown.json` (`{"country": null}` for `XX`). Codes are case-sensitive: `ch` also returns null, but codes always come from the list.
-
-## Domain types
-```swift
-public struct Language: Hashable, Sendable {
-  public let code: String
-  public let name: String
-}
-
-public struct CountryDetails: Identifiable, Hashable, Sendable {
-  /// The fields the list shows: code, name, flag and continent.
-  public let summary: CountrySummary
-  public let capital: String?
-  /// ISO 4217 codes, main currency first.
-  public let currencies: [String]
-  public let languages: [Language]
-  public var id: String { summary.id }
-}
-
-public protocol CountriesRepository: Sendable {
-  func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary]
-  /// The country with `code`. Throws `CountriesError.notFound` when there's none, another
-  /// `CountriesError`, or `CancellationError` when the task is cancelled.
-  func country(code: String) async throws -> CountryDetails
-}
-```
-The UI test doubles gain the method.
-
-## UI details
-- **Header:** the flag emoji at a size that scales with Dynamic Type (`@ScaledMetric` relative to `.largeTitle`), hidden from VoiceOver, above the name in a title font token, centered and wrapping, with the heading trait.
-- **Rows:** `LabeledContent` with the label from the catalog and the value as `Text(verbatim:)`, or the catalog's "None". At accessibility sizes `LabeledContent` stacks the value under its label by itself.
-- **Values:** `CountryDetailValuesMapper` turns details into `CountryDetailValues`, the text of each row: the capital, or "None" from the catalog; currencies and language names joined with `.formatted(.list(type: .and))` in the view's locale (`\.locale`), or "None" when there are none; and the continent's name.
-- **Error copy:** `ErrorCopy` gains a subject: the list's generic failure stays "Couldn't Load Countries", the detail's is "Couldn't Load Country". Offline copy is shared. On the detail, `.notFound` gets its own copy and `canRetry == false`, and `.loadState` shows no Try Again for it. The list never gets `.notFound`; if it did, it would show its generic failure with Try Again, as in US-1.
-- **Background:** the detail keeps the system grouped background in every state. An empty `List` draws a plain background whatever its style, so loading and errors would sit on white and the screen would change color when the rows arrive. The list's own background is hidden with `.scrollContentBackground(.hidden)` and `Palette.groupedBackground` is drawn behind it.
-- **Tokens:** `Typography.Detail.title` for the header name and `Typography.Detail.flag(size:)` for the flag, whose size is a `@ScaledMetric` relative to `.largeTitle`; `Palette.primaryText` for the name inside the section header, which the system would style as secondary; and `Palette.groupedBackground`. Nothing else is styled by hand.
-
 ## Errors and edge cases
 | Scenario | Expected | UI state | Recovery |
 |---|---|---|---|
@@ -126,20 +56,16 @@ The UI test doubles gain the method.
 | A search filters out the selected country | Selection unchanged | The detail stays | none needed |
 | A restored selection with no network | `.offline` | Offline error in the detail | Try Again |
 
-## Test plan
-| AC | Tests |
+## Verification
+Every automated test names the AC it covers, as in `@Test("AC-2.5 an unknown code shows not found")`, so `grep -rn "AC-2\." Packages AtlasUISnapshotTests` lists them. Checked by hand:
+
+| AC | How |
 |---|---|
-| 2.1 | Manual on iPhone 17 Pro and iPad (A16) simulators; the `COUNTRY_DETAIL_*` and re-recorded `COUNTRY_LIST_*` images show the pushed detail and the disclosure indicators on compact width |
-| 2.2 | `CountryDetailsTests`: "AC-2.2 details are identified by the country code"; `CountryDetailsMapperTests`: "AC-2.2 maps every field and reuses the summary mapper" (CH fixture); repository: "AC-2.2 fetches the country by code, cache first"; `CountryDetailValuesMapperTests`: "AC-2.2 every row shows its value"; view model: "AC-2.2 the title shows once the header's name is under the bar", "AC-2.2 the title hides when the header's name scrolls back"; manual: scroll the detail at the largest text size; `COUNTRY_DETAIL_LOADED_*`, `COUNTRY_DETAIL_LONG_NAME_*` |
-| 2.3 | Mapping: "AC-2.3 Antarctica has no capital, currencies or languages" (AQ fixture), "AC-2.3 blank values are missing values"; `CountryDetailValuesMapperTests`: "AC-2.3 missing values read None"; `COUNTRY_DETAIL_MISSING_VALUES_*` |
-| 2.4 | View model: "AC-2.4 appearing shows loading, then the details", "AC-2.4 appearing again loads nothing", "AC-2.4 a failure shows the error", "AC-2.4 retry repeats the request"; repository: "AC-2.4 a failure reaches the caller unchanged", "AC-2.4 a response with GraphQL errors stays out of the cache" (a real `ApolloClient` over `StubURLSession`); `ErrorCopyTests`: "AC-2.4 the detail's error names a country"; `COUNTRY_DETAIL_LOADING_*`, `_ERROR_*`, `_OFFLINE_*` |
-| 2.5 | Repository: "AC-2.5 a null country is not found" (unknown-code fixture); view model: "AC-2.5 an unknown code shows not found"; `ErrorCopyTests`: "AC-2.5 not found has its own copy and no retry"; `COUNTRY_DETAIL_NOT_FOUND_*` |
-| 2.6 | `CountryDetailSnapshotTests`: `COUNTRY_DETAIL_LOADING`, `_LOADED`, `_MISSING_VALUES`, `_LONG_NAME`, `_ERROR`, `_OFFLINE`, `_NOT_FOUND`; `CountryListSnapshotTests` re-recorded |
-| 2.7 | `LocalizationTests`; `CountryDetailValuesMapperTests`: "AC-2.7 currencies and languages use the locale's list format" (`en_US`); `COUNTRY_DETAIL_LOADED_*_rtl` images |
-| 2.8 | Manual on iPad (A16) and iPhone 17 Pro: highlight, search and refresh with a selection, back on compact width; the iPad `COUNTRY_DETAIL_*` images show the highlight |
-| 2.9 | Manual: fold and unfold on the iPhone Duo simulator, rotate the iPad, resize an iPad window; relaunch from Xcode after backgrounding the app |
-| 2.10 | View model, with `SuspendingDetailsRepository`: "AC-2.10 disappearing cancels the request and shows no error", "AC-2.10 appearing after disappearing loads again", "AC-2.10 a stale response is ignored" |
-| 2.11 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
+| 2.1 | On the iPhone 17 Pro and iPad (A16) simulators; the `COUNTRY_DETAIL_*` and re-recorded `COUNTRY_LIST_*` images show the pushed detail and the disclosure indicators on compact width |
+| 2.2 | Scroll the detail at the largest text size: the name shows in the bar only once the header's name is under it |
+| 2.8 | On iPad (A16) and iPhone 17 Pro: highlight, search and refresh with a selection, back on compact width; the iPad `COUNTRY_DETAIL_*` images show the highlight |
+| 2.9 | Fold and unfold on the iPhone Duo simulator, rotate the iPad, resize an iPad window; relaunch from Xcode after backgrounding the app |
+| 2.11 | Accessibility Inspector on the iPhone 17 Pro simulator |
 
 ## Decisions
 - **The detail loads only from its own query.** It takes the country `code` and nothing else, and shows a loading state until `CountryQuery` answers. Each screen has a query shaped for it, so the detail can gain fields without touching the list's query or models; the `CountryBasics` fragment is what the two share. Rejected: showing the list's summary (flag, name, continent) at once while the rest loads, which couples the detail to the list's data and gives the screen two loading shapes.
@@ -154,6 +80,7 @@ The UI test doubles gain the method.
 - **Blank values are dropped in the mapper,** so the domain never carries an API quirk and the UI only knows "present" or "missing". Rejected: filtering in the view.
 - **Not found offers no Try Again.** Repeating the request won't make the country exist; the user picks another one. Rejected: Try Again on every error, which here would only fail again.
 - **The error title names what failed to load,** "Couldn't Load Country" on the detail, while the offline copy is shared. Rejected: one title for both screens, which says "Countries" when a single country failed.
+- **The detail keeps the grouped background in every state.** An empty `List` draws a plain background whatever its style, so loading and errors would sit on white and the screen would change color when the rows arrive. The list hides its own background and `Palette.groupedBackground` is drawn behind it.
 - **The detail snapshots show Bolivia, selected in the list beside it.** Its row sits near the top of the sidebar, so the highlight is on screen on every iPad preset, and it has two currencies and three languages. Bolivia joins the list's samples, so the list snapshots gain a row. Rejected: Switzerland, whose row is below the fold on iPad landscape, so the images couldn't show the highlight.
 - **Placeholder states render on iPhone 17 Pro in light, plus accessibility XXXL; this applies to the list's states too.** Loading, empty, error, offline and not found center a system `ProgressView` or `ContentUnavailableView`. Other presets and dark mode show the same view in a different place, and the copy is checked by `ErrorCopyTests` and `LocalizationTests`. The accessibility image still catches long copy wrapping. This took the reference images from 147 to 75. Rejected: every state on every preset in light and dark, where most of the 147 images re-checked system placeholders, slowed the snapshot check and buried the images worth reviewing.
 - **No custom EnvironmentValues entry: the repository comes in through `RootView`'s `init`.** Revised during the story. The `\.countriesRepository` entry from US-1 was read only by `RootView`, which passed it on to both screens through `init`, so it moved the repository one level, and its required default, a repository that fails every request, turned a missing injection into an error state at runtime instead of a compile error. The brief asks for an entry only where more than one view genuinely needs it, and two shallow screens have no such value: locale, Dynamic Type and color scheme are SwiftUI's own, and everything else reaches its view through a parameter. Rejected: each screen reading the entry itself, which `init` can't do, so each view would build its view model late and draw an empty first frame.
@@ -162,3 +89,4 @@ The UI test doubles gain the method.
 Settled during the story:
 - **Snapshots of a collapsed split view with a selection.** A `NavigationSplitView` that starts collapsed with a selection shows the detail pushed, with a back button, so compact presets render the same split view as the others.
 - **`List(selection:)` with the selected row filtered out.** SwiftUI leaves the binding alone. Measured on iOS 17.0, 26.0 and 27.0, on regular and compact width, with a split view hosted in a window: filtering the selected row out, emptying the list and bringing the row back never wrote to the binding. So the list takes the selection binding as it is. Rejected: a binding that ignores a `nil` while the selected code isn't among the rows, which would also swallow going back on compact width after a search had filtered the row out on regular width, leaving the user unable to leave the detail.
+- **Country codes are case-sensitive.** `ch` returns `null` like an unknown code (checked against the live API on 2026-10-10). Codes always come from the list, so none is ever changed in between.

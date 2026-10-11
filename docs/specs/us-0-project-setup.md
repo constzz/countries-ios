@@ -1,5 +1,8 @@
 # US-0: Project setup
 
+> Delivered in [PR #1](https://github.com/constzz/countries-ios/pull/1) on 2026-10-10. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
+> **Changed since:** snapshots are drawn at @1x and matched within 2 of 255 per channel (US-1); the repository reaches the screens through `RootView`'s `init`, with no environment entry (US-2).
+
 *As a reviewer or developer, I can clone the repo, open it in Xcode, and run the app, its tests and its linters, so every feature story lands on a working, warning-free baseline.*
 
 ## Scope

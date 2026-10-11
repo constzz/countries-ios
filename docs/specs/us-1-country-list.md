@@ -1,12 +1,15 @@
 # US-1: Country list
 
+> Delivered in [PR #2](https://github.com/constzz/countries-ios/pull/2) on 2026-10-10. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
+> **Changed since:** the repository reaches the screens through `RootView`'s `init`, and the `\.countriesRepository` environment entry is gone (US-2); placeholder states render on iPhone 17 Pro in light only (US-2); `AppEnvironment` reads the endpoint from the Info.plist, not `AppContainer` (PR #8).
+
 *As a user, I can browse every country with its flag, name and continent, and search by name, so I can find a country quickly.*
 
 ## Scope
-- **Domain:** `CountrySummary`, `Continent`, `CountriesError`, and `CountriesRepository.countries(matching:forceRefresh:)`.
-- **Data:** `CountriesQuery($filter:)` on the `CountryBasics` fragment, `SearchPattern`, the `GraphQLClient` seam with its Apollo adapter and error mapping, the summary mapper, the repository and its public factory, and the `network` logger.
-- **UI:** `CountryListViewModel`, the list screen with `.searchable` and `.refreshable` as the sidebar of a `NavigationSplitView` whose detail column shows a "Select a Country" placeholder, the shared state views, the `.loadState(_:retry:)` modifier, the `\.countriesRepository` environment entry, previews and snapshots of every list state. The US-0 placeholder root screen and its snapshots are replaced.
-- **App:** `AppContainer` reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and creates the repository through AtlasData's factory, which builds the `ApolloClient` with a 15 s request timeout, so Apollo stays inside AtlasData. The `@main` entry point, `AppLauncher`, runs `TestHostApp`, an empty window, while the app hosts tests, and `AtlasApp` otherwise, so no test run builds the app's dependencies or touches the network, and `AppContainer` knows nothing about tests.
+- **Domain:** the country summary, continent and error types, and the repository's search method.
+- **Data:** the countries query, a case-insensitive search filter, the Apollo adapter with its error mapping and logging, and the repository behind one public factory.
+- **UI:** the list screen on the shared MVI base, with search and pull-to-refresh, as the sidebar of a split view whose detail column shows a "Select a Country" placeholder; the shared state views; previews and snapshots of every list state. The US-0 placeholder root screen and its snapshots are replaced.
+- **App:** the API endpoint as a build setting, a 15 s request timeout, and an entry point that runs an empty app while hosting tests.
 
 **Non-goals:** selecting a row and the country detail (US-2), diacritic-insensitive search ("Reunion" doesn't find "Réunion"), localized country names, persistence beyond Apollo's in-memory cache, UI tests.
 
@@ -38,61 +41,7 @@
 | `.failed(other)` | "Couldn't Load Countries", "Something went wrong. Try again in a moment.", Try Again |
 | Detail column, regular width | "Select a Country" placeholder |
 
-| Interaction | Action | Reduction |
-|---|---|---|
-| The screen appears (`.task`) | `.appeared` | The first time: `.loading`, fetch every country. Later, nothing. |
-| Typing or clearing the search field | `.searchTextChanged(text)` | `searchText = text`; the text enters the search pipe: trim, debounce 300 ms, drop duplicates |
-| The pipe settles on a term | `.searchSettled(term)` | Nothing if `term` equals `query`. Otherwise `query = term`, fetch it. Over current content, `isSearching` stays as it is, and if it's off, "Searching…" is due in 0.5 s; with no content, `.loading`. A blank term lists every country. |
-| A search is still running after 0.5 s | `.searchProgressDue(requestID:)` | `isSearching = true`, if it's still the latest request and its content is on screen |
-| Pull to refresh | `.refreshRequested` | Fetch `query` from the network; the content stays |
-| Tapping Try Again | `.retryTapped` | `.loading`, then repeat the last request: same term, same cache policy |
-| A response arrives | `.responseReceived(id, result)` | Ignored unless it answers the latest request. "Searching…" is no longer due. Rows → `.loaded`, none → `.empty(query:)`, an error → `.failed`. After a search, VoiceOver announces the result count. |
-
 One fetch runs at a time: a new one cancels the one in flight. Full-screen loading shows only when there's nothing to keep on screen (the first load, or after a failure).
-
-## Presentation: MVI
-The screen conforms to the shared MVI types in `AtlasUI/Architecture/` (rules in `docs/ARCHITECTURE.md`). Each type has its own file, named after it.
-- **State:** `CountryListState: MVIState` is one value: `content` (`idle | loading | loaded([CountrySummary]) | empty(query:) | failed(CountriesError)`), `searchText`, `query` (the settled search term), `isSearching`, and the latest `request`. `CountriesRequest` (id, term, kind; a refresh bypasses the cache) has its own file.
-- **Actions:** `CountryListAction: MVIAction` lists everything that can happen. The view sends `.appeared`, `.searchTextChanged`, `.refreshRequested` and `.retryTapped`; the view model sends `.searchSettled`, `.searchProgressDue` and `.responseReceived`.
-- **Effects:** `CountryListEffect: MVIEffect` holds the screen's one-time UI events: `.announce(resultCount:)`, which the view posts to VoiceOver. An effect emitted while no view subscribes is dropped.
-- **View model:** `CountryListViewModel` subclasses `MVIViewModel<CountryListState, CountryListAction, CountryListEffect>`. Its `reduce(_:_:)` is the only place the state changes: it hands each action to a `handle…` method and returns the new state at once. The handlers feed the Combine search pipe, start the one fetch in flight through `launchEffect` (cancelling the previous one), and `emit` the announcement. The view model exposes `state`, `send(_:)` and `effects()`. `send` returns a task that finishes when the work the action started has, so `.refreshable` and tests can await it.
-- **View:** owns its view model in `@State`. In `.task` it subscribes to `effects()`, then sends `.appeared`. It draws `state` and sends actions. The search field binds to `state.searchText` and sends `.searchTextChanged`.
-
-## Data layer
-- **Operation:** `query Countries($filter: CountryFilterInput) { countries(filter: $filter) { ...CountryBasics } }`. A blank term sends no filter.
-- **`SearchPattern`** (internal, pure) turns a term into a regex for the `name` filter: trim whitespace (blank means no filter), escape `\ ^ $ . | ? * + ( ) [ ] { }`, and wrap each cased letter as `[xX]`. Letters whose case mapping isn't one-to-one, such as `ß`, pass through unchanged. The API's regex is case-sensitive, so this makes the search case-insensitive, and an unescaped `(` would return a server error.
-- **Mapping:** `CountrySummaryMapper` maps the `CountryBasics` fragment's code, name, emoji and continent (code and name). One mapper per GraphQL shape; US-2 reuses it.
-- **Repository:** `countries(matching:forceRefresh:)` fetches with `.cacheFirst`, or `.networkOnly` when `forceRefresh` is true, maps every country and sorts by name with `localizedStandardCompare`. Every country has a name, so an empty list for a blank term is a bad response: if it came from the cache, the repository fetches again from the network, and if the network also returns none, it throws `.server`.
-- **`GraphQLClient`** (internal protocol): `fetch<Q: GraphQLQuery>(_:cachePolicy:) async throws -> Q.Data`. The Apollo adapter maps a response with GraphQL errors or no data to `.server`, and transport failures as below. Tests use `FakeGraphQLClient`, which returns `Q.Data` built from JSON fixtures captured from the live API.
-- **Error mapping** (a pure helper): `URLError.notConnectedToInternet` and `.networkConnectionLost` → `.offline`; `.timedOut` and other transport or HTTP failures → `.network`; `CancellationError` and `URLError.cancelled` → rethrown as `CancellationError`; `JSONResponseParsingError`, `JSONDecodingError` and `GraphQLExecutionError` → `.decoding`; anything else → `.unknown`. Each mapped failure is logged to the `network` category with its real cause; the search term is `.private`.
-- **Factory:** AtlasData exposes one public factory, `makeCountriesRepository(endpoint:)`, that returns `any CountriesRepository`; the implementation stays internal. The 15 s request timeout belongs to the client it builds, so it lives in AtlasData too.
-
-## Domain types
-```swift
-public struct Continent: Hashable, Sendable {
-  public let code: String
-  public let name: String
-}
-
-public struct CountrySummary: Identifiable, Hashable, Sendable {
-  public let code: String
-  public let name: String
-  public let emoji: String
-  public let continent: Continent
-  public var id: String { code }
-}
-
-public enum CountriesError: Error, Equatable, Sendable {
-  case offline, network, server, notFound, decoding, unknown
-}
-
-public protocol CountriesRepository: Sendable {
-  /// Countries whose name matches `term`, sorted by name. A blank term returns every country.
-  /// Throws `CountriesError`, or `CancellationError` when the task is cancelled.
-  func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary]
-}
-```
-`.notFound` is unused until US-2.
 
 ## Errors and edge cases
 | Scenario | Expected | UI state | Recovery |
@@ -113,30 +62,20 @@ public protocol CountriesRepository: Sendable {
 | Unaccented input ("Reunion") | No match | `empty(query:)` | Left out (README) |
 | Longest name ("South Georgia and the South Sandwich Islands") | Wraps | Loaded | none needed |
 
-## Test plan
-| AC | Tests |
+## Verification
+Every automated test names the AC it covers, as in `@Test("AC-1.5 no match shows the empty state with the query")`, so `grep -rn "AC-1\." Packages AtlasUISnapshotTests` lists them. Checked by hand:
+
+| AC | How |
 |---|---|
-| 1.1 | `CountrySummaryMapperTests`: "AC-1.1 maps the fragment to a summary"; repository: "AC-1.1 returns every country sorted by name" (250-country fixture); view model: "AC-1.1 a response shows the loaded rows", "AC-1.1 appearing loads every country" |
-| 1.2 | View model, short injected interval and recorded mock calls: "AC-1.2 typing searches once after a pause", "AC-1.2 an unchanged term issues no search", "AC-1.2 returning to the settled term issues no search" |
-| 1.3 | `SearchPatternTests`: "AC-1.3 letters match either case", "AC-1.3 regex metacharacters are escaped", "AC-1.3 a blank term means no filter"; repository: "AC-1.3 sends the pattern as a name regex filter" |
-| 1.4 | View model: "AC-1.4 the first load shows loading", "AC-1.4 a search keeps rows visible and shows Searching after 0.5 s", "AC-1.4 a quick search never shows Searching", "AC-1.4 Searching stays up when a newer search replaces a running one", "AC-1.4 a refresh keeps rows visible" |
-| 1.5 | View model: "AC-1.5 no match shows the empty state with the query" |
-| 1.6 | View model: "AC-1.6 a failure shows the error", "AC-1.6 retry repeats the last request"; error mapping: "AC-1.6 not connected maps to offline" and one test per row of the mapping; repository: "AC-1.6 a blank term with no countries refetches from the network", "AC-1.6 a blank term with no countries from the network is a server error"; UI: "AC-1.6 offline has its own message" |
-| 1.7 | View model: "AC-1.7 rows keep their codes across refresh and filtering" |
-| 1.8 | Repository: "AC-1.8 force refresh fetches network-only"; view model: "AC-1.8 refresh fetches from the network" |
-| 1.9 | `CountryListSnapshotTests`: `COUNTRY_LIST_LOADING`, `_LOADED`, `_SEARCHING`, `_EMPTY`, `_ERROR`, `_OFFLINE` |
-| 1.10 | `LocalizationTests` (every key added in the catalog, used, commented and translated); "AC-1.10 error copy comes from the catalog"; `COUNTRY_LIST_LOADED_*_rtl` images |
-| 1.11 | View model, with a mock repository that suspends until released: "AC-1.11 a stale response never replaces newer results", "AC-1.11 a new fetch cancels the one in flight", "AC-1.11 a cancelled request shows no error" |
-| 1.12 | View model: "AC-1.12 a search announces its result count", "AC-1.12 load and refresh announce nothing" (both read `effects`); "AC-1.12 the announcement text uses plural variants", "AC-1.12 no results is announced" |
-| 1.13 | Manual: Network Link Conditioner at 100% loss, the error state appears after about 15 s |
-| 1.14 | Manual: Accessibility Inspector on the iPhone 17 Pro simulator |
-| none | `MVIViewModelTests`, on a toy view model: the shared base reduces, launches and tracks work, and delivers effects to subscribers and drops those emitted while no one subscribes |
+| 1.13 | Network Link Conditioner at 100% loss: the error state appears after about 15 s |
+| 1.14 | Accessibility Inspector on the iPhone 17 Pro simulator |
 
 ## Decisions
 - **MVI on the list screen, on a shared base.** One state value, one action enum and one `reduce` per screen, and the shared `MVIViewModel` runs them: `send` reduces, assigns the state only when it changed, and returns a task for the work the action started. `reduce` lives on the view model and starts async work itself through `launchEffect`; the work's result comes back as an action, and stale responses are dropped in `reduce` by request id. Effects are one-time UI events only, so anything that must survive a redraw is state. Every screen conforms the same way, and each of its types sits in its own file. Rejected: a separate pure reducer that returns effects as values for the view model to run, which tests without doubles but splits each screen across two types and makes "effect" mean both work and UI events; MVVM with an event method per interaction and several observable properties, which spreads state changes across methods and widens the view model's surface.
 - **The empty search state is the system's `ContentUnavailableView.search(text:)`.** It names the query, and iOS localizes its copy in every language it supports, so it needs no catalog entry. Rejected: our own "No countries match “…”" sentence in a hand-built `ContentUnavailableView`, which rebuilds a system component.
 - **Snapshots render the split view with the list's inner view fed a fixed state.** No snapshot loads data or depends on timing. Rejected: the full screen with a stub repository, which would rely on the helper's few layout passes to settle.
 - **Sorting is part of the repository contract.** The API sorts by code; every caller wants names. Rejected: sorting in the view model, which lets an API quirk leak into the UI.
+- **Search is case-insensitive through the regex we send.** The API's `regex` filter is case-sensitive, so each cased letter goes out as `[xX]`, and regex metacharacters are escaped, since an unescaped `(` returns a server error. Letters whose case mapping isn't one-to-one, such as `ß`, pass through unchanged.
 - **Retry repeats the last request with its cache policy,** so a failed refresh retries from the network. Rejected: retry always reading through the cache, which could bring back the data the refresh meant to replace.
 - **A failure replaces the rows with the error state.** One state at a time keeps the screen contract small. Rejected: stale rows under an error banner, a sixth state for a rare case.
 - **A running search shows "Searching…" pinned above the rows, not in the toolbar.** On iPhone the navigation bar hides while the search field is active, so a toolbar indicator vanished exactly when a search ran, and a slow or stalled search looked like nothing was happening. Above the rows it stays visible on every device and in one place (HIG Progress indicators: "Display progress indicators in a consistent location"). Rejected: replacing the rows with full-screen progress, which drops the content the user is refining.
