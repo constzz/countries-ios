@@ -6,12 +6,16 @@ import UIKit
 /// size on iPhone 17 Pro, and compares each image with its reference in `snapshots/` next to the
 /// calling test file. Images are named `<name>_<preset>_<variant>.png`.
 ///
-/// - Parameter rightToLeft: Also renders a right-to-left image on iPhone 17 Pro and iPad landscape,
-///   in light.
+/// - Parameters:
+///   - everyDevice: When `false`, renders only iPhone 17 Pro in light, plus the largest
+///     accessibility text size.
+///   - rightToLeft: Also renders a right-to-left image on iPhone 17 Pro and iPad landscape, in
+///     light.
 @MainActor
 func assertSnapshots(
   of view: some View,
   named name: String,
+  everyDevice: Bool = true,
   rightToLeft: Bool = false,
   filePath: StaticString = #filePath,
   sourceLocation: SourceLocation = #_sourceLocation
@@ -21,7 +25,9 @@ func assertSnapshots(
     return
   }
 
-  var shots: [(SnapshotPreset, SnapshotVariant)] = SnapshotPreset.all.flatMap { [($0, .light), ($0, .dark)] }
+  let presets = everyDevice ? SnapshotPreset.all : [.iPhone17Pro]
+  let variants: [SnapshotVariant] = everyDevice ? [.light, .dark] : [.light]
+  var shots = presets.flatMap { preset in variants.map { (preset, $0) } }
   shots.append((.iPhone17Pro, .lightAccessibilityXXXL))
   if rightToLeft {
     shots += [(.iPhone17Pro, .lightRightToLeft), (.iPad11Landscape, .lightRightToLeft)]
