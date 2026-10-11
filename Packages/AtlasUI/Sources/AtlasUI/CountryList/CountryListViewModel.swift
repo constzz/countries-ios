@@ -8,7 +8,9 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private let repository: any CountriesRepository
   /// Holds the search pipe's terms back until typing pauses.
   private let debounced: (AnyPublisher<String, Never>) -> AnyPublisher<String, Never>
-  private let searchProgressDelay: Duration
+  /// Starts the wait before "Searching…" shows. The wait it returns ends the delay after this call,
+  /// however late the task running it starts.
+  private let makeSearchProgressWait: () -> @Sendable () async throws -> Void
   /// Built on first use: SwiftUI builds a view's initial `@State` value every time it creates the
   /// view, so `init` only stores dependencies.
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
@@ -16,17 +18,23 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  /// - Parameter scheduler: where the 300 ms debounce waits. It must run each action later, on the
-  ///   main thread: an action run inside the `schedule` call would send its term in the middle of
-  ///   a `reduce`.
+  /// - Parameters:
+  ///   - scheduler: where the 300 ms debounce waits. It must run each action later, on the main
+  ///     thread: an action run inside the `schedule` call would send its term in the middle of a
+  ///     `reduce`.
+  ///   - clock: what the wait before "Searching…" shows is measured on.
   init(
     repository: any CountriesRepository,
     scheduler: some Scheduler = DispatchQueue.main,
+    clock: some Clock<Duration> = ContinuousClock(),
     searchProgressDelay: Duration = .milliseconds(500)
   ) {
     self.repository = repository
     debounced = { $0.debounce(for: .milliseconds(300), scheduler: scheduler).eraseToAnyPublisher() }
-    self.searchProgressDelay = searchProgressDelay
+    makeSearchProgressWait = {
+      let deadline = clock.now.advanced(by: searchProgressDelay)
+      return { try await clock.sleep(until: deadline, tolerance: nil) }
+    }
     super.init(initialState: CountryListState())
   }
 
@@ -175,12 +183,13 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
     return next
   }
 
-  /// Sends `.searchProgressDue` once `request` has run for `searchProgressDelay`, unless its
+  /// Sends `.searchProgressDue` once `request` has run for the search progress delay, unless its
   /// response or a newer request cancels the wait first.
   private func scheduleSearchProgress(for request: CountriesRequest) {
-    searchProgressTask = launchEffect { [weak self, searchProgressDelay] in
+    let wait = makeSearchProgressWait()
+    searchProgressTask = launchEffect { [weak self] in
       do {
-        try await Task.sleep(for: searchProgressDelay)
+        try await wait()
       } catch {
         return
       }
