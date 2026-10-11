@@ -81,7 +81,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
 - **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
 - **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.task`.
-- **One request at a time** per screen: a new fetch cancels the one in flight, and `reduce` ignores any response that doesn't answer the latest request.
+- **One request at a time** per screen: a new fetch cancels the one in flight, and a response to a cancelled fetch is never applied.
 - **Stable identity:** a country's `code` is its `id` across reloads and filtering.
 - **Tests** drive a view model through `send`, await `send(_:).value`, replace its dependencies with test doubles, and check the state, the calls the doubles recorded and the effects. `MVIViewModelTests` covers the base on a toy view model.
 

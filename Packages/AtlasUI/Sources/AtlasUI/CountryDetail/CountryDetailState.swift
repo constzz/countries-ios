@@ -9,7 +9,5 @@ struct CountryDetailState: MVIState {
   }
 
   var content: Content = .idle
-  /// The latest request's id. Only its response is applied.
-  var requestID = 0
   var isHeaderUnderBar = false
 }

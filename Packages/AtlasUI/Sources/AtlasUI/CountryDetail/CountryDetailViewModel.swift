@@ -23,8 +23,8 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       handleRetryTapped(current)
     case let .headerScrolled(underBar):
       handleHeaderScrolled(current, underBar: underBar)
-    case let .responseReceived(requestID, result):
-      handleResponse(result, for: requestID, in: current)
+    case let .responseReceived(result):
+      handleResponse(current, result)
     }
   }
 
@@ -62,13 +62,11 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     return next
   }
 
-  /// Applies the response to the latest request; responses to older ones are ignored.
   private func handleResponse(
-    _ result: Result<CountryDetails, CountriesError>,
-    for requestID: Int,
-    in current: CountryDetailState
+    _ current: CountryDetailState,
+    _ result: Result<CountryDetails, CountriesError>
   ) -> CountryDetailState {
-    guard requestID == current.requestID, current.content == .loading else {
+    guard current.content == .loading else {
       return current
     }
     var next = current
@@ -85,14 +83,15 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
 
   private func start(in current: CountryDetailState) -> CountryDetailState {
     var next = current
-    next.requestID += 1
     next.content = .loading
-    fetch(requestID: next.requestID)
+    fetch()
     return next
   }
 
-  /// Cancels the fetch in flight and starts a new one. A cancelled fetch sends nothing back.
-  private func fetch(requestID: Int) {
+  /// Cancels the fetch in flight and starts a new one. A cancelled fetch sends nothing back, even
+  /// if its response already arrived: the cancel and the check before sending both run on the main
+  /// actor.
+  private func fetch() {
     fetchTask?.cancel()
     fetchTask = launchEffect { [weak self, repository, code] in
       let result: Result<CountryDetails, CountriesError>
@@ -103,7 +102,10 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
       } catch {
         result = .failure(error as? CountriesError ?? .unknown)
       }
-      await self?.send(.responseReceived(requestID: requestID, result)).value
+      guard !Task.isCancelled else {
+        return
+      }
+      await self?.send(.responseReceived(result)).value
     }
   }
 }

@@ -1,6 +1,7 @@
 # US-2: Country detail
 
 > Delivered in [PR #3](https://github.com/constzz/countries-ios/pull/3) on 2026-10-11. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
+> **Changed since:** the detail keeps no request id: a cancelled fetch sends nothing back, so `.responseReceived` carries only the result, and a response to an older request never reaches the reducer; `showsTitle` is `isHeaderUnderBar` (PR #13).
 
 *As a user, I can tap a country to see its name, flag, capital, currencies, languages and continent.*
 
