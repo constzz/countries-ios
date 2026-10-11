@@ -60,7 +60,7 @@ Each requirement of the task traces to an acceptance criterion and the test that
 | Search by name, debounced with Combine | US-1 / AC-1.2, AC-1.3 | `CountryListSearchInputTests`, `SearchPatternTests`, `CountriesRepositoryTests` |
 | Loading, empty and error states | US-1 / AC-1.4 to AC-1.6, AC-1.9 | `CountryListViewModelTests`, `ErrorCopyTests`, `CountryListSnapshotTests` |
 | `@Observable` and `@MainActor` view models | US-1 / AC-1.1, AC-1.11 | `CountryListViewModelTests` |
-| Tests with a mocked network boundary | US-1 / AC-1.1, AC-1.3, AC-1.8 | `FakeGraphQLClient` in the data tests, `MockCountriesRepository` in the view-model tests |
+| Tests with a mocked network boundary | US-1 / AC-1.1, AC-1.3, AC-1.8, US-2 / AC-2.4 | `FakeGraphQLClient` in the data tests, `StubURLSession` under a real `ApolloClient` for the cache, `MockCountriesRepository` in the view-model tests |
 | A test of the GraphQL to domain mapping | US-1 / AC-1.1, US-2 / AC-2.2, AC-2.3 | `CountrySummaryMappingTests`, `CountryDetailsMappingTests` |
 | Tap a country to see its name, flag, capital, currencies, languages and continent | US-2 / AC-2.1 to AC-2.3 | `CountryDetailsMappingTests`, `CountryDetailValuesTests`, `COUNTRY_DETAIL_*` snapshots, manual check |
 | Detail loading and error states | US-2 / AC-2.4, AC-2.5, AC-2.10 | `CountryDetailViewModelTests`, `CountriesRepositoryTests`, `ErrorCopyTests`, `CountryDetailSnapshotTests` |
