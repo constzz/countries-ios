@@ -18,7 +18,7 @@ The dependency direction is `UI → Domain ← Data`. The app target is the only
 Foundation only. It defines what the app works with, independent of where the data comes from.
 - `Sendable` value models:
   - `CountrySummary`: `code` (also its `id`), `name`, `emoji`, `continent`.
-  - `CountryDetails`: the summary fields plus `capital: String?`, `currencies: [String]` and `languages: [Language]`.
+  - `CountryDetails`: a `summary: CountrySummary` plus `capital: String?`, `currencies: [String]` and `languages: [Language]`.
   - `Continent` and `Language`.
 - `CountriesRepository: Sendable`:
   - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, sorted by name;
@@ -39,7 +39,8 @@ Foundation only. It defines what the app works with, independent of where the da
 Implements the repository with Apollo iOS.
 - Operations `CountriesQuery($filter:)` and `CountryQuery($code:)`, both built on the fragment `CountryBasics { code name emoji continent { code name } }`. Each screen has its own query, so the detail screen can gain fields without touching the list.
 - Apollo's generated code is embedded in this target with `internal` access. No public API can expose a generated type: the compiler rejects it.
-- `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout.
+- `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout and Apollo's default in-memory cache.
+- The client keeps Apollo's default interceptors but one: `CountriesInterceptorProvider` swaps in `ErrorFreeCacheInterceptor`, which never writes a response with GraphQL errors to the cache and otherwise does what Apollo's default cache interceptor does. Apollo would store the data such a response carries, with each failed field as `null`, and `.cacheFirst` would later read those as real values: a failed country as not found, a failed capital as missing.
 - Internal pieces, each unit-tested:
   - mappers, one per GraphQL shape: `CountrySummary(fragment:)`, reused by the detail mapper;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
@@ -50,11 +51,11 @@ Implements the repository with Apollo iOS.
 SwiftUI screens and their view models. It imports only CountriesDomain, never Apollo.
 - `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
 - `CountryList/` and `CountryDetail/`, one folder per feature.
-- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views, the `.loadState(_:retry:)` modifier and the `\.countriesRepository` environment entry.
+- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### CountriesApp
-`AppLauncher`, the `@main` entry point; the `CountriesApp` App; and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory and injects it into the environment; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
+`AppLauncher`, the `@main` entry point; the `CountriesApp` App; and `AppContainer`, the composition root. It reads the API endpoint from the app's Info.plist (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`), creates the repository through CountriesData's public factory, and `CountriesApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves CountriesData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `CountriesApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
@@ -85,7 +86,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
-- No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, and view-model tests use `MockCountriesRepository` and `SuspendingCountriesRepository`. Test doubles live in test targets.
+- No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
 - Snapshot tests render each screen state on every device preset in light and dark ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `CountriesUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
 - `CountriesApp.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 

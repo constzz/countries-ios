@@ -39,7 +39,9 @@
   @MainActor
   private func countryList(_ state: CountryListState) -> some View {
     CountriesSplitView {
-      CountryListContent(state: state) { _ in Task {} }
+      CountryListContent(state: state, selection: .constant(nil)) { _ in Task {} }
+    } detail: {
+      SelectCountryPlaceholder()
     }
   }
 #endif

@@ -24,6 +24,17 @@
         }
       }
     },
+    "Capital" : {
+      "comment" : "Label of the row with a country's capital city.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capital"
+          }
+        }
+      }
+    },
     "Connect to the internet and try again." : {
       "comment" : "Message of the error state when the device has no internet connection.",
       "localizations" : {
@@ -31,6 +42,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Connect to the internet and try again."
+          }
+        }
+      }
+    },
+    "Continent" : {
+      "comment" : "Label of the row with the continent a country is on.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continent"
           }
         }
       }
@@ -46,6 +68,17 @@
         }
       }
     },
+    "Couldn’t Load Country" : {
+      "comment" : "Title of the error state when a country's details failed to load for any reason but being offline.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Load Country"
+          }
+        }
+      }
+    },
     "Countries" : {
       "comment" : "The app's name, shown as the root screen's title.",
       "localizations" : {
@@ -53,6 +86,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Countries"
+          }
+        }
+      }
+    },
+    "Country Not Found" : {
+      "comment" : "Title of the state shown when the selected country no longer exists.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Country Not Found"
+          }
+        }
+      }
+    },
+    "Currencies" : {
+      "comment" : "Label of the row with the currencies a country uses.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Currencies"
+          }
+        }
+      }
+    },
+    "Languages" : {
+      "comment" : "Label of the row with the languages spoken in a country.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Languages"
           }
         }
       }
@@ -68,6 +134,17 @@
         }
       }
     },
+    "Loading Country…" : {
+      "comment" : "Label under the progress indicator while a country's details load.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Country…"
+          }
+        }
+      }
+    },
     "No countries found" : {
       "comment" : "VoiceOver announcement after a search that matched no country.",
       "localizations" : {
@@ -75,6 +152,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No countries found"
+          }
+        }
+      }
+    },
+    "None" : {
+      "comment" : "Value of a country detail row that has no value, such as the capital of Antarctica.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
           }
         }
       }
@@ -113,12 +201,23 @@
       }
     },
     "Something went wrong. Try again in a moment." : {
-      "comment" : "Message of the error state when the country list failed to load for any reason but being offline.",
+      "comment" : "Message of the error state when the countries or a country failed to load, unless offline.",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Something went wrong. Try again in a moment."
+          }
+        }
+      }
+    },
+    "This country isn’t available. Choose another one." : {
+      "comment" : "Message of the state shown when the selected country no longer exists.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This country isn’t available. Choose another one."
           }
         }
       }

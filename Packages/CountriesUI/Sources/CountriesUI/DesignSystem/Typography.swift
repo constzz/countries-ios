@@ -20,4 +20,15 @@ extension Font {
   static var rowFlag: Font {
     .title
   }
+
+  /// A country's name in the detail's header.
+  static var detailTitle: Font {
+    .title.bold()
+  }
+
+  /// A country's flag emoji in the detail's header, at `size`. Scale the size with
+  /// `@ScaledMetric(relativeTo: .largeTitle)`, so it follows Dynamic Type.
+  static func detailFlag(size: CGFloat) -> Font {
+    .system(size: size)
+  }
 }

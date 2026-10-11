@@ -8,6 +8,7 @@
       sample("AF", "Afghanistan", "🇦🇫", .asia),
       sample("AX", "Åland", "🇦🇽", .europe),
       sample("AQ", "Antarctica", "🇦🇶", .antarctica),
+      sample("BO", "Bolivia", "🇧🇴", .southAmerica),
       sample("BR", "Brazil", "🇧🇷", .southAmerica),
       sample("CA", "Canada", "🇨🇦", .northAmerica),
       sample("DE", "Germany", "🇩🇪", .europe),

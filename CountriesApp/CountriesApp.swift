@@ -6,8 +6,7 @@ struct CountriesApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView()
-        .environment(\.countriesRepository, container.countriesRepository)
+      RootView(repository: container.countriesRepository)
     }
   }
 }

@@ -11,10 +11,28 @@ enum LoadPhase: Equatable {
 extension View {
   /// Covers the content with the view for `phase`, or shows the content when it's `nil`. The
   /// content stays in place underneath, so its search field and refresh control keep working.
-  func loadState(_ phase: LoadPhase?, loadingLabel: Text, retry: @escaping () -> Void) -> some View {
-    overlay {
+  func loadState(
+    _ phase: LoadPhase?,
+    subject: ErrorCopy.Subject,
+    loadingLabel: Text,
+    retry: @escaping () -> Void
+  ) -> some View {
+    modifier(LoadStateModifier(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry))
+  }
+}
+
+/// The loading, empty and failed states both screens show over their content, so they look and
+/// behave the same.
+private struct LoadStateModifier: ViewModifier {
+  let phase: LoadPhase?
+  let subject: ErrorCopy.Subject
+  let loadingLabel: Text
+  let retry: () -> Void
+
+  func body(content: Content) -> some View {
+    content.overlay {
       if let phase {
-        LoadStateView(phase: phase, loadingLabel: loadingLabel, retry: retry)
+        LoadStateView(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry)
       }
     }
   }
@@ -22,6 +40,7 @@ extension View {
 
 private struct LoadStateView: View {
   let phase: LoadPhase
+  let subject: ErrorCopy.Subject
   let loadingLabel: Text
   let retry: () -> Void
 
@@ -32,7 +51,7 @@ private struct LoadStateView: View {
     case let .empty(query):
       ContentUnavailableView.search(text: query)
     case let .failed(error):
-      failure(ErrorCopy(error))
+      failure(ErrorCopy(error, subject: subject))
     }
   }
 
@@ -46,10 +65,12 @@ private struct LoadStateView: View {
     } description: {
       Text(copy.message)
     } actions: {
-      Button(action: retry) {
-        Text("Try Again", bundle: .module, comment: "Button on an error state that repeats the failed request.")
+      if copy.canRetry {
+        Button(action: retry) {
+          Text("Try Again", bundle: .module, comment: "Button on an error state that repeats the failed request.")
+        }
+        .buttonStyle(.bordered)
       }
-      .buttonStyle(.bordered)
     }
   }
 }

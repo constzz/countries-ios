@@ -18,12 +18,17 @@ enum JSONFixture {
 extension JSONFixture {
   /// The `data` object of a response captured into `Fixtures/<name>.json`.
   static func responseData(_ name: String, sourceLocation: SourceLocation = #_sourceLocation) throws -> JSONObject {
+    let response = try object(responseBody(name, sourceLocation: sourceLocation), sourceLocation: sourceLocation)
+    return try #require(response["data"] as? JSONObject, "\(name).json has no data", sourceLocation: sourceLocation)
+  }
+
+  /// The whole response captured into `Fixtures/<name>.json`, as the server sent it.
+  static func responseBody(_ name: String, sourceLocation: SourceLocation = #_sourceLocation) throws -> Data {
     let url = try #require(
       Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures"),
       "No fixture \(name).json",
       sourceLocation: sourceLocation
     )
-    let response = try object(Data(contentsOf: url), sourceLocation: sourceLocation)
-    return try #require(response["data"] as? JSONObject, "\(name).json has no data", sourceLocation: sourceLocation)
+    return try Data(contentsOf: url)
   }
 }
