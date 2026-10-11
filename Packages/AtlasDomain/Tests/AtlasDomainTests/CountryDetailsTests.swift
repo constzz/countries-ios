@@ -5,7 +5,7 @@ import Testing
 struct CountryDetailsTests {
   @Test("AC-2.2 details are identified by the country code")
   func idIsCode() {
-    let details = CountryDetails(
+    let sut = CountryDetails(
       summary: CountrySummary(
         code: "CH", name: "Switzerland", emoji: "🇨🇭", continent: Continent(code: "EU", name: "Europe")
       ),
@@ -13,6 +13,7 @@ struct CountryDetailsTests {
       currencies: ["CHF"],
       languages: [Language(code: "de", name: "German")]
     )
-    #expect(details.id == "CH")
+
+    #expect(sut.id == "CH")
   }
 }
