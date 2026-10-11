@@ -13,13 +13,17 @@ import Testing
 struct CountryDetailSnapshotTests {
   @Test("AC-2.4 AC-2.6 loading")
   func loading() async {
-    await assertSnapshots(of: countryDetail(.loading), named: "COUNTRY_DETAIL_LOADING", everyDevice: false)
+    let sut = makeSUT(.loading)
+
+    await assertSnapshots(of: sut, named: "COUNTRY_DETAIL_LOADING", everyDevice: false)
   }
 
   @Test("AC-2.2 AC-2.6 AC-2.7 loaded, with right-to-left")
   func loaded() async {
+    let sut = makeSUT(.loaded(.bolivia))
+
     await assertSnapshots(
-      of: countryDetail(.loaded(.bolivia)),
+      of: sut,
       named: "COUNTRY_DETAIL_LOADED",
       rightToLeft: true
     )
@@ -27,18 +31,24 @@ struct CountryDetailSnapshotTests {
 
   @Test("AC-2.3 AC-2.6 missing values read None")
   func missingValues() async {
-    await assertSnapshots(of: countryDetail(.loaded(.antarctica)), named: "COUNTRY_DETAIL_MISSING_VALUES")
+    let sut = makeSUT(.loaded(.antarctica))
+
+    await assertSnapshots(of: sut, named: "COUNTRY_DETAIL_MISSING_VALUES")
   }
 
   @Test("AC-2.2 AC-2.6 the longest name wraps")
   func longName() async {
-    await assertSnapshots(of: countryDetail(.loaded(.southGeorgia)), named: "COUNTRY_DETAIL_LONG_NAME")
+    let sut = makeSUT(.loaded(.southGeorgia))
+
+    await assertSnapshots(of: sut, named: "COUNTRY_DETAIL_LONG_NAME")
   }
 
   @Test("AC-2.4 AC-2.6 error")
   func error() async {
+    let sut = makeSUT(.failed(.failure(title: String(localized: .countryDetailErrorTitle))))
+
     await assertSnapshots(
-      of: countryDetail(.failed(.failure(title: String(localized: .countryDetailErrorTitle)))),
+      of: sut,
       named: "COUNTRY_DETAIL_ERROR",
       everyDevice: false
     )
@@ -46,25 +56,29 @@ struct CountryDetailSnapshotTests {
 
   @Test("AC-2.4 AC-2.6 offline")
   func offline() async {
-    await assertSnapshots(of: countryDetail(.failed(.offline)), named: "COUNTRY_DETAIL_OFFLINE", everyDevice: false)
+    let sut = makeSUT(.failed(.offline))
+
+    await assertSnapshots(of: sut, named: "COUNTRY_DETAIL_OFFLINE", everyDevice: false)
   }
 
   @Test("AC-2.5 AC-2.6 not found")
   func notFound() async {
+    let sut = makeSUT(.failed(ErrorCopy(
+      title: String(localized: .countryDetailNotFoundTitle),
+      message: String(localized: .countryDetailNotFoundMessage),
+      systemImage: "mappin.slash",
+      canRetry: false
+    )))
+
     await assertSnapshots(
-      of: countryDetail(.failed(ErrorCopy(
-        title: String(localized: .countryDetailNotFoundTitle),
-        message: String(localized: .countryDetailNotFoundMessage),
-        systemImage: "mappin.slash",
-        canRetry: false
-      ))),
+      of: sut,
       named: "COUNTRY_DETAIL_NOT_FOUND",
       everyDevice: false
     )
   }
 
   /// Bolivia's row is selected in every state, so the iPad images show the highlight.
-  private func countryDetail(_ content: CountryDetailState.Content) -> some View {
+  private func makeSUT(_ content: CountryDetailState.Content) -> some View {
     RootSplitView {
       CountryListContent(
         state: CountryListState(content: .loaded(CountrySummary.samples)),
