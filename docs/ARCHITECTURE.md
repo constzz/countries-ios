@@ -42,7 +42,7 @@ Implements the repository with Apollo iOS.
 - `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout and Apollo's default in-memory cache.
 - The client keeps Apollo's default interceptors but one: `CountriesInterceptorProvider` swaps in `ErrorFreeCacheInterceptor`, which never writes a response with GraphQL errors to the cache and otherwise does what Apollo's default cache interceptor does. Apollo would store the data such a response carries, with each failed field as `null`, and `.cacheFirst` would later read those as real values: a failed country as not found, a failed capital as missing.
 - Internal pieces, each unit-tested:
-  - mappers, one per GraphQL shape: `CountrySummary(fragment:)`, reused by the detail mapper;
+  - mappers, one per GraphQL shape: `CountrySummaryMapper`, reused by `CountryDetailsMapper`;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
   - `GraphQLClient`, the seam over `ApolloClient`. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `CountriesError` and logs the real cause.
@@ -60,6 +60,7 @@ SwiftUI screens and their view models. It imports only CountriesDomain, never Ap
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in CountriesData, and domain types are what crosses into the UI.
 - Protocols are `public`; implementations are `internal`.
+- A mapper is a `final class …Mapper` with a `private init()` and one `static func map`, tested on its own. It is never an initializer in an extension on the type it builds, where it would sit among that type's own initializers.
 - Dependencies come in through `init`. No singletons.
 - No use-case layer: view models call the repository protocol directly. At this size, use cases would only pass calls through. They are the first thing to add if business rules appear.
 - One UI package with a folder per feature. The split view composes both screens and their shared selection. A package per feature would add a shared design-system package and a catalog and test targets per package, all for two screens.
