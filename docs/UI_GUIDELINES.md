@@ -53,18 +53,18 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 - Full-screen loading only on the first load. Searches and refreshes keep the current rows visible with inline progress.
 - Empty and error states are built on `ContentUnavailableView`. A search with no results uses `ContentUnavailableView.search(text:)`.
 - Errors offer a retry that repeats the last request. The offline error has its own message.
-- The `.loadState(_:subject:loadingLabel:retry:)` view modifier renders the shared states, so both screens behave the same way. `subject` names what failed to load in the generic error's title.
+- The `.loadState(_:loadingLabel:retry:)` view modifier renders the shared states, so both screens behave the same way. A failure shows the `ErrorCopy` its view model chose: `.offline`, `.failure(title:)` titled after what failed to load, or copy the view model writes itself, such as the detail's not-found state.
 - Missing values render as "None".
 
 ## Views
 - The `body` is split into small private computed subviews.
-- The outer view owns the view model with `@State` and sends `.appeared` from `.task`. The inner view takes a state and an action handler, so previews and snapshots can feed it any state.
+- The outer view owns the view model with `@State` and sends `.appeared` from `.onAppear` (and the detail `.disappeared` from `.onDisappear`); the list's `.task` only handles effects. The inner view takes a state and an action handler, so previews and snapshots can feed it any state.
 - Previews cover loading, loaded, empty, error, long names, dark mode and the largest accessibility text size.
 
 ## Navigation
 - `NavigationSplitView`: the country list in the sidebar, the selected country in the detail column. On compact width (iPhone, folded iPhone Duo) it collapses into a push stack by itself.
 - The sidebar is a `List(selection:)` keyed by the country `code`, each row a `NavigationLink(value:)`, with `.searchable` and `.refreshable`.
-- The detail column shows `CountryDetailView(code:repository:).id(code)`: a new view and view model for each country.
+- The detail column shows `CountryDetailView(countryCode:repository:).id(countryCode)`: a new view and view model for each country.
 - Selection lives in the root view as `@SceneStorage`, not in either view model:
   - on regular width the selected row stays highlighted, and before any selection the detail column shows a "Select a country" placeholder;
   - if a search filters out the selected country, its detail stays visible, and refresh keeps the selection;

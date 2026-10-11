@@ -11,7 +11,7 @@ struct ErrorMappingTests {
     arguments: [URLError.Code.notConnectedToInternet, .networkConnectionLost]
   )
   func notConnectedMapsToOffline(code: URLError.Code) {
-    #expect(ApolloGraphQLClient.mapped(URLError(code)) as? CountriesError == .offline)
+    #expect(ApolloGraphQLClient.mapped(URLError(code)) as? RequestError == .offline)
   }
 
   @Test(
@@ -19,7 +19,7 @@ struct ErrorMappingTests {
     arguments: [URLError.Code.timedOut, .cannotFindHost, .badServerResponse]
   )
   func transportFailuresMapToNetwork(code: URLError.Code) {
-    #expect(ApolloGraphQLClient.mapped(URLError(code)) as? CountriesError == .network)
+    #expect(ApolloGraphQLClient.mapped(URLError(code)) as? RequestError == .network)
   }
 
   @Test("AC-1.11 cancellation stays cancellation")
@@ -31,7 +31,7 @@ struct ErrorMappingTests {
   @Test("AC-1.6 a body that isn't JSON maps to decoding")
   func unparsableBodyMapsToDecoding() {
     let error = JSONResponseParsingError.couldNotParseToJSON(data: Data("<html>".utf8))
-    #expect(ApolloGraphQLClient.mapped(error) as? CountriesError == .decoding)
+    #expect(ApolloGraphQLClient.mapped(error) as? RequestError == .decoding)
   }
 
   @Test(
@@ -39,14 +39,14 @@ struct ErrorMappingTests {
     arguments: [JSONDecodingError.missingValue, .nullValue, .wrongType]
   )
   func undecodableValueMapsToDecoding(error: JSONDecodingError) {
-    #expect(ApolloGraphQLClient.mapped(error) as? CountriesError == .decoding)
+    #expect(ApolloGraphQLClient.mapped(error) as? RequestError == .decoding)
   }
 
-  @Test("AC-1.6 anything else maps to unknown, and a CountriesError passes through")
+  @Test("AC-1.6 anything else maps to unknown, and a RequestError passes through")
   func otherErrorsMapToUnknown() {
-    #expect(ApolloGraphQLClient.mapped(ApolloClient.Error.noResults) as? CountriesError == .unknown)
-    #expect(ApolloGraphQLClient.mapped(CocoaError(.fileNoSuchFile)) as? CountriesError == .unknown)
-    #expect(ApolloGraphQLClient.mapped(CountriesError.server) as? CountriesError == .server)
+    #expect(ApolloGraphQLClient.mapped(ApolloClient.Error.noResults) as? RequestError == .unknown)
+    #expect(ApolloGraphQLClient.mapped(CocoaError(.fileNoSuchFile)) as? RequestError == .unknown)
+    #expect(ApolloGraphQLClient.mapped(RequestError.server) as? RequestError == .server)
   }
 
   @Test("AC-1.6 a response with GraphQL errors maps to server")
@@ -55,13 +55,13 @@ struct ErrorMappingTests {
     let withoutData = response(data: nil, errors: [error])
     let withData = try await response(data: countriesData(), errors: [error])
 
-    #expect(throws: CountriesError.server) { try ApolloGraphQLClient.data(from: withoutData) }
-    #expect(throws: CountriesError.server) { try ApolloGraphQLClient.data(from: withData) }
+    #expect(throws: RequestError.server) { try ApolloGraphQLClient.data(from: withoutData) }
+    #expect(throws: RequestError.server) { try ApolloGraphQLClient.data(from: withData) }
   }
 
   @Test("AC-1.6 a response without data maps to server")
   func missingDataMapsToServer() {
-    #expect(throws: CountriesError.server) { try ApolloGraphQLClient.data(from: response(data: nil, errors: nil)) }
+    #expect(throws: RequestError.server) { try ApolloGraphQLClient.data(from: response(data: nil, errors: nil)) }
   }
 
   @Test("AC-1.1 a response with data and no errors returns the data")

@@ -12,17 +12,23 @@ let package = Package(
   ],
   dependencies: [
     .package(path: "../AtlasDomain"),
+    .package(path: "../AtlasMVI"),
   ],
   targets: [
     .target(
       name: "AtlasUI",
-      dependencies: ["AtlasDomain"],
+      dependencies: ["AtlasDomain", "AtlasMVI"],
       resources: [.process("Resources")],
       swiftSettings: swiftSettings
     ),
     .testTarget(
       name: "AtlasUITests",
-      dependencies: ["AtlasUI", "AtlasDomain"],
+      dependencies: [
+        "AtlasUI",
+        "AtlasDomain",
+        "AtlasMVI",
+        .product(name: "AtlasMVITesting", package: "AtlasMVI"),
+      ],
       swiftSettings: swiftSettings
     ),
   ]

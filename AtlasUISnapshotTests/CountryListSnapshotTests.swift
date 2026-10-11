@@ -48,7 +48,7 @@ struct CountryListSnapshotTests {
   @Test("AC-1.9 error")
   func error() async {
     await assertSnapshots(
-      of: countryList(CountryListState(content: .failed(.network))),
+      of: countryList(CountryListState(content: .failed(.failure(title: String(localized: .countryListErrorTitle))))),
       named: "COUNTRY_LIST_ERROR",
       everyDevice: false
     )

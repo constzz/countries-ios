@@ -3,35 +3,12 @@ import AtlasDomain
 import Foundation
 import os
 
-/// Creates a repository backed by the Countries GraphQL API at `endpoint`.
-public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
-  CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint)))
-}
-
-/// How long a request may wait for data before it fails, instead of URLSession's 60 s.
-private let requestTimeout: TimeInterval = 15
-
-/// The client with an in-memory cache that never stores a response with GraphQL errors.
-func makeApolloClient(
-  endpoint: URL,
-  session: any ApolloURLSession = URLSession(configuration: .default)
-) -> ApolloClient {
-  let store = ApolloStore(cache: InMemoryNormalizedCache())
-  let transport = RequestChainNetworkTransport(
-    urlSession: session,
-    interceptorProvider: CountriesInterceptorProvider(),
-    store: store,
-    endpointURL: endpoint
-  )
-  return ApolloClient(
-    networkTransport: transport,
-    store: store,
-    defaultRequestConfiguration: RequestConfiguration(requestTimeout: requestTimeout)
-  )
-}
-
 struct CountriesRepositoryImpl: CountriesRepository {
-  let client: any GraphQLClient
+  private let client: any GraphQLClient
+
+  init(client: any GraphQLClient) {
+    self.client = client
+  }
 
   func countries(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary] {
     let filter: GraphQLNullable<CountriesAPI.CountryFilterInput> = SearchPattern.regex(for: term)
@@ -46,7 +23,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
       }
       guard !data.countries.isEmpty else {
         Logger.network.error("\(CountriesAPI.CountriesQuery.operationName, privacy: .public) returned no countries")
-        throw CountriesError.server
+        throw RequestError.server
       }
     }
     // The API sorts by code.
@@ -60,7 +37,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
     guard let country = try await client.fetch(query, cachePolicy: .cacheFirst).country else {
       let operation = CountriesAPI.CountryQuery.operationName
       Logger.network.error("\(operation, privacy: .public) found no country \(code, privacy: .public)")
-      throw CountriesError.notFound
+      throw RequestError.notFound
     }
     return CountryDetailsMapper.map(country)
   }

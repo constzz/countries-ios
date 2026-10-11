@@ -10,7 +10,6 @@ actor SuspendingCountriesRepository: CountriesRepository {
   }
 
   private(set) var calls: [MockCountriesRepository.Call] = []
-  /// The terms of the requests whose tasks were cancelled, in order.
   private(set) var cancelledTerms: [String] = []
   private var pending: [Pending] = []
   private var cancelledIDs: Set<Int> = []
@@ -43,7 +42,7 @@ actor SuspendingCountriesRepository: CountriesRepository {
   }
 
   func country(code _: String) async throws -> CountryDetails {
-    throw CountriesError.unknown
+    throw RequestError.unknown
   }
 
   /// Answers the oldest request for `term` still waiting.

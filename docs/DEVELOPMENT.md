@@ -12,7 +12,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 |---|---|
 | Build and run | open `Atlas.xcodeproj`, then ⌘R |
 | All tests | `xcodebuild test -scheme Atlas -testPlan Atlas -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
-| Package tests on macOS | `swift test --package-path Packages/AtlasData` (also `AtlasDomain`) |
+| Package tests on macOS | `swift test --package-path Packages/AtlasData` (also `AtlasDomain` and `AtlasMVI`) |
 | Lint | `scripts/lint.sh` |
 | Format, then lint | `scripts/lint.sh --fix` |
 | Test matrix | `scripts/test-matrix.sh` |

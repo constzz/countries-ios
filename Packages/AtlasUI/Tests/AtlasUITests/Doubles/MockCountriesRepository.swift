@@ -10,22 +10,22 @@ actor MockCountriesRepository: CountriesRepository {
   private(set) var calls: [Call] = []
   /// The codes `country(code:)` was asked for, in order.
   private(set) var requestedCodes: [String] = []
-  private var result: Result<[CountrySummary], CountriesError>
-  private var detailResult: Result<CountryDetails, CountriesError>
+  private var result: Result<[CountrySummary], RequestError>
+  private var detailResult: Result<CountryDetails, RequestError>
 
   init(
-    result: Result<[CountrySummary], CountriesError> = .success([]),
-    detailResult: Result<CountryDetails, CountriesError> = .failure(.notFound)
+    result: Result<[CountrySummary], RequestError> = .success([]),
+    detailResult: Result<CountryDetails, RequestError> = .failure(.notFound)
   ) {
     self.result = result
     self.detailResult = detailResult
   }
 
-  func setResult(_ result: Result<[CountrySummary], CountriesError>) {
+  func setResult(_ result: Result<[CountrySummary], RequestError>) {
     self.result = result
   }
 
-  func setDetailResult(_ detailResult: Result<CountryDetails, CountriesError>) {
+  func setDetailResult(_ detailResult: Result<CountryDetails, RequestError>) {
     self.detailResult = detailResult
   }
 

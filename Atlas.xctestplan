@@ -27,6 +27,13 @@
     },
     {
       "target" : {
+        "containerPath" : "container:Packages\/AtlasMVI",
+        "identifier" : "AtlasMVITests",
+        "name" : "AtlasMVITests"
+      }
+    },
+    {
+      "target" : {
         "containerPath" : "container:Packages\/AtlasUI",
         "identifier" : "AtlasUITests",
         "name" : "AtlasUITests"

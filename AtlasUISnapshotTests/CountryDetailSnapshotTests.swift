@@ -37,7 +37,11 @@ struct CountryDetailSnapshotTests {
 
   @Test("AC-2.4 AC-2.6 error")
   func error() async {
-    await assertSnapshots(of: countryDetail(.failed(.network)), named: "COUNTRY_DETAIL_ERROR", everyDevice: false)
+    await assertSnapshots(
+      of: countryDetail(.failed(.failure(title: String(localized: .countryDetailErrorTitle)))),
+      named: "COUNTRY_DETAIL_ERROR",
+      everyDevice: false
+    )
   }
 
   @Test("AC-2.4 AC-2.6 offline")
@@ -47,7 +51,16 @@ struct CountryDetailSnapshotTests {
 
   @Test("AC-2.5 AC-2.6 not found")
   func notFound() async {
-    await assertSnapshots(of: countryDetail(.failed(.notFound)), named: "COUNTRY_DETAIL_NOT_FOUND", everyDevice: false)
+    await assertSnapshots(
+      of: countryDetail(.failed(ErrorCopy(
+        title: String(localized: .countryDetailNotFoundTitle),
+        message: String(localized: .countryDetailNotFoundMessage),
+        systemImage: "mappin.slash",
+        canRetry: false
+      ))),
+      named: "COUNTRY_DETAIL_NOT_FOUND",
+      everyDevice: false
+    )
   }
 
   /// Bolivia's row is selected in every state, so the iPad images show the highlight.

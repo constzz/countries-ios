@@ -1,15 +1,18 @@
 import AtlasDomain
+import AtlasMVITesting
 import Testing
+@testable import AtlasMVI
 @testable import AtlasUI
 
-/// Every action, sent to the view model with a test repository: the state it leaves, the requests
-/// it makes and the effects it emits.
-@Suite("CountryListViewModel")
+/// Every action, sent to the view model with a test repository: the state it leaves and the
+/// requests it makes.
+@Suite("CountryListViewModel", .testTime)
 @MainActor
 struct CountryListViewModelTests {
   private let rows = Array(CountrySummary.samples.prefix(4))
-  /// Measures the 0.5 s before "Searching…" shows, and moves only when a test advances it.
-  private let clock = TestClock()
+  private var clock: TestClock {
+    TestTime.clock
+  }
 
   // MARK: Loading
 
@@ -64,7 +67,7 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository()
     let viewModel = await loadedViewModel(repository)
 
-    viewModel.send(.searchSettled("ger"))
+    viewModel.receive(.searchSettled("ger"))
 
     #expect(viewModel.state.content == .loaded(rows))
     #expect(!viewModel.state.isSearching)
@@ -82,11 +85,11 @@ struct CountryListViewModelTests {
   @Test("AC-1.4 a quick search never shows Searching")
   func quickSearchNeverShowsSearching() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository, clock: clock)
+    let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
     await repository.setResult(.success([rows[0]]))
 
-    let search = viewModel.send(.searchSettled("ger"))
+    let search = viewModel.receive(.searchSettled("ger"))
     #expect(!viewModel.state.isSearching)
     let isAnswered = await eventually { viewModel.state.content == .loaded([rows[0]]) }
     #expect(isAnswered)
@@ -102,12 +105,12 @@ struct CountryListViewModelTests {
   func searchingStaysUpAcrossSearches() async {
     let repository = SuspendingCountriesRepository()
     let viewModel = await loadedViewModel(repository)
-    viewModel.send(.searchSettled("a"))
+    viewModel.receive(.searchSettled("a"))
     clock.advance(by: .milliseconds(500))
     let isShown = await eventually { viewModel.state.isSearching }
     #expect(isShown)
 
-    viewModel.send(.searchSettled("ab"))
+    viewModel.receive(.searchSettled("ab"))
 
     #expect(viewModel.state.isSearching)
   }
@@ -118,7 +121,7 @@ struct CountryListViewModelTests {
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
 
-    let search = viewModel.send(.searchSettled("ger"))
+    let search = viewModel.receive(.searchSettled("ger"))
 
     #expect(viewModel.state.content == .loading)
     #expect(!viewModel.state.isSearching)
@@ -132,7 +135,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.appeared).value
 
     await repository.setResult(.success([]))
-    await viewModel.send(.searchSettled("zzz")).value
+    await viewModel.receive(.searchSettled("zzz")).value
 
     #expect(viewModel.state.content == .empty(query: "zzz"))
     #expect(!viewModel.state.isSearching)
@@ -141,8 +144,8 @@ struct CountryListViewModelTests {
   @Test("AC-1.2 typing updates the search text and feeds the search pipe")
   func typingFeedsTheSearchPipe() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    let scheduler = TestScheduler()
-    let viewModel = CountryListViewModel(repository: repository, scheduler: scheduler)
+    let scheduler = TestTime.scheduler
+    let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
 
     viewModel.send(.searchTextChanged("Ger"))
@@ -172,7 +175,7 @@ struct CountryListViewModelTests {
     let repository = MockCountriesRepository(result: .success(rows))
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
-    await viewModel.send(.searchSettled("a")).value
+    await viewModel.receive(.searchSettled("a")).value
 
     await repository.setResult(.success([rows[0]]))
     await viewModel.send(.refreshRequested).value
@@ -190,7 +193,7 @@ struct CountryListViewModelTests {
     await viewModel.send(.refreshRequested).value
     let refreshed = ids(viewModel.state)
     await repository.setResult(.success([rows[1], rows[2]]))
-    await viewModel.send(.searchSettled("an")).value
+    await viewModel.receive(.searchSettled("an")).value
 
     #expect(refreshed == rows.map(\.code))
     #expect(ids(viewModel.state) == [rows[1].code, rows[2].code])
@@ -205,14 +208,14 @@ struct CountryListViewModelTests {
     await viewModel.send(.appeared).value
 
     await repository.setResult(.failure(.offline))
-    await viewModel.send(.searchSettled("ger")).value
+    await viewModel.receive(.searchSettled("ger")).value
 
     #expect(viewModel.state.content == .failed(.offline))
     #expect(!viewModel.state.isSearching)
   }
 
-  @Test("AC-1.6 retry repeats the last request")
-  func retryRepeatsTheLastRequest() async {
+  @Test("AC-1.6 retry after a failed refresh refreshes again")
+  func retryAfterAFailedRefreshRefreshesAgain() async {
     let repository = MockCountriesRepository(result: .success(rows))
     let viewModel = CountryListViewModel(repository: repository)
     await viewModel.send(.appeared).value
@@ -228,6 +231,23 @@ struct CountryListViewModelTests {
     #expect(viewModel.state.content == .loaded(rows))
   }
 
+  @Test("AC-1.6 retry after a failed search runs the term again")
+  func retryAfterAFailedSearchRunsTheTermAgain() async {
+    let repository = MockCountriesRepository(result: .success(rows))
+    let viewModel = CountryListViewModel(repository: repository)
+    await viewModel.send(.appeared).value
+    await repository.setResult(.failure(.offline))
+    await viewModel.receive(.searchSettled("ger")).value
+
+    await repository.setResult(.success([rows[0]]))
+    let retry = viewModel.send(.retryTapped)
+
+    #expect(viewModel.state.content == .loading)
+    await retry.value
+    #expect(await repository.calls.last?.term == "ger")
+    #expect(viewModel.state.content == .loaded([rows[0]]))
+  }
+
   // MARK: Ordering
 
   @Test("AC-1.11 a new fetch cancels the one in flight, and the cancelled one shows no error")
@@ -235,10 +255,10 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository()
     let viewModel = CountryListViewModel(repository: repository)
 
-    let first = viewModel.send(.searchSettled("a"))
+    let first = viewModel.receive(.searchSettled("a"))
     let isRequested = await eventually { await repository.requestedTerms == ["a"] }
     #expect(isRequested)
-    let second = viewModel.send(.searchSettled("ab"))
+    let second = viewModel.receive(.searchSettled("ab"))
     await first.value
 
     #expect(await repository.cancelledTerms == ["a"])
@@ -257,10 +277,10 @@ struct CountryListViewModelTests {
     let repository = SuspendingCountriesRepository(honorsCancellation: false)
     let viewModel = await loadedViewModel(repository)
 
-    let first = viewModel.send(.searchSettled("a"))
+    let first = viewModel.receive(.searchSettled("a"))
     let isFirstRequested = await eventually { await repository.requestedTerms.last == "a" }
     #expect(isFirstRequested)
-    let second = viewModel.send(.searchSettled("ab"))
+    let second = viewModel.receive(.searchSettled("ab"))
     let isSecondRequested = await eventually { await repository.requestedTerms.last == "ab" }
     #expect(isSecondRequested)
     await repository.respond(to: "ab", with: [rows[0]])
@@ -274,39 +294,11 @@ struct CountryListViewModelTests {
     #expect(viewModel.state.content == .loaded([rows[0]]))
   }
 
-  // MARK: Announcing
-
-  @Test("AC-1.12 a search announces its result count")
-  func searchAnnouncesItsResultCount() async {
-    let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository)
-    let effects = viewModel.effects()
-    await viewModel.send(.appeared).value
-
-    await viewModel.send(.searchSettled("a")).value
-    await repository.setResult(.success([]))
-    await viewModel.send(.searchSettled("zzz")).value
-
-    #expect(await first(2, of: effects) == [.announce(resultCount: rows.count), .announce(resultCount: 0)])
-  }
-
-  @Test("AC-1.12 load and refresh announce nothing")
-  func loadAndRefreshAnnounceNothing() async {
-    let viewModel = CountryListViewModel(repository: MockCountriesRepository(result: .success(rows)))
-    let effects = viewModel.effects()
-
-    await viewModel.send(.appeared).value
-    await viewModel.send(.refreshRequested).value
-    await viewModel.send(.searchSettled("a")).value
-
-    #expect(await first(1, of: effects) == [.announce(resultCount: rows.count)])
-  }
-
   // MARK: Helpers
 
   /// A view model whose first load returned `rows` from `repository`.
   private func loadedViewModel(_ repository: SuspendingCountriesRepository) async -> CountryListViewModel {
-    let viewModel = CountryListViewModel(repository: repository, clock: clock)
+    let viewModel = CountryListViewModel(repository: repository)
     let load = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedTerms == [""] }
     await repository.respond(to: "", with: rows)

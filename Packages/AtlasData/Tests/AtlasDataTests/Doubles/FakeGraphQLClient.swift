@@ -8,14 +8,13 @@ import AtlasDomain
 actor FakeGraphQLClient: GraphQLClient {
   private(set) var queries: [any GraphQLQuery] = []
   private(set) var cachePolicies: [CachePolicy.Query.SingleResponse] = []
-  private var results: [Result<JSONObject, CountriesError>]
+  private var results: [Result<JSONObject, RequestError>]
 
-  /// Answers every query with `result`.
-  init(result: Result<JSONObject, CountriesError>) {
+  init(result: Result<JSONObject, RequestError>) {
     self.init(results: [result])
   }
 
-  init(results: [Result<JSONObject, CountriesError>]) {
+  init(results: [Result<JSONObject, RequestError>]) {
     precondition(!results.isEmpty, "A fake client needs at least one result.")
     self.results = results
   }

@@ -3,9 +3,13 @@ import AtlasDomain
 import Foundation
 import os
 
-/// Fetches through `ApolloClient` and maps every failure to `CountriesError`, logging its cause.
+/// Fetches through `ApolloClient` and maps every failure to `RequestError`, logging its cause.
 struct ApolloGraphQLClient: GraphQLClient {
-  let client: ApolloClient
+  private let client: ApolloClient
+
+  init(client: ApolloClient) {
+    self.client = client
+  }
 
   func fetch<Query: GraphQLQuery>(
     _ query: Query,
@@ -16,7 +20,7 @@ struct ApolloGraphQLClient: GraphQLClient {
       response = try await client.fetch(query: query, cachePolicy: cachePolicy)
     } catch {
       let mapped = Self.mapped(error)
-      if mapped is CountriesError {
+      if mapped is RequestError {
         let cause = String(describing: error)
         Logger.network.error("\(Query.operationName, privacy: .public) failed: \(cause, privacy: .public)")
       }
@@ -36,31 +40,31 @@ struct ApolloGraphQLClient: GraphQLClient {
   /// The response's data, or `.server` when it has GraphQL errors or no data.
   static func data<Operation>(from response: GraphQLResponse<Operation>) throws -> Operation.Data {
     guard response.errors?.isEmpty ?? true, let data = response.data else {
-      throw CountriesError.server
+      throw RequestError.server
     }
     return data
   }
 
-  /// The error to throw for a failed fetch: `CancellationError` or a `CountriesError`.
+  /// The error to throw for a failed fetch: `CancellationError` or a `RequestError`.
   static func mapped(_ error: any Error) -> any Error {
     switch error {
-    case is CountriesError, is CancellationError:
+    case is RequestError, is CancellationError:
       error
     case let error as URLError:
       switch error.code {
       case .cancelled:
         CancellationError()
       case .notConnectedToInternet, .networkConnectionLost:
-        CountriesError.offline
+        RequestError.offline
       default:
-        CountriesError.network
+        RequestError.network
       }
     case is ResponseCodeInterceptor.ResponseCodeError:
-      CountriesError.network
+      RequestError.network
     case is JSONResponseParsingError, is JSONDecodingError, is GraphQLExecutionError:
-      CountriesError.decoding
+      RequestError.decoding
     default:
-      CountriesError.unknown
+      RequestError.unknown
     }
   }
 }

@@ -8,9 +8,7 @@ actor SuspendingDetailsRepository: CountriesRepository {
     let continuation: CheckedContinuation<CountryDetails, any Error>
   }
 
-  /// The codes requested, in order.
   private(set) var requestedCodes: [String] = []
-  /// How many requests were cancelled.
   private(set) var cancelledCount = 0
   private var pending: [Pending] = []
   private var cancelledIDs: Set<Int> = []
@@ -23,7 +21,7 @@ actor SuspendingDetailsRepository: CountriesRepository {
   }
 
   func countries(matching _: String, forceRefresh _: Bool) async throws -> [CountrySummary] {
-    throw CountriesError.unknown
+    throw RequestError.unknown
   }
 
   func country(code: String) async throws -> CountryDetails {
@@ -45,7 +43,7 @@ actor SuspendingDetailsRepository: CountriesRepository {
   /// Answers request `index`, counting from 0 in the order they came, if it's still waiting. A
   /// cancellation reaches the repository a moment late, so answering "the oldest request" could
   /// answer one already cancelled.
-  func respond(to index: Int, with result: Result<CountryDetails, CountriesError>) {
+  func respond(to index: Int, with result: Result<CountryDetails, RequestError>) {
     guard let position = pending.firstIndex(where: { $0.id == index }) else {
       return
     }
