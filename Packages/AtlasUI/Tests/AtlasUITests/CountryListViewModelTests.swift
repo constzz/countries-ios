@@ -134,13 +134,16 @@ struct CountryListViewModelTests {
   @Test("AC-1.2 typing updates the search text and feeds the search pipe")
   func typingFeedsTheSearchPipe() async {
     let repository = MockCountriesRepository(result: .success(rows))
-    let viewModel = CountryListViewModel(repository: repository, debounceInterval: .milliseconds(20))
+    let scheduler = TestScheduler()
+    let viewModel = CountryListViewModel(repository: repository, scheduler: scheduler)
     await viewModel.send(.appeared).value
 
     viewModel.send(.searchTextChanged("Ger"))
 
     #expect(viewModel.state.searchText == "Ger")
-    #expect(await repository.calls.count == 1)
+    #expect(viewModel.state.query.isEmpty)
+    scheduler.advance(by: .milliseconds(300))
+    #expect(viewModel.state.query == "Ger")
     let isSearched = await eventually { await repository.calls.last == .init(term: "Ger", forceRefresh: false) }
     #expect(isSearched)
   }
