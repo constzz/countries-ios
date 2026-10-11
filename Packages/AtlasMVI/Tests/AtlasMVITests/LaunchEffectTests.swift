@@ -10,37 +10,41 @@ import Testing
 struct LaunchEffectTests {
   @Test("the work's value comes back as an action")
   func valueComesBackAsAnAction() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    let request = viewModel.send(.valueRequested(7))
+    let request = sut.send(.valueRequested(7))
     TestTime.clock.advance(by: .seconds(1))
     await request.value
 
-    #expect(viewModel.state.value == 7)
+    #expect(sut.state.value == 7)
   }
 
   @Test("the work's error comes back as an action")
   func errorComesBackAsAnAction() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    let request = viewModel.send(.valueRequested(-1))
+    let request = sut.send(.valueRequested(-1))
     TestTime.clock.advance(by: .seconds(1))
     await request.value
 
-    #expect(viewModel.state.didFail)
-    #expect(viewModel.state.value == nil)
+    #expect(sut.state.didFail)
+    #expect(sut.state.value == nil)
   }
 
   @Test("a cancelled effect sends nothing")
   func cancelledEffectSendsNothing() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    let request = viewModel.send(.valueRequested(7))
-    viewModel.send(.valueRequestCancelled)
+    let request = sut.send(.valueRequested(7))
+    sut.send(.valueRequestCancelled)
     TestTime.clock.advance(by: .seconds(1))
     await request.value
 
-    #expect(viewModel.state.value == nil)
-    #expect(!viewModel.state.didFail)
+    #expect(sut.state.value == nil)
+    #expect(!sut.state.didFail)
+  }
+
+  private func makeSUT() -> CounterViewModel {
+    CounterViewModel()
   }
 }

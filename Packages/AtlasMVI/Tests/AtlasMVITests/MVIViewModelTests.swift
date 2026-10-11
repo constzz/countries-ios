@@ -9,104 +9,108 @@ import Testing
 struct MVIViewModelTests {
   @Test("send applies reduce's new state")
   func sendAppliesTheNewState() {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    viewModel.send(.incremented)
+    sut.send(.incremented)
 
-    #expect(viewModel.state.count == 1)
+    #expect(sut.state.count == 1)
   }
 
   @Test("an unchanged state doesn't notify observers")
   func unchangedStateDoesNotNotify() {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
     let changes = ChangeCount()
-    observeState(of: viewModel, counting: changes)
+    observeState(of: sut, counting: changes)
 
-    viewModel.send(.nothingChanged)
+    sut.send(.nothingChanged)
     #expect(changes.value == 0)
 
-    viewModel.send(.incremented)
+    sut.send(.incremented)
     #expect(changes.value == 1)
   }
 
   @Test("send's task finishes after the work it launched")
   func sendTaskAwaitsLaunchedWork() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    let task = viewModel.send(.workStarted)
-    #expect(!viewModel.state.isWorkFinished)
+    let task = sut.send(.workStarted)
+    #expect(!sut.state.isWorkFinished)
     await task.value
 
-    #expect(viewModel.state.isWorkFinished)
+    #expect(sut.state.isWorkFinished)
   }
 
   @Test("a cancelled launched task stops and delivers nothing")
   func cancelledWorkStops() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    let task = viewModel.send(.longWorkStarted)
-    viewModel.send(.longWorkCancelled)
+    let task = sut.send(.longWorkStarted)
+    sut.send(.longWorkCancelled)
     await task.value
 
-    #expect(!viewModel.state.isLongWorkStopped)
+    #expect(!sut.state.isLongWorkStopped)
   }
 
   @Test("a subscribed publisher's values arrive as events")
   func subscribedValuesArriveAsEvents() {
-    let viewModel = CounterViewModel()
-    viewModel.send(.inputOpened)
+    let sut = makeSUT()
+    sut.send(.inputOpened)
 
-    viewModel.input.send(5)
+    sut.input.send(5)
 
-    #expect(viewModel.state.value == 5)
+    #expect(sut.state.value == 5)
   }
 
   @Test("an event goes through the event reduce")
   func eventGoesThroughTheEventReduce() {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    viewModel.receive(.valueReceived(3))
+    sut.receive(.valueReceived(3))
 
-    #expect(viewModel.state.value == 3)
+    #expect(sut.state.value == 3)
   }
 
   @Test("an emitted effect reaches the subscriber")
   func emittedEffectReachesSubscriber() async {
-    let viewModel = CounterViewModel()
-    let effects = viewModel.effects()
+    let sut = makeSUT()
+    let effects = sut.effects()
 
-    viewModel.send(.pingRequested(1))
+    sut.send(.pingRequested(1))
 
     #expect(await first(1, of: effects) == [.pinged(1)])
   }
 
   @Test("an effect emitted while no one subscribes is dropped")
   func unheardEffectIsDropped() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
 
-    viewModel.send(.pingRequested(1))
-    let effects = viewModel.effects()
-    viewModel.send(.pingRequested(2))
+    sut.send(.pingRequested(1))
+    let effects = sut.effects()
+    sut.send(.pingRequested(2))
 
     #expect(await first(1, of: effects) == [.pinged(2)])
   }
 
   @Test("a new subscriber after a cancelled one still gets effects")
   func newSubscriberAfterCancelledOne() async {
-    let viewModel = CounterViewModel()
+    let sut = makeSUT()
     let firstSubscriber = Task {
-      for await _ in viewModel.effects() {}
+      for await _ in sut.effects() {}
     }
     firstSubscriber.cancel()
     await firstSubscriber.value
 
-    let effects = viewModel.effects()
-    viewModel.send(.pingRequested(3))
+    let effects = sut.effects()
+    sut.send(.pingRequested(3))
 
     #expect(await first(1, of: effects) == [.pinged(3)])
   }
 
   // MARK: Helpers
+
+  private func makeSUT() -> CounterViewModel {
+    CounterViewModel()
+  }
 
   /// Counts the next change to `state`. Observation reports only the first change after it starts.
   private func observeState(of viewModel: CounterViewModel, counting changes: ChangeCount) {
