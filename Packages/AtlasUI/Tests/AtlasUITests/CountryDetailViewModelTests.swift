@@ -84,7 +84,11 @@ struct CountryDetailViewModelTests {
 
     await viewModel.send(.appeared).value
 
-    #expect(viewModel.state.content == .failed(.countryNotFound))
+    guard case let .failed(copy) = viewModel.state.content else {
+      Issue.record("Expected not found, got \(viewModel.state.content)")
+      return
+    }
+    #expect(copy.title == String(localized: .countryDetailNotFoundTitle))
   }
 
   // MARK: Title

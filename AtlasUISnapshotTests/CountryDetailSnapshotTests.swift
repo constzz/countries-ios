@@ -38,7 +38,7 @@ struct CountryDetailSnapshotTests {
   @Test("AC-2.4 AC-2.6 error")
   func error() async {
     await assertSnapshots(
-      of: countryDetail(.failed(.countryDetailFailure)),
+      of: countryDetail(.failed(.failure(title: String(localized: .countryDetailErrorTitle)))),
       named: "COUNTRY_DETAIL_ERROR",
       everyDevice: false
     )
@@ -52,7 +52,12 @@ struct CountryDetailSnapshotTests {
   @Test("AC-2.5 AC-2.6 not found")
   func notFound() async {
     await assertSnapshots(
-      of: countryDetail(.failed(.countryNotFound)),
+      of: countryDetail(.failed(ErrorCopy(
+        title: String(localized: .countryDetailNotFoundTitle),
+        message: String(localized: .countryDetailNotFoundMessage),
+        systemImage: "mappin.slash",
+        canRetry: false
+      ))),
       named: "COUNTRY_DETAIL_NOT_FOUND",
       everyDevice: false
     )

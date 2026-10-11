@@ -19,7 +19,7 @@
   }
 
   #Preview("Error") {
-    countryDetail(CountryDetailState(content: .failed(.countryDetailFailure)))
+    countryDetail(CountryDetailState(content: .failed(.failure(title: String(localized: .countryDetailErrorTitle)))))
   }
 
   #Preview("Offline") {
@@ -27,7 +27,12 @@
   }
 
   #Preview("Not found") {
-    countryDetail(CountryDetailState(content: .failed(.countryNotFound)))
+    countryDetail(CountryDetailState(content: .failed(ErrorCopy(
+      title: String(localized: .countryDetailNotFoundTitle),
+      message: String(localized: .countryDetailNotFoundMessage),
+      systemImage: "mappin.slash",
+      canRetry: false
+    ))))
   }
 
   #Preview("Loaded, dark") {

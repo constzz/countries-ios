@@ -19,7 +19,7 @@
   }
 
   #Preview("Error") {
-    countryList(CountryListState(content: .failed(.countryListFailure)))
+    countryList(CountryListState(content: .failed(.failure(title: String(localized: .countryListErrorTitle)))))
   }
 
   #Preview("Offline") {

@@ -22,8 +22,6 @@ struct ErrorCopyTests {
       message: String(localized: .errorGenericMessage),
       systemImage: "exclamationmark.triangle"
     ))
-    #expect(ErrorCopy.countryListFailure.title == String(localized: .countryListErrorTitle))
-    #expect(ErrorCopy.countryDetailFailure.title == String(localized: .countryDetailErrorTitle))
   }
 
   @Test(
@@ -35,7 +33,8 @@ struct ErrorCopyTests {
 
     await viewModel.send(.appeared).value
 
-    #expect(viewModel.state.content == .failed(error == .offline ? .offline : .countryListFailure))
+    let failure = ErrorCopy.failure(title: String(localized: .countryListErrorTitle))
+    #expect(viewModel.state.content == .failed(error == .offline ? .offline : failure))
   }
 
   @Test(
@@ -43,7 +42,7 @@ struct ErrorCopyTests {
     arguments: [RequestError.network, .server, .decoding, .unknown]
   )
   func detailFailureNamesACountry(error: RequestError) async {
-    #expect(await detailContent(after: error) == .failed(.countryDetailFailure))
+    #expect(await detailContent(after: error) == .failed(.failure(title: String(localized: .countryDetailErrorTitle))))
   }
 
   @Test("AC-2.5 not found has its own copy and no retry")

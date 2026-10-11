@@ -113,9 +113,15 @@ final class CountryDetailViewModel: MVIViewModel<
     case .offline:
       .offline
     case .notFound:
-      .countryNotFound
+      // The country won't start existing, so repeating the request can't help.
+      ErrorCopy(
+        title: String(localized: .countryDetailNotFoundTitle),
+        message: String(localized: .countryDetailNotFoundMessage),
+        systemImage: "mappin.slash",
+        canRetry: false
+      )
     case .network, .server, .decoding, .unknown:
-      .countryDetailFailure
+      .failure(title: String(localized: .countryDetailErrorTitle))
     }
   }
 

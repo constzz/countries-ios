@@ -53,7 +53,7 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 - Full-screen loading only on the first load. Searches and refreshes keep the current rows visible with inline progress.
 - Empty and error states are built on `ContentUnavailableView`. A search with no results uses `ContentUnavailableView.search(text:)`.
 - Errors offer a retry that repeats the last request. The offline error has its own message.
-- The `.loadState(_:loadingLabel:retry:)` view modifier renders the shared states, so both screens behave the same way. A failure shows the `ErrorCopy` its view model chose: `.offline`, `.failure(title:)` titled after what failed to load, or a feature's own copy, kept beside its view model (`ErrorCopy+CountryDetail.swift`).
+- The `.loadState(_:loadingLabel:retry:)` view modifier renders the shared states, so both screens behave the same way. A failure shows the `ErrorCopy` its view model chose: `.offline`, `.failure(title:)` titled after what failed to load, or copy the view model writes itself, such as the detail's not-found state.
 - Missing values render as "None".
 
 ## Views

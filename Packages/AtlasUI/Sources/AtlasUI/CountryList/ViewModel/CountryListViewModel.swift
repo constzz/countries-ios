@@ -123,7 +123,7 @@ final class CountryListViewModel: MVIViewModel<
     searchProgressTask?.cancel()
     var next = current
     next.isSearching = false
-    next.content = .failed(error == .offline ? .offline : .countryListFailure)
+    next.content = .failed(error == .offline ? .offline : .failure(title: String(localized: .countryListErrorTitle)))
     return next
   }
 
