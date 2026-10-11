@@ -15,49 +15,49 @@ struct CountryListSearchInputTests {
 
   @Test("AC-1.2 typing searches once, 300 ms after the last keystroke")
   func typingSearchesOnceAfterAPause() async {
-    let viewModel = makeViewModel()
+    let sut = makeSUT()
 
-    viewModel.send(.searchTextChanged("g"))
+    sut.send(.searchTextChanged("g"))
     scheduler.advance(by: .milliseconds(200))
-    viewModel.send(.searchTextChanged("ge"))
+    sut.send(.searchTextChanged("ge"))
     scheduler.advance(by: .milliseconds(200))
-    viewModel.send(.searchTextChanged("ger"))
+    sut.send(.searchTextChanged("ger"))
     scheduler.advance(by: .milliseconds(299))
 
-    #expect(viewModel.state.query == "")
+    #expect(sut.state.query == "")
 
     scheduler.advance(by: .milliseconds(1))
 
-    #expect(viewModel.state.query == "ger")
+    #expect(sut.state.query == "ger")
     scheduler.advance(by: .seconds(1))
-    await expectCalls(for: ["ger"], thenSearch: "gera", in: viewModel)
+    await expectCalls(for: ["ger"], thenSearch: "gera", in: sut)
   }
 
   @Test("AC-1.2 an unchanged term issues no search")
   func unchangedTermIssuesNoSearch() async {
-    let viewModel = makeViewModel()
-    viewModel.send(.searchTextChanged("ger"))
+    let sut = makeSUT()
+    sut.send(.searchTextChanged("ger"))
     scheduler.advance(by: .milliseconds(300))
 
-    viewModel.send(.searchTextChanged("ger "))
+    sut.send(.searchTextChanged("ger "))
     scheduler.advance(by: .milliseconds(300))
 
-    await expectCalls(for: ["ger"], thenSearch: "gera", in: viewModel)
+    await expectCalls(for: ["ger"], thenSearch: "gera", in: sut)
   }
 
   @Test("AC-1.2 returning to the settled term issues no search")
   func returningToTheSettledTermIssuesNoSearch() async {
-    let viewModel = makeViewModel()
-    await viewModel.send(.appeared).value
+    let sut = makeSUT()
+    await sut.send(.appeared).value
 
-    viewModel.send(.searchTextChanged("a"))
-    viewModel.send(.searchTextChanged(""))
+    sut.send(.searchTextChanged("a"))
+    sut.send(.searchTextChanged(""))
     scheduler.advance(by: .milliseconds(300))
 
-    await expectCalls(for: [""], thenSearch: "b", in: viewModel)
+    await expectCalls(for: [""], thenSearch: "b", in: sut)
   }
 
-  private func makeViewModel() -> CountryListViewModel {
+  private func makeSUT() -> CountryListViewModel {
     CountryListViewModel(repository: repository)
   }
 

@@ -29,12 +29,12 @@ struct ErrorCopyTests {
     arguments: [RequestError.offline, .network, .server, .notFound, .decoding, .unknown]
   )
   func listCopy(error: RequestError) async {
-    let viewModel = CountryListViewModel(repository: MockCountriesRepository(result: .failure(error)))
+    let sut = makeSUT(result: .failure(error))
 
-    await viewModel.send(.appeared).value
+    await sut.send(.appeared).value
 
     let failure = ErrorCopy.failure(title: String(localized: .countryListErrorTitle))
-    #expect(viewModel.state.content == .failed(error == .offline ? .offline : failure))
+    #expect(sut.state.content == .failed(error == .offline ? .offline : failure))
   }
 
   @Test(
@@ -55,12 +55,17 @@ struct ErrorCopyTests {
     )))
   }
 
+  private func makeSUT(result: Result<[CountrySummary], RequestError>) -> CountryListViewModel {
+    CountryListViewModel(repository: MockCountriesRepository(result: result))
+  }
+
+  private func makeSUT(detailResult: Result<CountryDetails, RequestError>) -> CountryDetailViewModel {
+    CountryDetailViewModel(countryCode: "CH", repository: MockCountriesRepository(detailResult: detailResult))
+  }
+
   private func detailContent(after error: RequestError) async -> CountryDetailState.Content {
-    let viewModel = CountryDetailViewModel(
-      countryCode: "CH",
-      repository: MockCountriesRepository(detailResult: .failure(error))
-    )
-    await viewModel.send(.appeared).value
-    return viewModel.state.content
+    let sut = makeSUT(detailResult: .failure(error))
+    await sut.send(.appeared).value
+    return sut.state.content
   }
 }
