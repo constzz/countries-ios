@@ -11,7 +11,8 @@ public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
 /// How long a request may wait for data before it fails, instead of URLSession's 60 s.
 private let requestTimeout: TimeInterval = 15
 
-/// The client with an in-memory cache. Tests pass a `session` that answers without the network.
+/// The client with an in-memory cache that never stores a response with GraphQL errors. Tests pass
+/// a `session` that answers without the network.
 func makeApolloClient(
   endpoint: URL,
   session: any ApolloURLSession = URLSession(configuration: .default)
@@ -19,7 +20,7 @@ func makeApolloClient(
   let store = ApolloStore(cache: InMemoryNormalizedCache())
   let transport = RequestChainNetworkTransport(
     urlSession: session,
-    interceptorProvider: DefaultInterceptorProvider.shared,
+    interceptorProvider: CountriesInterceptorProvider(),
     store: store,
     endpointURL: endpoint
   )
