@@ -13,30 +13,30 @@
   "testTargets" : [
     {
       "target" : {
-        "containerPath" : "container:Packages\/CountriesDomain",
-        "identifier" : "CountriesDomainTests",
-        "name" : "CountriesDomainTests"
+        "containerPath" : "container:Packages\/AtlasDomain",
+        "identifier" : "AtlasDomainTests",
+        "name" : "AtlasDomainTests"
       }
     },
     {
       "target" : {
-        "containerPath" : "container:Packages\/CountriesData",
-        "identifier" : "CountriesDataTests",
-        "name" : "CountriesDataTests"
+        "containerPath" : "container:Packages\/AtlasData",
+        "identifier" : "AtlasDataTests",
+        "name" : "AtlasDataTests"
       }
     },
     {
       "target" : {
-        "containerPath" : "container:Packages\/CountriesUI",
-        "identifier" : "CountriesUITests",
-        "name" : "CountriesUITests"
+        "containerPath" : "container:Packages\/AtlasUI",
+        "identifier" : "AtlasUITests",
+        "name" : "AtlasUITests"
       }
     },
     {
       "target" : {
         "containerPath" : "container:CountriesApp.xcodeproj",
         "identifier" : "C0A100000000000000000062",
-        "name" : "CountriesUISnapshotTests"
+        "name" : "AtlasUISnapshotTests"
       }
     }
   ],

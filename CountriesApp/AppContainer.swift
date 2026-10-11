@@ -1,5 +1,5 @@
-import CountriesData
-import CountriesDomain
+import AtlasData
+import AtlasDomain
 
 /// The composition root: builds the app's dependencies. Startup does nothing else.
 struct AppContainer {

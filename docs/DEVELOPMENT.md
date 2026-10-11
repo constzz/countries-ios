@@ -12,7 +12,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 |---|---|
 | Build and run | open `CountriesApp.xcodeproj`, then ⌘R |
 | All tests | `xcodebuild test -scheme CountriesApp -testPlan CountriesApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
-| Package tests on macOS | `swift test --package-path Packages/CountriesData` (also `CountriesDomain`) |
+| Package tests on macOS | `swift test --package-path Packages/AtlasData` (also `AtlasDomain`) |
 | Lint | `scripts/lint.sh` |
 | Format, then lint | `scripts/lint.sh --fix` |
 | Test matrix | `scripts/test-matrix.sh` |
@@ -23,7 +23,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 `-collect-test-diagnostics never` stops `xcodebuild` from collecting a sysdiagnose from the simulator after a failing test, which can take 10 minutes.
 
 ## Rules
-- **Layers:** `UI → Domain ← Data`; no layer is skipped. Apollo and generated types never leave CountriesData.
+- **Layers:** `UI → Domain ← Data`; no layer is skipped. Apollo and generated types never leave AtlasData.
 - **Zero warnings.** Every warning in our code is a build error: `SWIFT_TREAT_WARNINGS_AS_ERRORS` in `Config/Shared.xcconfig` for the app, `.treatAllWarnings(as: .error)` in each `Package.swift`. Don't pass `SWIFT_TREAT_WARNINGS_AS_ERRORS` on the `xcodebuild` command line: it also reaches Apollo, whose warnings Xcode suppresses, and the two flags conflict.
 - **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project file stays in the "Xcode 16.0" format (`objectVersion = 77` in `project.pbxproj`; Project → File inspector → Project Format), because Xcode 26.0.1 knows no format newer than "Xcode 16.3". Check it after every project-file change.
 - **Concurrency:** async/await everywhere. Combine only in the search input pipe.
@@ -81,7 +81,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 | 26.0.1 | iPhone 17 Pro, iOS 26.0 | build + test plan without snapshots |
 
 ## Snapshot tests
-Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xcode project hosted by the app (a package test target has no window scene, so Liquid Glass wouldn't render). Its helpers are in `Helpers/`, and reference images in `snapshots/` next to the test files. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
+Snapshot tests live in `AtlasUISnapshotTests/`, a unit-test target in the Xcode project hosted by the app (a package test target has no window scene, so Liquid Glass wouldn't render). Its helpers are in `Helpers/`, and reference images in `snapshots/` next to the test files. Reference images are recorded and compared only on the reference row: Xcode 27.1 with the iOS 27.0 simulator. (Xcode 27.1's simulator runtime for iPhones and iPads is iOS 27.0; its iOS 27.1 runtime supports only iPhone Duo.)
 - **Record:** run the `RecordSnapshots` test plan. It sets `SNAPSHOT_RECORD=1`, writes the reference PNGs, and fails every snapshot test on purpose, so a recording run can never pass in CI. From the command line:
   ```sh
   xcodebuild test -scheme CountriesApp -testPlan RecordSnapshots -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
@@ -93,7 +93,7 @@ Snapshot tests live in `CountriesUISnapshotTests/`, a unit-test target in the Xc
 - **Off the reference simulator** snapshot tests are skipped, and a recording run fails.
 
 ## Codegen
-Apollo's inputs live in `Packages/CountriesData/Sources/CountriesData/GraphQL/`: the downloaded `schema.graphqls` and the operations (`*.graphql`). The generated Swift goes to `Generated/` next to it, `internal` to CountriesData. Both are committed, so building never needs codegen. Settings are in `apollo-codegen-config.json`.
+Apollo's inputs live in `Packages/AtlasData/Sources/AtlasData/GraphQL/`: the downloaded `schema.graphqls` and the operations (`*.graphql`). The generated Swift goes to `Generated/` next to it, `internal` to AtlasData. Both are committed, so building never needs codegen. Settings are in `apollo-codegen-config.json`.
 
 Generated code is never edited by hand or by a formatter: SwiftLint and SwiftFormat exclude `**/Generated`, and `Generated/.swift-format-ignore` keeps the swift-format that ships with Xcode out too. Codegen keeps that file.
 

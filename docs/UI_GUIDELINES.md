@@ -3,7 +3,7 @@
 Apple's [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) are the design reference. There is no custom design: system components, system colors and system text styles come first. When a HIG section drives a decision, the commit or pull request names it.
 
 ## Design tokens
-Screens never name a system color or text style directly. They use semantic tokens defined once in `CountriesUI/DesignSystem/`, named after their role:
+Screens never name a system color or text style directly. They use semantic tokens defined once in `AtlasUI/DesignSystem/`, named after their role:
 
 ```swift
 // DesignSystem/Palette.swift
@@ -29,15 +29,15 @@ Text(verbatim: country.continent.name)
 - A token's value is always a system semantic color or a system text style, so dark mode, increased contrast and Dynamic Type keep working with no extra code.
 - Restyling a role is a one-line change in one file.
 - System components keep their own styling: `List`, `LabeledContent`, `ContentUnavailableView`, navigation and search bars get no tokens. Tokens cover only what the app styles itself.
-- Lint enforces this: the `design_tokens_only` rule rejects system colors and text styles in CountriesUI outside `DesignSystem/`.
+- Lint enforces this: the `design_tokens_only` rule rejects system colors and text styles in AtlasUI outside `DesignSystem/`.
 
 ## Colors
 - Color tokens map to system semantic colors: `.primary`, `.secondary`, `.tint`, `Color(.systemGroupedBackground)` and so on. They adapt to light mode, dark mode and increased contrast on their own.
 - Text colors are `HierarchicalShapeStyle` tokens (`.secondary`), not `Color` tokens. Hierarchical styles resolve against their context, so secondary text stays readable inside a selected sidebar row.
 - No `preferredColorScheme`.
 - A grouped list keeps `Palette.groupedBackground` behind it in every state (`.scrollContentBackground(.hidden)`), because an empty `List` draws a plain background and the color would change when its rows arrive.
-- A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `CountriesUI/Resources/Colors.xcassets`, exposed as a token.
-- Lint rejects hard-coded colors anywhere in CountriesUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
+- A custom color is added only for a brand accent, as a colorset with Any and Dark appearances in `AtlasUI/Resources/Colors.xcassets`, exposed as a token.
+- Lint rejects hard-coded colors anywhere in AtlasUI: `Color(red:…)`, `UIColor(red:…)`, `#colorLiteral`, `Color(hex:…)`, `.black` and `.white`.
 
 ## Typography and Dynamic Type
 - Font tokens map to system text styles (`.body`, `.headline`, `.caption`…), never fixed point sizes. Sizes that must scale use `@ScaledMetric`.
@@ -78,8 +78,8 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 
 ## Localization and right-to-left
 The app ships in English but is localization-ready: adding a language is a catalog and project-setting change with no code changes ([development guide](DEVELOPMENT.md#adding-a-language)).
-- All user-facing copy lives in `CountriesUI/Resources/Localizable.xcstrings`. Each string is added in the catalog editor (+) under a short key named for its screen and role, such as `countryList.title` or `error.retry`, with its English value and a translator comment. Translator comments live only in the catalog.
-- Xcode generates a symbol for each key: `countryList.title` becomes `.countryListTitle`. In views: `Text(.countryListTitle)`. Outside views: `String(localized: .countryListTitle)`. The symbols look strings up in the package's bundle, so code never passes `bundle: .module`, and a mistyped key doesn't compile. Lint flags literal keys in CountriesUI, such as `Text("…")` and `String(localized: "…")`.
+- All user-facing copy lives in `AtlasUI/Resources/Localizable.xcstrings`. Each string is added in the catalog editor (+) under a short key named for its screen and role, such as `countryList.title` or `error.retry`, with its English value and a translator comment. Translator comments live only in the catalog.
+- Xcode generates a symbol for each key: `countryList.title` becomes `.countryListTitle`. In views: `Text(.countryListTitle)`. Outside views: `String(localized: .countryListTitle)`. The symbols look strings up in the package's bundle, so code never passes `bundle: .module`, and a mistyped key doesn't compile. Lint flags literal keys in AtlasUI, such as `Text("…")` and `String(localized: "…")`.
 - SwiftUI conveniences that take a string key, such as `Button("…")`, `Label("…", systemImage:)`, `navigationTitle("…")` and `ContentUnavailableView("…", systemImage:)`, are replaced by their forms that take a `Text`.
 - Data from the API is shown with `Text(verbatim:)`. Country, capital and continent names stay in English, because search matches the English names.
 - Whole sentences with placeholders, never joined fragments: a value such as `No countries match “%@”` makes the symbol a function, `Text(.countryListNoMatch(query))`, and so does a plural. Quotation marks belong to the catalog string, so each language can use its own.

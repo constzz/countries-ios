@@ -25,7 +25,7 @@ cd "$(dirname "$0")/.."
 XCODE_27_PATH="${XCODE_27_PATH:-/Applications/Xcode 27.1.app}"
 XCODE_26_PATH="${XCODE_26_PATH:-/Applications/Xcode.app}"
 SCHEME="CountriesApp"
-SNAPSHOT_TARGET="CountriesUISnapshotTests"
+SNAPSHOT_TARGET="AtlasUISnapshotTests"
 
 WORK_DIR="${MATRIX_OUTPUT_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/countries-test-matrix.XXXXXX")}"
 mkdir -p "$WORK_DIR"

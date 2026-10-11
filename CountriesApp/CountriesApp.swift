@@ -1,4 +1,4 @@
-import CountriesUI
+import AtlasUI
 import SwiftUI
 
 struct CountriesApp: App {

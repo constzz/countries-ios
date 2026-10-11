@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C0A100000000000000000101 /* CountriesDomain in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000201 /* CountriesDomain */; };
-		C0A100000000000000000102 /* CountriesData in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000202 /* CountriesData */; };
-		C0A100000000000000000103 /* CountriesUI in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000203 /* CountriesUI */; };
+		C0A100000000000000000101 /* AtlasDomain in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000201 /* AtlasDomain */; };
+		C0A100000000000000000102 /* AtlasData in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000202 /* AtlasData */; };
+		C0A100000000000000000103 /* AtlasUI in Frameworks */ = {isa = PBXBuildFile; productRef = C0A100000000000000000203 /* AtlasUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,20 +26,20 @@
 		C0A100000000000000000011 /* CountriesApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CountriesApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A100000000000000000012 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		C0A100000000000000000013 /* CountriesApp.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = CountriesApp.xctestplan; sourceTree = "<group>"; };
-		C0A100000000000000000014 /* CountriesUISnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CountriesUISnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0A100000000000000000014 /* AtlasUISnapshotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AtlasUISnapshotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0A100000000000000000015 /* RecordSnapshots.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RecordSnapshots.xctestplan; sourceTree = "<group>"; };
-		C0A100000000000000000021 /* CountriesDomain */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CountriesDomain; sourceTree = "<group>"; };
-		C0A100000000000000000022 /* CountriesData */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CountriesData; sourceTree = "<group>"; };
-		C0A100000000000000000023 /* CountriesUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CountriesUI; sourceTree = "<group>"; };
+		C0A100000000000000000021 /* AtlasDomain */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasDomain; sourceTree = "<group>"; };
+		C0A100000000000000000022 /* AtlasData */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasData; sourceTree = "<group>"; };
+		C0A100000000000000000023 /* AtlasUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasUI; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C0A100000000000000000034 /* Exceptions for "CountriesUISnapshotTests" folder in "CountriesUISnapshotTests" target */ = {
+		C0A100000000000000000034 /* Exceptions for "AtlasUISnapshotTests" folder in "AtlasUISnapshotTests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				snapshots,
 			);
-			target = C0A100000000000000000062 /* CountriesUISnapshotTests */;
+			target = C0A100000000000000000062 /* AtlasUISnapshotTests */;
 		};
 		C0A100000000000000000035 /* Exceptions for "CountriesApp" folder in "CountriesApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -59,15 +59,15 @@
 			path = CountriesApp;
 			sourceTree = "<group>";
 		};
-		C0A100000000000000000032 /* CountriesUISnapshotTests */ = {
+		C0A100000000000000000032 /* AtlasUISnapshotTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				C0A100000000000000000034 /* Exceptions for "CountriesUISnapshotTests" folder in "CountriesUISnapshotTests" target */,
+				C0A100000000000000000034 /* Exceptions for "AtlasUISnapshotTests" folder in "AtlasUISnapshotTests" target */,
 			);
 			explicitFolders = (
 				snapshots,
 			);
-			path = CountriesUISnapshotTests;
+			path = AtlasUISnapshotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -77,9 +77,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C0A100000000000000000101 /* CountriesDomain in Frameworks */,
-				C0A100000000000000000102 /* CountriesData in Frameworks */,
-				C0A100000000000000000103 /* CountriesUI in Frameworks */,
+				C0A100000000000000000101 /* AtlasDomain in Frameworks */,
+				C0A100000000000000000102 /* AtlasData in Frameworks */,
+				C0A100000000000000000103 /* AtlasUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -97,7 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				C0A100000000000000000031 /* CountriesApp */,
-				C0A100000000000000000032 /* CountriesUISnapshotTests */,
+				C0A100000000000000000032 /* AtlasUISnapshotTests */,
 				C0A100000000000000000042 /* Packages */,
 				C0A100000000000000000041 /* Config */,
 				C0A100000000000000000013 /* CountriesApp.xctestplan */,
@@ -117,9 +117,9 @@
 		C0A100000000000000000042 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				C0A100000000000000000021 /* CountriesDomain */,
-				C0A100000000000000000022 /* CountriesData */,
-				C0A100000000000000000023 /* CountriesUI */,
+				C0A100000000000000000021 /* AtlasDomain */,
+				C0A100000000000000000022 /* AtlasData */,
+				C0A100000000000000000023 /* AtlasUI */,
 			);
 			path = Packages;
 			sourceTree = "<group>";
@@ -128,7 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				C0A100000000000000000011 /* CountriesApp.app */,
-				C0A100000000000000000014 /* CountriesUISnapshotTests.xctest */,
+				C0A100000000000000000014 /* AtlasUISnapshotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -153,17 +153,17 @@
 			);
 			name = CountriesApp;
 			packageProductDependencies = (
-				C0A100000000000000000201 /* CountriesDomain */,
-				C0A100000000000000000202 /* CountriesData */,
-				C0A100000000000000000203 /* CountriesUI */,
+				C0A100000000000000000201 /* AtlasDomain */,
+				C0A100000000000000000202 /* AtlasData */,
+				C0A100000000000000000203 /* AtlasUI */,
 			);
 			productName = CountriesApp;
 			productReference = C0A100000000000000000011 /* CountriesApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		C0A100000000000000000062 /* CountriesUISnapshotTests */ = {
+		C0A100000000000000000062 /* AtlasUISnapshotTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C0A100000000000000000084 /* Build configuration list for PBXNativeTarget "CountriesUISnapshotTests" */;
+			buildConfigurationList = C0A100000000000000000084 /* Build configuration list for PBXNativeTarget "AtlasUISnapshotTests" */;
 			buildPhases = (
 				C0A100000000000000000054 /* Sources */,
 				C0A100000000000000000055 /* Frameworks */,
@@ -175,11 +175,11 @@
 				C0A100000000000000000091 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				C0A100000000000000000032 /* CountriesUISnapshotTests */,
+				C0A100000000000000000032 /* AtlasUISnapshotTests */,
 			);
-			name = CountriesUISnapshotTests;
-			productName = CountriesUISnapshotTests;
-			productReference = C0A100000000000000000014 /* CountriesUISnapshotTests.xctest */;
+			name = AtlasUISnapshotTests;
+			productName = AtlasUISnapshotTests;
+			productReference = C0A100000000000000000014 /* AtlasUISnapshotTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -216,7 +216,7 @@
 			projectRoot = "";
 			targets = (
 				C0A100000000000000000061 /* CountriesApp */,
-				C0A100000000000000000062 /* CountriesUISnapshotTests */,
+				C0A100000000000000000062 /* AtlasUISnapshotTests */,
 			);
 		};
 /* End PBXProject section */
@@ -500,7 +500,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C0A100000000000000000084 /* Build configuration list for PBXNativeTarget "CountriesUISnapshotTests" */ = {
+		C0A100000000000000000084 /* Build configuration list for PBXNativeTarget "AtlasUISnapshotTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C0A100000000000000000085 /* Debug */,
@@ -512,17 +512,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		C0A100000000000000000201 /* CountriesDomain */ = {
+		C0A100000000000000000201 /* AtlasDomain */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = CountriesDomain;
+			productName = AtlasDomain;
 		};
-		C0A100000000000000000202 /* CountriesData */ = {
+		C0A100000000000000000202 /* AtlasData */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = CountriesData;
+			productName = AtlasData;
 		};
-		C0A100000000000000000203 /* CountriesUI */ = {
+		C0A100000000000000000203 /* AtlasUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = CountriesUI;
+			productName = AtlasUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

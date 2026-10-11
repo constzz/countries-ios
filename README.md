@@ -9,12 +9,12 @@ A SwiftUI app for browsing the world's countries, backed by the public [Countrie
 These are reference images from the snapshot tests, so the Snapshots workflow checks on every pull request and every merge to main that the app still renders them.
 
 <p>
-  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_light.png" width="200" alt="The country list in light mode">
-  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_light.png" width="200" alt="Bolivia's details in light mode">
-  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_dark.png" width="200" alt="The country list in dark mode">
-  <img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_dark.png" width="200" alt="Bolivia's details in dark mode">
+  <img src="AtlasUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_light.png" width="200" alt="The country list in light mode">
+  <img src="AtlasUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_light.png" width="200" alt="Bolivia's details in light mode">
+  <img src="AtlasUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_dark.png" width="200" alt="The country list in dark mode">
+  <img src="AtlasUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPhone17Pro_dark.png" width="200" alt="Bolivia's details in dark mode">
 </p>
-<img src="CountriesUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPad11Landscape_light.png" width="816" alt="The list and Bolivia's details side by side on iPad">
+<img src="AtlasUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPad11Landscape_light.png" width="816" alt="The list and Bolivia's details side by side on iPad">
 
 ## Build and run
 **Requirements:** Xcode 26.0.1 or later, iOS 17.0 or later.
@@ -42,13 +42,13 @@ Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 To check right-to-left layout or long text: Edit Scheme → Run → Options → App Language → Right-to-Left Pseudolanguage or Double-Length Pseudolanguage.
 
 ## Architecture
-Three local Swift packages with one dependency direction: `CountriesUI → CountriesDomain ← CountriesData`. The domain package defines the models, the repository protocol and the error type. The data package implements the repository with Apollo iOS and keeps every generated type internal. The UI package has the screens and their `@MainActor @Observable` view models, and never sees Apollo. The app target composes the three.
+Three local Swift packages with one dependency direction: `AtlasUI → AtlasDomain ← AtlasData`. The domain package defines the models, the repository protocol and the error type. The data package implements the repository with Apollo iOS and keeps every generated type internal. The UI package has the screens and their `@MainActor @Observable` view models, and never sees Apollo. The app target composes the three.
 
 ```
                       CountriesApp
               │               │               │
               ▼               ▼               ▼
-        CountriesUI ──► CountriesDomain ◄── CountriesData ──► Apollo iOS
+        AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
 ```
 
 More in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/UI_GUIDELINES.md](docs/UI_GUIDELINES.md) and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
@@ -81,13 +81,13 @@ Each requirement of the task traces to an acceptance criterion and the test that
 | The detail loads from its own query | US-2 / AC-2.4 | `CountriesRepositoryTests`, `CountryDetailViewModelTests` |
 
 ## How to see each state
-- Snapshot images: every screen state, on every device in light and dark (placeholder states on iPhone in light), in [`CountriesUISnapshotTests/snapshots`](CountriesUISnapshotTests/snapshots).
+- Snapshot images: every screen state, on every device in light and dark (placeholder states on iPhone in light), in [`AtlasUISnapshotTests/snapshots`](AtlasUISnapshotTests/snapshots).
 - SwiftUI previews for each screen.
 - In the app: search "zzz" for the empty state; select Antarctica for "None" values; turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
 
 ## Key decisions
 - **Search runs on the server, debounced.** The API's `name` filter takes a regex, so typing sends at most one query per 300 ms pause, and an unchanged term sends none. The term is escaped and each letter becomes a class of both cases, because the API's regex is case-sensitive and an unbalanced `(` is a server error. Rejected: loading all 250 countries once and filtering on the device, which matches better (diacritics included) but leaves the debounce nothing to gate.
-- **MVI on each screen, on a shared base.** Every screen conforms to the same small types in `CountriesUI/Architecture/`: one state value, one action enum, an effect enum for one-time UI events, and a view model that subclasses `MVIViewModel` and overrides `reduce`. `reduce` is the only place the state changes; its handlers start async work through `launchEffect`, and the result comes back as an action. Each type has its own file. Rejected: a separate pure reducer returning effects as values, which splits each screen across two types, and a view model with an event method per interaction and several observable properties.
+- **MVI on each screen, on a shared base.** Every screen conforms to the same small types in `AtlasUI/Architecture/`: one state value, one action enum, an effect enum for one-time UI events, and a view model that subclasses `MVIViewModel` and overrides `reduce`. `reduce` is the only place the state changes; its handlers start async work through `launchEffect`, and the result comes back as an action. Each type has its own file. Rejected: a separate pure reducer returning effects as values, which splits each screen across two types, and a view model with an event method per interaction and several observable properties.
 - **Combine only in the search field's input pipe**, where the debounce lives. Everything else is async/await.
 - **One request at a time.** A new load, search, refresh or retry cancels the one in flight, and `reduce` ignores any response that doesn't answer the latest request.
 - **The detail loads from its own query.** It takes only the country code and shows loading until `CountryQuery` answers; both queries share the `CountryBasics` fragment and its mapper, so each screen can change its fields alone. Rejected: showing the list's summary at once while the rest loads, which couples the two screens.
