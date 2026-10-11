@@ -54,7 +54,7 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
   - `ViewModel/`: the view model, its state, actions and effects, and the values the state holds;
   - `Views/`: the screen's view, the view that draws its state, and their subviews;
   - `Previews/`: the previews and the sample data they share with the snapshot and unit tests.
-- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views and the `.loadState(_:subject:loadingLabel:retry:)` view modifier.
+- `DesignSystem/`: semantic color, font, spacing and radius tokens, state views, `ErrorCopy` and the `.loadState(_:loadingLabel:retry:)` view modifier.
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### Atlas

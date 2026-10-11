@@ -1,11 +1,10 @@
-import AtlasDomain
 import SwiftUI
 
 /// A screen state that replaces the content: loading, an empty search or a failure.
 enum LoadPhase: Equatable {
   case loading
   case empty(query: String)
-  case failed(RequestError)
+  case failed(ErrorCopy)
 }
 
 extension View {
@@ -13,24 +12,22 @@ extension View {
   /// content stays in place underneath, so it keeps its state.
   func loadState(
     _ phase: LoadPhase?,
-    subject: ErrorCopy.Subject,
     loadingLabel: Text,
     retry: @escaping () -> Void
   ) -> some View {
-    modifier(LoadStateModifier(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry))
+    modifier(LoadStateModifier(phase: phase, loadingLabel: loadingLabel, retry: retry))
   }
 }
 
 private struct LoadStateModifier: ViewModifier {
   let phase: LoadPhase?
-  let subject: ErrorCopy.Subject
   let loadingLabel: Text
   let retry: () -> Void
 
   func body(content: Content) -> some View {
     content.overlay {
       if let phase {
-        LoadStateView(phase: phase, subject: subject, loadingLabel: loadingLabel, retry: retry)
+        LoadStateView(phase: phase, loadingLabel: loadingLabel, retry: retry)
       }
     }
   }
@@ -38,7 +35,6 @@ private struct LoadStateModifier: ViewModifier {
 
 private struct LoadStateView: View {
   let phase: LoadPhase
-  let subject: ErrorCopy.Subject
   let loadingLabel: Text
   let retry: () -> Void
 
@@ -48,8 +44,8 @@ private struct LoadStateView: View {
       ProgressView { loadingLabel }
     case let .empty(query):
       ContentUnavailableView.search(text: query)
-    case let .failed(error):
-      failure(ErrorCopy(error, subject: subject))
+    case let .failed(copy):
+      failure(copy)
     }
   }
 

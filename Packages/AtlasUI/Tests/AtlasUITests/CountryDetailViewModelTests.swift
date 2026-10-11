@@ -83,7 +83,7 @@ struct CountryDetailViewModelTests {
 
     await viewModel.send(.appeared).value
 
-    #expect(viewModel.state.content == .failed(.notFound))
+    #expect(viewModel.state.content == .failed(.countryNotFound))
   }
 
   // MARK: Title

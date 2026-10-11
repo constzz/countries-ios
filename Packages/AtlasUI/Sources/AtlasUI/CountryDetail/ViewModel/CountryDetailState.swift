@@ -1,11 +1,9 @@
-import AtlasDomain
-
 struct CountryDetailState: MVIState {
   enum Content: Equatable {
     case idle
     case loading
     case loaded(CountryDetailValues)
-    case failed(RequestError)
+    case failed(ErrorCopy)
   }
 
   var content: Content = .idle

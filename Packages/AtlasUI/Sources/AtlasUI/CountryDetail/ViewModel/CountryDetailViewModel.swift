@@ -77,7 +77,7 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
     case let .success(details):
       next.content = .loaded(values(for: details))
     case let .failure(error):
-      next.content = .failed(error)
+      next.content = .failed(Self.errorCopy(for: error))
     }
     return next
   }
@@ -101,6 +101,17 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
   }
 
   // MARK: Text
+
+  private static func errorCopy(for error: RequestError) -> ErrorCopy {
+    switch error {
+    case .offline:
+      .offline
+    case .notFound:
+      .countryNotFound
+    case .network, .server, .decoding, .unknown:
+      .countryDetailFailure
+    }
+  }
 
   /// A missing value reads "None", and lists use the locale's list format. Values from the API are
   /// shown as the API spells them.

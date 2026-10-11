@@ -19,7 +19,7 @@
   }
 
   #Preview("Error") {
-    countryDetail(CountryDetailState(content: .failed(.network)))
+    countryDetail(CountryDetailState(content: .failed(.countryDetailFailure)))
   }
 
   #Preview("Offline") {
@@ -27,7 +27,7 @@
   }
 
   #Preview("Not found") {
-    countryDetail(CountryDetailState(content: .failed(.notFound)))
+    countryDetail(CountryDetailState(content: .failed(.countryNotFound)))
   }
 
   #Preview("Loaded, dark") {

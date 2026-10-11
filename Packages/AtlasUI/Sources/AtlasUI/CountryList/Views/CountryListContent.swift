@@ -22,7 +22,6 @@ struct CountryListContent: View {
     }
     .loadState(
       phase,
-      subject: .countries,
       loadingLabel: Text(.countryListLoading),
       retry: { _ = send(.retryTapped) }
     )
@@ -45,8 +44,8 @@ struct CountryListContent: View {
       nil
     case let .empty(query):
       .empty(query: query)
-    case let .failed(error):
-      .failed(error)
+    case let .failed(copy):
+      .failed(copy)
     }
   }
 

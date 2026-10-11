@@ -108,7 +108,7 @@ final class CountryListViewModel: MVIViewModel<CountryListState, CountryListActi
         emit(.announce(Self.announcement(forResultCount: countries.count)))
       }
     case let .failure(error):
-      next.content = .failed(error)
+      next.content = .failed(error == .offline ? .offline : .countryListFailure)
     }
     return next
   }

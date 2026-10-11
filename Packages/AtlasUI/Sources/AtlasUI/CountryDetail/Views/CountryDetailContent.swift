@@ -30,7 +30,6 @@ struct CountryDetailContent: View {
     .navigationBarTitleDisplayMode(.inline)
     .loadState(
       phase,
-      subject: .country,
       loadingLabel: Text(.countryDetailLoading),
       retry: { _ = send(.retryTapped) }
     )
@@ -74,8 +73,8 @@ struct CountryDetailContent: View {
       .loading
     case .loaded:
       nil
-    case let .failed(error):
-      .failed(error)
+    case let .failed(copy):
+      .failed(copy)
     }
   }
 }
