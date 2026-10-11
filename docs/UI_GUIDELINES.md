@@ -64,7 +64,7 @@ Small token enums in `DesignSystem/` next to the color and font tokens, e.g. `Sp
 ## Navigation
 - `NavigationSplitView`: the country list in the sidebar, the selected country in the detail column. On compact width (iPhone, folded iPhone Duo) it collapses into a push stack by itself.
 - The sidebar is a `List(selection:)` keyed by the country `code`, each row a `NavigationLink(value:)`, with `.searchable` and `.refreshable`.
-- The detail column shows `CountryDetailView(code:repository:).id(code)`: a new view and view model for each country.
+- The detail column shows `CountryDetailView(countryCode:repository:).id(countryCode)`: a new view and view model for each country.
 - Selection lives in the root view as `@SceneStorage`, not in either view model:
   - on regular width the selected row stays highlighted, and before any selection the detail column shows a "Select a country" placeholder;
   - if a search filters out the selected country, its detail stays visible, and refresh keeps the selection;

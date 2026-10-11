@@ -17,7 +17,7 @@ public struct RootView: View {
     } detail: {
       if let selection {
         // A view, and so a view model, per country: nothing from the previous one can show.
-        CountryDetailView(code: selection, repository: repository)
+        CountryDetailView(countryCode: selection, repository: repository)
           .id(selection)
       } else {
         SelectCountryPlaceholder()

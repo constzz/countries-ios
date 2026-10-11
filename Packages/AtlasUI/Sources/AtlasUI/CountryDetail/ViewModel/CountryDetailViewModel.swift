@@ -2,15 +2,15 @@ import AtlasDomain
 import Foundation
 
 final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect> {
-  private let code: String
+  private let countryCode: String
   private let repository: any CountriesRepository
   private let locale: Locale
   private var fetchTask: Task<Void, Never>?
 
   /// Stores the dependencies and does nothing else: SwiftUI builds a view's initial `@State` value
   /// every time it creates the view.
-  init(code: String, repository: any CountriesRepository, locale: Locale = .autoupdatingCurrent) {
-    self.code = code
+  init(countryCode: String, repository: any CountriesRepository, locale: Locale = .autoupdatingCurrent) {
+    self.countryCode = countryCode
     self.repository = repository
     self.locale = locale
     super.init(initialState: CountryDetailState())
@@ -96,10 +96,10 @@ final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDeta
   /// actor.
   private func fetch() {
     fetchTask?.cancel()
-    fetchTask = launchEffect { [weak self, repository, code] in
+    fetchTask = launchEffect { [weak self, repository, countryCode] in
       let result: Result<CountryDetails, RequestError>
       do {
-        result = try await .success(repository.country(code: code))
+        result = try await .success(repository.country(code: countryCode))
       } catch is CancellationError {
         return
       } catch {

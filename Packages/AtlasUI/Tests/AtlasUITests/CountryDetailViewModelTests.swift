@@ -23,7 +23,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.4 appearing shows loading, then the details")
   func appearingShowsLoadingThenTheDetails() async {
     let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
 
     let load = viewModel.send(.appeared)
 
@@ -38,7 +38,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.4 appearing again loads nothing")
   func appearingAgainLoadsNothing() async {
     let repository = MockCountriesRepository(detailResult: .success(details))
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
     await viewModel.send(.appeared).value
 
     await viewModel.send(.appeared).value
@@ -50,7 +50,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.4 a failure shows the error")
   func failureShowsTheError() async {
     let viewModel = CountryDetailViewModel(
-      code: "CH",
+      countryCode: "CH",
       repository: MockCountriesRepository(detailResult: .failure(.offline))
     )
 
@@ -62,7 +62,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.4 retry repeats the request")
   func retryRepeatsTheRequest() async {
     let repository = MockCountriesRepository(detailResult: .failure(.network))
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
     await viewModel.send(.appeared).value
     await repository.setDetailResult(.success(details))
 
@@ -77,7 +77,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.5 an unknown code shows not found")
   func unknownCodeShowsNotFound() async {
     let viewModel = CountryDetailViewModel(
-      code: "XX",
+      countryCode: "XX",
       repository: MockCountriesRepository(detailResult: .failure(.notFound))
     )
 
@@ -91,7 +91,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.2 the title shows once the header's name is under the bar")
   func titleShowsOnceTheHeaderIsUnderTheBar() async {
     let viewModel = CountryDetailViewModel(
-      code: "CH",
+      countryCode: "CH",
       repository: MockCountriesRepository(detailResult: .success(details))
     )
     await viewModel.send(.appeared).value
@@ -105,7 +105,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.2 the title hides when the header's name scrolls back")
   func titleHidesWhenTheHeaderScrollsBack() async {
     let viewModel = CountryDetailViewModel(
-      code: "CH",
+      countryCode: "CH",
       repository: MockCountriesRepository(detailResult: .success(details))
     )
     await viewModel.send(.appeared).value
@@ -121,7 +121,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.10 disappearing cancels the request and shows no error")
   func disappearingCancelsTheRequest() async {
     let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
     let load = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
 
@@ -137,7 +137,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.10 appearing after disappearing loads again")
   func appearingAfterDisappearingLoadsAgain() async {
     let repository = SuspendingDetailsRepository()
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
     viewModel.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
     viewModel.send(.disappeared)
@@ -155,7 +155,7 @@ struct CountryDetailViewModelTests {
   @Test("AC-2.10 a stale response is ignored")
   func staleResponseIsIgnored() async {
     let repository = SuspendingDetailsRepository(honorsCancellation: false)
-    let viewModel = CountryDetailViewModel(code: "CH", repository: repository)
+    let viewModel = CountryDetailViewModel(countryCode: "CH", repository: repository)
     let staleLoad = viewModel.send(.appeared)
     _ = await eventually { await repository.requestedCodes == ["CH"] }
     viewModel.send(.disappeared)
@@ -214,7 +214,7 @@ struct CountryDetailViewModelTests {
     locale: Locale = .autoupdatingCurrent
   ) async -> CountryDetailValues? {
     let viewModel = CountryDetailViewModel(
-      code: details.id,
+      countryCode: details.id,
       repository: MockCountriesRepository(detailResult: .success(details)),
       locale: locale
     )
