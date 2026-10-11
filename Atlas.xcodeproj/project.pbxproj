@@ -31,6 +31,7 @@
 		C0A100000000000000000021 /* AtlasDomain */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasDomain; sourceTree = "<group>"; };
 		C0A100000000000000000022 /* AtlasData */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasData; sourceTree = "<group>"; };
 		C0A100000000000000000023 /* AtlasUI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasUI; sourceTree = "<group>"; };
+		C0A100000000000000000024 /* AtlasMVI */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AtlasMVI; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -120,6 +121,7 @@
 				C0A100000000000000000021 /* AtlasDomain */,
 				C0A100000000000000000022 /* AtlasData */,
 				C0A100000000000000000023 /* AtlasUI */,
+				C0A100000000000000000024 /* AtlasMVI */,
 			);
 			path = Packages;
 			sourceTree = "<group>";

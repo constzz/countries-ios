@@ -2,19 +2,19 @@ import os
 
 /// A clock whose time moves only when `advance(by:)` moves it. A sleep ends once the clock reaches
 /// its deadline, and throws `CancellationError` if its task is cancelled first.
-final class TestClock: Clock {
-  struct Instant: InstantProtocol {
+public final class TestClock: Clock {
+  public struct Instant: InstantProtocol {
     fileprivate let offset: Duration
 
-    func advanced(by duration: Duration) -> Self {
+    public func advanced(by duration: Duration) -> Self {
       Self(offset: offset + duration)
     }
 
-    func duration(to other: Self) -> Duration {
+    public func duration(to other: Self) -> Duration {
       other.offset - offset
     }
 
-    static func < (lhs: Self, rhs: Self) -> Bool {
+    public static func < (lhs: Self, rhs: Self) -> Bool {
       lhs.offset < rhs.offset
     }
   }
@@ -34,15 +34,17 @@ final class TestClock: Clock {
 
   private let state = OSAllocatedUnfairLock(initialState: State())
 
-  var now: Instant {
+  public init() {}
+
+  public var now: Instant {
     state.withLock { $0.now }
   }
 
-  var minimumResolution: Duration {
+  public var minimumResolution: Duration {
     .zero
   }
 
-  func sleep(until deadline: Instant, tolerance _: Duration? = nil) async throws {
+  public func sleep(until deadline: Instant, tolerance _: Duration? = nil) async throws {
     let id = state.withLock { state in
       state.lastID += 1
       return state.lastID
@@ -76,7 +78,7 @@ final class TestClock: Clock {
   }
 
   /// Moves the clock forward by `duration` and ends every sleep whose deadline it reaches.
-  func advance(by duration: Duration) {
+  public func advance(by duration: Duration) {
     let woken = state.withLock { state in
       state.now = state.now.advanced(by: duration)
       let now = state.now

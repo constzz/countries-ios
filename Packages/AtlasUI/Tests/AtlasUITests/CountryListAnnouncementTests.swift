@@ -1,4 +1,5 @@
 import AtlasDomain
+import AtlasMVITesting
 import Foundation
 import Testing
 @testable import AtlasUI

@@ -1,4 +1,5 @@
 import AtlasDomain
+import AtlasMVI
 import Foundation
 
 final class CountryDetailViewModel: MVIViewModel<CountryDetailState, CountryDetailAction, CountryDetailEffect> {

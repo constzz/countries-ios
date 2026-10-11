@@ -1,4 +1,4 @@
-@testable import AtlasUI
+import AtlasMVI
 
 enum CounterEffect: MVIEffect {
   case pinged(Int)

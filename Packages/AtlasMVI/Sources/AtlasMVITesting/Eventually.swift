@@ -4,7 +4,7 @@
 /// It counts attempts rather than watching a deadline: on a busy CI machine the main actor can
 /// stall for seconds, and a deadline that passed during a stall would end the wait before the work
 /// the test waits for had its turn.
-func eventually(
+public func eventually(
   isolation _: isolated (any Actor)? = #isolation,
   attempts: Int = 400,
   _ condition: () async -> Bool

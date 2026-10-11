@@ -10,9 +10,12 @@ This document describes the target shape of the app. Each story builds its own s
            │             │              │
            ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
+           │
+           ▼
+        AtlasMVI
 ```
 
-The dependency direction is `UI → Domain ← Data`. The app target is the only place that sees all three.
+The dependency direction is `UI → Domain ← Data`, and AtlasUI builds its screens on AtlasMVI, which depends on nothing. The app target is the only place that sees AtlasUI, AtlasDomain and AtlasData together.
 
 ### AtlasDomain
 Foundation only. It defines what the app works with, independent of where the data comes from.
@@ -47,9 +50,14 @@ Implements the repository with Apollo iOS.
   - `GraphQLClient`, the seam over `ApolloClient`. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `RequestError` and logs the real cause.
 
+### AtlasMVI
+The MVI layer every screen is built on, with no knowledge of countries.
+- `AtlasMVI`: `MVIState`, `MVIAction`, `MVIEffect`, the `MVIViewModel` base and `MVITime`.
+- `AtlasMVITesting`, linked by test targets only: the `.testTime` trait with `TestScheduler` and `TestClock`, and the `eventually` and `first(_:of:)` helpers.
+- `AtlasMVITests` test the base on a toy counter view model.
+
 ### AtlasUI
-SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo.
-- `Architecture/`: the shared MVI types every screen conforms to (`MVIState`, `MVIAction`, `MVIEffect`, `MVIViewModel`).
+SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, never Apollo.
 - `CountryList/` and `CountryDetail/`, one folder per feature, each grouped the same way:
   - `ViewModel/`: the view model, its state, actions and effects, and the values the state holds;
   - `Views/`: the screen's view, the view that draws its state, and their subviews;
@@ -74,7 +82,7 @@ SwiftUI screens and their view models. It imports only AtlasDomain, never Apollo
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
-MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in `AtlasUI/Architecture/`; there's no third-party framework.
+MVI with one-way data flow: view → action → `reduce` → new state, plus work and one-time effects → view. Every screen conforms to the shared types in AtlasMVI; there's no third-party framework.
 - **Parts.** Each screen has a `…State: MVIState`, a `…Action: MVIAction`, a `…Effect: MVIEffect` (a caseless enum when the screen has none) and a `final class …ViewModel: MVIViewModel<…State, …Action, …Effect>`.
 - **One type per file.** Every top-level type has its own file, named after it, in its feature's subfolder for that role. That includes helper values such as `CountriesRequest`.
 - **State** is one value with everything the screen shows.

@@ -1,6 +1,7 @@
+import AtlasMVI
+import AtlasMVITesting
 import Observation
 import Testing
-@testable import AtlasUI
 
 /// The shared base every screen's view model subclasses, tested through a toy counter.
 @Suite("MVIViewModel")

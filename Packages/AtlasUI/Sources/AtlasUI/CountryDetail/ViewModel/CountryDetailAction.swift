@@ -1,4 +1,5 @@
 import AtlasDomain
+import AtlasMVI
 
 enum CountryDetailAction: MVIAction {
   // MARK: Sent by the view

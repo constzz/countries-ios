@@ -4,9 +4,9 @@ import Foundation
 /// A Combine scheduler whose clock moves only when `advance(by:)` moves it. Actions run on the
 /// caller's thread, in time order. Unchecked: tests use it from the main actor only, and the
 /// task-local that carries it needs `Sendable`.
-final class TestScheduler: Scheduler, @unchecked Sendable {
-  typealias SchedulerTimeType = DispatchQueue.SchedulerTimeType
-  typealias SchedulerOptions = DispatchQueue.SchedulerOptions
+public final class TestScheduler: Scheduler, @unchecked Sendable {
+  public typealias SchedulerTimeType = DispatchQueue.SchedulerTimeType
+  public typealias SchedulerOptions = DispatchQueue.SchedulerOptions
 
   private struct ScheduledAction {
     let id: Int
@@ -16,13 +16,15 @@ final class TestScheduler: Scheduler, @unchecked Sendable {
     let run: () -> Void
   }
 
-  private(set) var now = SchedulerTimeType(DispatchTime(uptimeNanoseconds: 1))
-  let minimumTolerance: SchedulerTimeType.Stride = .zero
+  public private(set) var now = SchedulerTimeType(DispatchTime(uptimeNanoseconds: 1))
+  public let minimumTolerance: SchedulerTimeType.Stride = .zero
   private var actions: [ScheduledAction] = []
   private var lastID = 0
 
+  public init() {}
+
   /// Moves the clock forward by `stride`, running each action that comes due on the way.
-  func advance(by stride: SchedulerTimeType.Stride) {
+  public func advance(by stride: SchedulerTimeType.Stride) {
     let end = now.advanced(by: stride)
     while let index = indexOfNextAction(dueBy: end) {
       let action = actions[index]
@@ -37,11 +39,11 @@ final class TestScheduler: Scheduler, @unchecked Sendable {
     now = end
   }
 
-  func schedule(options _: SchedulerOptions?, _ action: @escaping () -> Void) {
+  public func schedule(options _: SchedulerOptions?, _ action: @escaping () -> Void) {
     enqueue(at: now, interval: nil, action)
   }
 
-  func schedule(
+  public func schedule(
     after date: SchedulerTimeType,
     tolerance _: SchedulerTimeType.Stride,
     options _: SchedulerOptions?,
@@ -50,7 +52,7 @@ final class TestScheduler: Scheduler, @unchecked Sendable {
     enqueue(at: date, interval: nil, action)
   }
 
-  func schedule(
+  public func schedule(
     after date: SchedulerTimeType,
     interval: SchedulerTimeType.Stride,
     tolerance _: SchedulerTimeType.Stride,

@@ -1,4 +1,5 @@
 import AtlasDomain
+import AtlasMVI
 
 struct CountryListState: MVIState {
   enum Content: Equatable {

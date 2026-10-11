@@ -1,6 +1,6 @@
 /// The first `count` elements of `stream`, or fewer if it ends first. It runs on the caller's
 /// actor, so main-actor tests can read a view model's effects.
-func first<Element>(
+public func first<Element>(
   isolation _: isolated (any Actor)? = #isolation,
   _ count: Int,
   of stream: AsyncStream<Element>

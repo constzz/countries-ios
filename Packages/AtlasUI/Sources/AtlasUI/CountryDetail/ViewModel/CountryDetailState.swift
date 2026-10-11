@@ -1,3 +1,5 @@
+import AtlasMVI
+
 struct CountryDetailState: MVIState {
   enum Content: Equatable {
     case idle

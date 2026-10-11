@@ -1,15 +1,15 @@
 import Combine
 import Foundation
 
-struct MVITime: Sendable {
-  @TaskLocal static var current = MVITime(scheduler: DispatchQueue.main, clock: ContinuousClock())
+public struct MVITime: Sendable {
+  @TaskLocal public static var current = MVITime(scheduler: DispatchQueue.main, clock: ContinuousClock())
 
   private let scheduler: any Scheduler & Sendable
   private let startWait: @Sendable (Duration) -> @Sendable () async throws -> Void
 
   /// - Parameter scheduler: must run each action later, never inside `schedule`, or a debounced
   ///   value would arrive in the middle of a `reduce`.
-  init(scheduler: some Scheduler & Sendable, clock: some Clock<Duration>) {
+  public init(scheduler: some Scheduler & Sendable, clock: some Clock<Duration>) {
     self.scheduler = scheduler
     startWait = { duration in
       let deadline = clock.now.advanced(by: duration)
@@ -17,7 +17,7 @@ struct MVITime: Sendable {
     }
   }
 
-  func debounce<Upstream: Publisher>(
+  public func debounce<Upstream: Publisher>(
     _ upstream: Upstream,
     for duration: Duration
   ) -> AnyPublisher<Upstream.Output, Upstream.Failure> {
@@ -25,7 +25,7 @@ struct MVITime: Sendable {
   }
 
   /// A wait that ends `duration` after this call, however late it starts.
-  func wait(for duration: Duration) -> @Sendable () async throws -> Void {
+  public func wait(for duration: Duration) -> @Sendable () async throws -> Void {
     startWait(duration)
   }
 

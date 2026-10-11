@@ -4,28 +4,28 @@ import Observation
 /// `state`, `send(_:)` and `effects()`.
 @MainActor
 @Observable
-class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
-  private(set) var state: State
-  let time = MVITime.current
+open class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
+  public private(set) var state: State
+  public let time = MVITime.current
 
   /// The work launched by the `reduce` call in progress, so `send` can await it.
   @ObservationIgnored private var launchedWork: [Task<Void, Never>] = []
   @ObservationIgnored private var subscribers: [AsyncStream<Effect>.Continuation] = []
 
-  init(initialState: State) {
+  public init(initialState: State) {
     state = initialState
   }
 
   /// Returns the state after `action`. The only place the state changes: hand each action to a
   /// `handle…` method that reads `current`, never `state`, and return at once. Start async work
   /// with `launchEffect(_:then:)`, which sends its result back as an action.
-  func reduce(_ current: State, _: Action) -> State {
+  open func reduce(_ current: State, _: Action) -> State {
     current
   }
 
   /// Applies `action`. The returned task finishes when the work it launched has.
   @discardableResult
-  final func send(_ action: Action) -> Task<Void, Never> {
+  public final func send(_ action: Action) -> Task<Void, Never> {
     let outerWork = launchedWork
     launchedWork = []
     let newState = reduce(state, action)
@@ -43,7 +43,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
 
   /// Starts `work` on the main actor and returns its task, so the subclass can cancel it.
   @discardableResult
-  final func launchEffect(_ work: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
+  public final func launchEffect(_ work: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
     let task = Task(operation: work)
     launchedWork.append(task)
     return task
@@ -53,7 +53,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   /// nothing, even if its result has already arrived: the cancel and the check before sending both
   /// run on the main actor.
   @discardableResult
-  final func launchEffect<Value>(
+  public final func launchEffect<Value>(
     _ work: @escaping @MainActor () async throws -> Value,
     then action: @escaping @MainActor (Result<Value, any Error>) -> Action
   ) -> Task<Void, Never> {
@@ -75,7 +75,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
 
   /// Sends a one-time UI event to every subscriber. With none, it's dropped: no screen is on
   /// display to handle it, and delivering it later would show a stale event.
-  final func emit(_ effect: Effect) {
+  public final func emit(_ effect: Effect) {
     subscribers.removeAll { subscriber in
       if case .terminated = subscriber.yield(effect) {
         return true
@@ -85,7 +85,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
   }
 
   /// The effects emitted from now on. Cancelling its iteration ends the stream.
-  func effects() -> AsyncStream<Effect> {
+  public final func effects() -> AsyncStream<Effect> {
     let (stream, continuation) = AsyncStream.makeStream(of: Effect.self)
     subscribers.append(continuation)
     return stream
