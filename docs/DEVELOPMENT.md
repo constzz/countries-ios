@@ -67,7 +67,7 @@ Commits follow Conventional Commits and show the flow: `test(list): …` (red), 
 - `scripts/lint.sh` is clean.
 - CI is green: it runs every row of `scripts/test-matrix.sh`. Locally, run only the tests a change touches.
 - Previews cover every state in light, dark and the largest accessibility size.
-- Every UI change ships snapshots of each affected state on every preset, in light and dark, inspected before committing.
+- Every UI change ships snapshots of each affected state on every preset, in light and dark (placeholder states on iPhone 17 Pro in light), inspected before committing.
 - Every new string is in the String Catalog under a short key with a translator comment, the localization tests pass, and the pseudolanguage checks are clean.
 - The README requirements map and decisions are up to date.
 

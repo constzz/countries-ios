@@ -87,7 +87,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
 - No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
-- Snapshot tests render each screen state on every device preset in light and dark ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `CountriesUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
+- Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `CountriesUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
 - `CountriesApp.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 
 ## Logging
