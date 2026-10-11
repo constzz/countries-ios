@@ -1,0 +1,50 @@
+name: Snapshots
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Pushes to main keep the README's badge current. A newer push to the same pull request, or a
+# newer merge to main, cancels the run in progress.
+concurrency:
+  group: snapshots-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The snapshot half of the Xcode 27.1 reference row: the reference images are recorded on
+  # Xcode 27.1 with the iOS 27.0 simulator, so they're compared there. Public repositories only:
+  # private ones pay for macOS minutes. The xcode-27 image has the iOS 27.0 runtime but no
+  # iPhone 17 Pro simulator, so the job creates one.
+  snapshots:
+    name: Snapshots (Xcode 27.1, iOS 27.0)
+    if: ${{ !github.event.repository.private }}
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      XCODE_27_PATH: /Applications/Xcode_27.1.app
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+      MATRIX_OUTPUT_DIR: ${{ github.workspace }}/test-matrix-output
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create the iPhone 17 Pro simulator on iOS 27.0
+        run: |
+          xcrun simctl list devices "iOS 27.0" | grep -q "iPhone 17 Pro (" ||
+            xcrun simctl create "iPhone 17 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro com.apple.CoreSimulator.SimRuntime.iOS-27-0
+
+      - name: Build with zero warnings and compare the snapshots
+        run: scripts/test-matrix.sh xcode27-ios27-snapshots
+
+      # On a mismatch, the result bundle holds each rendered image, attached to its test.
+      - name: Upload logs and result bundles
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: snapshots-xcode27
+          path: test-matrix-output
+          retention-days: 7

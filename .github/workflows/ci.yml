@@ -6,7 +6,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# A newer push to the same pull request, or a newer merge to main, cancels the run in progress.
+# Pushes to main keep the README's badge current. A newer push to the same pull request, or a
+# newer merge to main, cancels the run in progress.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -68,11 +69,12 @@ jobs:
           path: test-matrix-output
           retention-days: 7
 
-  # The Xcode 27.1 reference row, snapshots included. Public repositories only: private ones pay
-  # for macOS minutes. The xcode-27 image has the iOS 27.0 runtime but no iPhone 17 Pro
-  # simulator, so the job creates one.
+  # The Xcode 27.1 reference row without its snapshots, which run in snapshots.yml. Public
+  # repositories only: private ones pay for macOS minutes. The xcode-27 image has the iOS 27.0
+  # runtime but no iPhone 17 Pro simulator, so the job creates one. The iOS 17.0 row isn't run
+  # here: no image has that runtime, and downloading it took minutes on every run.
   xcode27:
-    name: Build and test with snapshots (Xcode 27.1, iOS 27.0)
+    name: Build and test (Xcode 27.1, iOS 27.0)
     if: ${{ !github.event.repository.private }}
     runs-on: xcode-27
     timeout-minutes: 45
@@ -88,48 +90,13 @@ jobs:
           xcrun simctl list devices "iOS 27.0" | grep -q "iPhone 17 Pro (" ||
             xcrun simctl create "iPhone 17 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro com.apple.CoreSimulator.SimRuntime.iOS-27-0
 
-      - name: Build with zero warnings and run the test plan
-        run: scripts/test-matrix.sh xcode27-ios27
+      - name: Build with zero warnings and run the test plan without snapshots
+        run: scripts/test-matrix.sh xcode27-ios27-tests
 
       - name: Upload logs and result bundles
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: test-matrix-xcode27
-          path: test-matrix-output
-          retention-days: 7
-
-  # The deployment-target floor: Xcode 27.1 building for and testing on iOS 17.0, without
-  # snapshots. Public repositories only, like the row above. The xcode-27 image has no iOS 17
-  # runtime, and Xcode 27.1's own downloader no longer offers it, so the job installs it with the
-  # image's xcodes (several GB) and creates an iPhone 15 Pro simulator. The download makes it the
-  # slowest job, so it runs on pushes to main only, not on pull requests.
-  xcode27-ios17:
-    name: Build and test on the iOS 17.0 floor (Xcode 27.1)
-    if: ${{ !github.event.repository.private && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    runs-on: xcode-27
-    timeout-minutes: 60
-    env:
-      XCODE_27_PATH: /Applications/Xcode_27.1.app
-      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
-      MATRIX_OUTPUT_DIR: ${{ github.workspace }}/test-matrix-output
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install the iOS 17.0 runtime and create the iPhone 15 Pro simulator
-        run: |
-          xcrun simctl list runtimes | grep -q "iOS 17.0 " ||
-            xcodes runtimes install "iOS 17.0"
-          xcrun simctl list devices "iOS 17.0" | grep -q "iPhone 15 Pro (" ||
-            xcrun simctl create "iPhone 15 Pro" com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro com.apple.CoreSimulator.SimRuntime.iOS-17-0
-
-      - name: Build and run the test plan
-        run: scripts/test-matrix.sh xcode27-ios17
-
-      - name: Upload logs and result bundles
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-matrix-xcode27-ios17
           path: test-matrix-output
           retention-days: 7
