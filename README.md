@@ -12,9 +12,9 @@ Developed with Xcode 27.1 (27A9269) on the iPhone 17 Pro / iOS 27.0 simulator.
 ### Tested with
 | Xcode | Simulator | Local | CI |
 |---|---|---|---|
-| 27.1 | iPhone 17 Pro, iOS 27.0 | ✓ (with snapshots) | every pull request |
-| 27.1 | iPhone 15 Pro, iOS 17.0 | ✓ | every pull request (downloads the iOS 17.0 runtime) |
-| 26.0.1 | iPhone 17 Pro, iOS 26.0 | ✓ | every pull request |
+| 27.1 | iPhone 17 Pro, iOS 27.0 | ✓ (with snapshots) | every pull request and push to main |
+| 27.1 | iPhone 15 Pro, iOS 17.0 | ✓ | every push to main (downloads the iOS 17.0 runtime) |
+| 26.0.1 | iPhone 17 Pro, iOS 26.0 | ✓ | every pull request and push to main |
 
 ### Commands
 | Task | Command |

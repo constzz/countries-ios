@@ -2,8 +2,11 @@ name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
+# A newer push to the same pull request, or a newer merge to main, cancels the run in progress.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -99,10 +102,11 @@ jobs:
   # The deployment-target floor: Xcode 27.1 building for and testing on iOS 17.0, without
   # snapshots. Public repositories only, like the row above. The xcode-27 image has no iOS 17
   # runtime, and Xcode 27.1's own downloader no longer offers it, so the job installs it with the
-  # image's xcodes (several GB) and creates an iPhone 15 Pro simulator.
+  # image's xcodes (several GB) and creates an iPhone 15 Pro simulator. The download makes it the
+  # slowest job, so it runs on pushes to main only, not on pull requests.
   xcode27-ios17:
     name: Build and test on the iOS 17.0 floor (Xcode 27.1)
-    if: ${{ !github.event.repository.private }}
+    if: ${{ !github.event.repository.private && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     runs-on: xcode-27
     timeout-minutes: 60
     env:
