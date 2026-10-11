@@ -1,8 +1,10 @@
 import CountriesDomain
 
-extension CountrySummary {
-  init(fragment: CountriesAPI.CountryBasics) {
-    self.init(
+final class CountrySummaryMapper {
+  private init() {}
+
+  static func map(_ fragment: CountriesAPI.CountryBasics) -> CountrySummary {
+    CountrySummary(
       code: fragment.code,
       name: fragment.name,
       emoji: fragment.emoji,

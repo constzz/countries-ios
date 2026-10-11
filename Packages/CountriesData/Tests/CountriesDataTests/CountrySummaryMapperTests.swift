@@ -2,8 +2,8 @@ import CountriesDomain
 import Testing
 @testable import CountriesData
 
-@Suite("CountrySummary mapping")
-struct CountrySummaryMappingTests {
+@Suite("CountrySummaryMapper")
+struct CountrySummaryMapperTests {
   @Test("AC-1.1 maps the fragment to a summary")
   func mapsTheFragment() async throws {
     let data = try await CountriesAPI.CountriesQuery.Data(data: JSONFixture.object("""
@@ -18,7 +18,7 @@ struct CountrySummaryMappingTests {
     }
     """))
 
-    let summaries = data.countries.map { CountrySummary(fragment: $0.fragments.countryBasics) }
+    let summaries = data.countries.map { CountrySummaryMapper.map($0.fragments.countryBasics) }
 
     #expect(summaries == [
       CountrySummary(code: "CH", name: "Switzerland", emoji: "🇨🇭", continent: Continent(code: "EU", name: "Europe")),

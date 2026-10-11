@@ -1,10 +1,12 @@
 import CountriesDomain
 
-extension CountryDetails {
+final class CountryDetailsMapper {
+  private init() {}
+
   /// Blank values are missing values: Antarctica's currencies are `[""]`.
-  init(country: CountriesAPI.CountryQuery.Data.Country) {
-    self.init(
-      summary: CountrySummary(fragment: country.fragments.countryBasics),
+  static func map(_ country: CountriesAPI.CountryQuery.Data.Country) -> CountryDetails {
+    CountryDetails(
+      summary: CountrySummaryMapper.map(country.fragments.countryBasics),
       capital: country.capital.flatMap { $0.isBlank ? nil : $0 },
       currencies: country.currencies.filter { !$0.isBlank },
       languages: country.languages

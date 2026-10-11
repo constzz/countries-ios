@@ -51,7 +51,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
     }
     // The API sorts by code.
     return data.countries
-      .map { CountrySummary(fragment: $0.fragments.countryBasics) }
+      .map { CountrySummaryMapper.map($0.fragments.countryBasics) }
       .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
   }
 
@@ -62,6 +62,6 @@ struct CountriesRepositoryImpl: CountriesRepository {
       Logger.network.error("\(operation, privacy: .public) found no country \(code, privacy: .public)")
       throw CountriesError.notFound
     }
-    return CountryDetails(country: country)
+    return CountryDetailsMapper.map(country)
   }
 }
