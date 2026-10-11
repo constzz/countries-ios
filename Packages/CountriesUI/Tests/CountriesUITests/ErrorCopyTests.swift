@@ -16,9 +16,10 @@ struct ErrorCopyTests {
     #expect(offline != ErrorCopy(.network, subject: subject))
   }
 
+  /// The list never gets `.notFound`; if it did, its generic failure would fit.
   @Test(
     "AC-1.10 error copy comes from the catalog",
-    arguments: [CountriesError.network, .server, .decoding, .unknown]
+    arguments: [CountriesError.network, .server, .decoding, .notFound, .unknown]
   )
   func errorCopyComesFromTheCatalog(error: CountriesError) {
     let copy = ErrorCopy(error, subject: .countries)
