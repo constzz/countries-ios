@@ -27,7 +27,7 @@ struct CountryDetailContent: View {
     // An empty list draws a plain background, so loading and errors would sit on a different
     // color than the rows. The grouped background stays behind every state.
     .scrollContentBackground(.hidden)
-    .background(.groupedBackground)
+    .background(Palette.groupedBackground)
     .navigationTitle(Text(verbatim: title))
     .navigationBarTitleDisplayMode(.inline)
     .loadState(
@@ -50,7 +50,7 @@ struct CountryDetailContent: View {
         _ = send(.headerScrolled(underBar: isUnderBar))
       }
       .textCase(nil)
-      .foregroundStyle(.primaryText)
+      .foregroundStyle(Palette.primaryText)
       .padding(.bottom)
     }
   }

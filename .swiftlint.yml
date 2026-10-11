@@ -54,7 +54,7 @@ custom_rules:
       - comment
       - doccomment
       - string
-    message: "Use a semantic token from DesignSystem (Colors.swift, Typography.swift) instead of a system color or text style."
+    message: "Use a semantic token from DesignSystem (Palette.swift, Typography.swift) instead of a system color or text style."
     severity: error
 
   ui_copy_from_catalog_symbols:

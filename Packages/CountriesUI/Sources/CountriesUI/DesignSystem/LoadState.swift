@@ -10,7 +10,7 @@ enum LoadPhase: Equatable {
 
 extension View {
   /// Covers the content with the view for `phase`, or shows the content when it's `nil`. The
-  /// content stays in place underneath, so its search field and refresh control keep working.
+  /// content stays in place underneath, so it keeps its state.
   func loadState(
     _ phase: LoadPhase?,
     subject: ErrorCopy.Subject,
@@ -21,8 +21,6 @@ extension View {
   }
 }
 
-/// The loading, empty and failed states both screens show over their content, so they look and
-/// behave the same.
 private struct LoadStateModifier: ViewModifier {
   let phase: LoadPhase?
   let subject: ErrorCopy.Subject

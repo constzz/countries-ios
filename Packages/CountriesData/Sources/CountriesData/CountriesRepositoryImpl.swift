@@ -3,7 +3,7 @@ import CountriesDomain
 import Foundation
 import os
 
-/// Creates the repository the app uses, backed by the Countries GraphQL API at `endpoint`.
+/// Creates a repository backed by the Countries GraphQL API at `endpoint`.
 public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
   CountriesRepositoryImpl(client: ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint)))
 }
@@ -11,8 +11,7 @@ public func makeCountriesRepository(endpoint: URL) -> any CountriesRepository {
 /// How long a request may wait for data before it fails, instead of URLSession's 60 s.
 private let requestTimeout: TimeInterval = 15
 
-/// The client with an in-memory cache that never stores a response with GraphQL errors. Tests pass
-/// a `session` that answers without the network.
+/// The client with an in-memory cache that never stores a response with GraphQL errors.
 func makeApolloClient(
   endpoint: URL,
   session: any ApolloURLSession = URLSession(configuration: .default)

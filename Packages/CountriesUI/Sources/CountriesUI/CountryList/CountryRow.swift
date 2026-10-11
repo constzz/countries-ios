@@ -30,17 +30,17 @@ struct CountryRow: View {
 
   private var flag: some View {
     Text(verbatim: country.emoji)
-      .font(.rowFlag)
+      .font(Typography.Row.flag)
       .accessibilityHidden(true)
   }
 
   private var details: some View {
     VStack(alignment: .leading) {
       Text(verbatim: country.name)
-        .font(.rowTitle)
+        .font(Typography.Row.title)
       Text(verbatim: country.continent.name)
-        .font(.rowSubtitle)
-        .foregroundStyle(.secondaryText)
+        .font(Typography.Row.subtitle)
+        .foregroundStyle(Palette.secondaryText)
     }
   }
 }

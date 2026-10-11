@@ -22,8 +22,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
     current
   }
 
-  /// Applies `action`. The returned task finishes when the work it launched has, so
-  /// `.refreshable` and tests can await it.
+  /// Applies `action`. The returned task finishes when the work it launched has.
   @discardableResult
   final func send(_ action: Action) -> Task<Void, Never> {
     let outerWork = launchedWork
@@ -60,9 +59,7 @@ class MVIViewModel<State: MVIState, Action: MVIAction, Effect: MVIEffect> {
     }
   }
 
-  /// Subscribes to the effects the view handles, from now on. Iterate it in `.task`, and subscribe
-  /// before sending the action that starts work: a cancelled iteration ends the stream, and the
-  /// next `.task` subscribes again.
+  /// The effects emitted from now on. Cancelling its iteration ends the stream.
   func effects() -> AsyncStream<Effect> {
     let (stream, continuation) = AsyncStream.makeStream(of: Effect.self)
     subscribers.append(continuation)

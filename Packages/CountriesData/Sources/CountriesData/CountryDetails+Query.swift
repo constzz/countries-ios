@@ -1,8 +1,7 @@
 import CountriesDomain
 
 extension CountryDetails {
-  /// Maps the detail query's country. The summary fields go through the list's mapper. Blank
-  /// values are missing values: Antarctica's currencies are `[""]`.
+  /// Blank values are missing values: Antarctica's currencies are `[""]`.
   init(country: CountriesAPI.CountryQuery.Data.Country) {
     self.init(
       summary: CountrySummary(fragment: country.fragments.countryBasics),

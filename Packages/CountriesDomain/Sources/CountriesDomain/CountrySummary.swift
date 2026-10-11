@@ -9,8 +9,7 @@ public struct Continent: Hashable, Sendable {
   }
 }
 
-/// What the country list shows for one country. The country code is its identity, so a row keeps
-/// it across reloads and filtering.
+/// The country code is its identity, so it stays the same across fetches.
 public struct CountrySummary: Identifiable, Hashable, Sendable {
   public let code: String
   public let name: String
