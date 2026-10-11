@@ -13,12 +13,9 @@ struct CountryDetailValues: Equatable {
 extension CountryDetailValues {
   /// - Parameter locale: the view's `\.locale`, so the values match the rest of the screen.
   init(_ details: CountryDetails, locale: Locale) {
-    let none = String(
-      localized: "None",
-      bundle: .module,
-      locale: locale,
-      comment: "Value of a country detail row that has no value, such as the capital of Antarctica."
-    )
+    var noneResource = LocalizedStringResource.countryDetailNone
+    noneResource.locale = locale
+    let none = String(localized: noneResource)
     func list(_ items: [String]) -> String {
       items.isEmpty ? none : items.formatted(.list(type: .and).locale(locale))
     }

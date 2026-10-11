@@ -9,8 +9,8 @@ struct ErrorCopyTests {
   func offlineHasItsOwnMessage(subject: ErrorCopy.Subject) {
     let offline = ErrorCopy(.offline, subject: subject)
 
-    #expect(offline.title == String(localized: "You’re Offline", bundle: .module))
-    #expect(offline.message == String(localized: "Connect to the internet and try again.", bundle: .module))
+    #expect(offline.title == String(localized: .errorOfflineTitle))
+    #expect(offline.message == String(localized: .errorOfflineMessage))
     #expect(offline.systemImage == "wifi.slash")
     #expect(offline.canRetry)
     #expect(offline != ErrorCopy(.network, subject: subject))
@@ -24,8 +24,8 @@ struct ErrorCopyTests {
   func errorCopyComesFromTheCatalog(error: CountriesError) {
     let copy = ErrorCopy(error, subject: .countries)
 
-    #expect(copy.title == String(localized: "Couldn’t Load Countries", bundle: .module))
-    #expect(copy.message == String(localized: "Something went wrong. Try again in a moment.", bundle: .module))
+    #expect(copy.title == String(localized: .countryListErrorTitle))
+    #expect(copy.message == String(localized: .errorGenericMessage))
     #expect(copy.systemImage == "exclamationmark.triangle")
     #expect(copy.canRetry)
   }
@@ -34,8 +34,8 @@ struct ErrorCopyTests {
   func detailErrorNamesACountry(error: CountriesError) {
     let copy = ErrorCopy(error, subject: .country)
 
-    #expect(copy.title == String(localized: "Couldn’t Load Country", bundle: .module))
-    #expect(copy.message == String(localized: "Something went wrong. Try again in a moment.", bundle: .module))
+    #expect(copy.title == String(localized: .countryDetailErrorTitle))
+    #expect(copy.message == String(localized: .errorGenericMessage))
     #expect(copy.systemImage == "exclamationmark.triangle")
     #expect(copy.canRetry)
   }
@@ -44,8 +44,8 @@ struct ErrorCopyTests {
   func notFoundHasItsOwnCopyAndNoRetry() {
     let copy = ErrorCopy(.notFound, subject: .country)
 
-    #expect(copy.title == String(localized: "Country Not Found", bundle: .module))
-    #expect(copy.message == String(localized: "This country isn’t available. Choose another one.", bundle: .module))
+    #expect(copy.title == String(localized: .countryDetailNotFoundTitle))
+    #expect(copy.message == String(localized: .countryDetailNotFoundMessage))
     #expect(copy.systemImage == "mappin.slash")
     #expect(!copy.canRetry)
   }

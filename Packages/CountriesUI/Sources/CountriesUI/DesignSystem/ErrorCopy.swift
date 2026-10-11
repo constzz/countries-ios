@@ -18,40 +18,20 @@ struct ErrorCopy: Equatable {
   init(_ error: CountriesError, subject: Subject) {
     switch error {
     case .offline:
-      title = String(
-        localized: "You’re Offline",
-        bundle: .module,
-        comment: "Title of the error state when the device has no internet connection."
-      )
-      message = String(
-        localized: "Connect to the internet and try again.",
-        bundle: .module,
-        comment: "Message of the error state when the device has no internet connection."
-      )
+      title = String(localized: .errorOfflineTitle)
+      message = String(localized: .errorOfflineMessage)
       systemImage = "wifi.slash"
     // Only a single country can be missing. The list never gets `.notFound`; if it did, its
     // generic failure fits.
     case .notFound where subject == .country:
-      title = String(
-        localized: "Country Not Found",
-        bundle: .module,
-        comment: "Title of the state shown when the selected country no longer exists."
-      )
-      message = String(
-        localized: "This country isn’t available. Choose another one.",
-        bundle: .module,
-        comment: "Message of the state shown when the selected country no longer exists."
-      )
+      title = String(localized: .countryDetailNotFoundTitle)
+      message = String(localized: .countryDetailNotFoundMessage)
       systemImage = "mappin.slash"
       // The country won't start existing, so repeating the request can't help.
       canRetry = false
     case .network, .server, .decoding, .notFound, .unknown:
       title = subject.failureTitle
-      message = String(
-        localized: "Something went wrong. Try again in a moment.",
-        bundle: .module,
-        comment: "Message of the error state when the countries or a country failed to load, unless offline."
-      )
+      message = String(localized: .errorGenericMessage)
       systemImage = "exclamationmark.triangle"
     }
   }
@@ -62,17 +42,9 @@ private extension ErrorCopy.Subject {
   var failureTitle: String {
     switch self {
     case .countries:
-      String(
-        localized: "Couldn’t Load Countries",
-        bundle: .module,
-        comment: "Title of the error state when the country list failed to load for any reason but being offline."
-      )
+      String(localized: .countryListErrorTitle)
     case .country:
-      String(
-        localized: "Couldn’t Load Country",
-        bundle: .module,
-        comment: "Title of the error state when a country's details failed to load for any reason but being offline."
-      )
+      String(localized: .countryDetailErrorTitle)
     }
   }
 }

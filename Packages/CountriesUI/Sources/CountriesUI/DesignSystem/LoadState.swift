@@ -67,7 +67,7 @@ private struct LoadStateView: View {
     } actions: {
       if copy.canRetry {
         Button(action: retry) {
-          Text("Try Again", bundle: .module, comment: "Button on an error state that repeats the failed request.")
+          Text(.errorRetry)
         }
         .buttonStyle(.bordered)
       }

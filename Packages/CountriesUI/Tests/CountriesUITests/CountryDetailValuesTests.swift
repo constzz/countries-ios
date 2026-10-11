@@ -23,7 +23,7 @@ struct CountryDetailValuesTests {
   func missingValuesReadNone() {
     let values = CountryDetailValues(.antarctica, locale: english)
 
-    let none = String(localized: "None", bundle: .module)
+    let none = String(localized: .countryDetailNone)
     #expect(values.capital == none)
     #expect(values.currencies == none)
     #expect(values.languages == none)
