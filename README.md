@@ -3,7 +3,7 @@
 [![CI](https://github.com/constzz/countries-ios/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/ci.yml?query=branch%3Amain)
 [![Snapshots](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml/badge.svg?branch=main)](https://github.com/constzz/countries-ios/actions/workflows/snapshots.yml?query=branch%3Amain)
 
-Atlas browses the world's countries from the public [Countries GraphQL API](https://countries.trevorblades.com). I built it as a take-home exercise in SwiftUI and Apollo iOS. Search the list by name, then open a country to see its capital, currencies, languages and continent.
+Atlas is an iOS app for browsing the world's countries from the public [Countries GraphQL API](https://countries.trevorblades.com). I built it as a take-home exercise in SwiftUI and Apollo iOS. Search the list by name, then open a country to see its capital, currencies, languages and continent.
 
 <p>
   <img src="AtlasUISnapshotTests/snapshots/COUNTRY_LIST_LOADED_iPhone17Pro_light.png" width="200" alt="The country list in light mode">
@@ -54,16 +54,16 @@ AtlasDomain holds the models, the use cases and the repository protocol, and imp
 - **Testing:** 124 Swift Testing tests, none of them on the network. Each layer is tested over doubles of the one below, no test sleeps, and [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift) renders iPhone, iPhone Duo and iPad in light and dark, the largest text size and right-to-left ([details](docs/ARCHITECTURE.md#testing)).
 
 ## Key decisions
-- **Search runs on the server.** The term goes to the API's `name` filter 300 ms after typing stops, so matching happens in one place for every client and can grow, for example to ignore accents, without repeating the logic in each app. Filtering a downloaded list on the device would also leave no queries to debounce, which the brief asks for.
-- **The repository has its own cache, and Apollo's is off.** Failures are never cached, so Try Again always reaches the network. Apollo's cache also stored responses with GraphQL errors, so a country that failed once read back as "not found".
-- **MVI on a small shared base.** A screen's state changes only in `reduce`, so even an old search answering after a newer one is a plain test: send actions, check the state. The base is my own [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), 120 lines, not a framework like TCA.
+- **Search runs on the server.** The app sends the term to the API's `name` filter 300 ms after typing stops. Matching then happens in one place for every client and can grow, for example to ignore accents, without repeating the logic in each app. Filtering a downloaded list on the device would also leave no queries to debounce, and the brief asks for debounced queries.
+- **The repository has its own cache, and Apollo's is off.** It keeps only successful results, in memory until the app quits; pull-to-refresh skips it, and Try Again always reaches the network. Apollo's cache also stored responses with GraphQL errors, so a country that failed once read back as "not found".
+- **MVI on a small shared base.** A screen's state changes only in `reduce`, so even an old search answering after a newer one is [a plain test](Packages/AtlasUI/Tests/AtlasUITests/CountryListViewModelTests.swift#L260): send actions, check the state. The base is my own [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), 120 lines, not a framework like TCA.
 - **One request at a time.** A new load, search, refresh or retry cancels the running request, and a cancelled request never changes the screen.
 - **View models go through use cases.** Rules about the data stay out of the view models: `GetCountriesUseCase` sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only forwards the call, but I kept it so both screens get their data the same way.
 - **The detail screen loads its own data.** It gets only the country code. Passing in the list's row would show the name and flag sooner, but the detail screen would depend on the list.
 
 ## Left out
 - **A custom EnvironmentValues entry.** The brief asks for one only where more than one view needs the value, and only the root view reads the use cases. The custom ViewModifier, `.loadState`, is in.
-- **Search that ignores accents.** The API matches names as written, so "Reunion" doesn't find "Réunion".
+- **Search that ignores accents.** The API matches names as written, so "Reunion" doesn't find "Réunion". The fix belongs on the server, with the rest of the matching.
 - **Translated country names.** Search matches the English names the API returns, so the names stay in English.
 - **Git LFS for the snapshot images.** They take 8 MB, and with LFS a clone without `git lfs` installed would get placeholders and fail the snapshot tests.
 
