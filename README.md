@@ -54,11 +54,11 @@ AtlasDomain holds the models, the use cases and the repository protocol, and imp
 - **Testing:** 124 Swift Testing tests, none of them on the network. Each layer is tested over doubles of the one below, no test sleeps, and [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift) renders iPhone, iPhone Duo and iPad in light and dark, the largest text size and right-to-left ([details](docs/ARCHITECTURE.md#testing)).
 
 ## Key decisions
-- **Search runs on the server.** The term goes to the API's `name` filter 300 ms after typing stops, and [`SearchPattern`](Packages/AtlasData/Sources/AtlasData/SearchPattern.swift) makes that case-sensitive regex match any case. I didn't filter a downloaded list on the device: the brief asks to debounce queries, and there would be none to debounce.
+- **Search runs on the server.** The term goes to the API's `name` filter 300 ms after typing stops, so matching happens in one place for every client and can grow, for example to ignore accents, without repeating the logic in each app. Filtering a downloaded list on the device would also leave no queries to debounce, which the brief asks for.
 - **The repository has its own cache, and Apollo's is off.** Failures are never cached, so Try Again always reaches the network. Apollo's cache also stored responses with GraphQL errors, so a country that failed once read back as "not found".
-- **Each screen is MVI on a shared base.** The tricky bugs are about order, like an old search answering after a newer one, and with one `reduce` each of them is a test that sends actions and checks the state. I didn't use a separate reducer type, because it would split each screen across two types.
+- **MVI on a small shared base.** A screen's state changes only in `reduce`, so even an old search answering after a newer one is a plain test: send actions, check the state. The base is my own [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), 120 lines, not a framework like TCA.
 - **One request at a time.** A new load, search, refresh or retry cancels the running request, and a cancelled request never changes the screen.
-- **Every layer is there, even when it only passes the call on.** Both screens get their data the same way, and a future rule about the data goes into a use case, not a view model ([PR #17](https://github.com/constzz/countries-ios/pull/17)).
+- **View models go through use cases.** Rules about the data stay out of the view models: `GetCountriesUseCase` sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only forwards the call, but I kept it so both screens get their data the same way.
 - **The detail screen loads its own data.** It gets only the country code. Passing in the list's row would show the name and flag sooner, but the detail screen would depend on the list.
 
 ## Left out
