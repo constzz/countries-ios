@@ -9,13 +9,13 @@ final class CountryListViewModel: MVIViewModel<
   CountryListEvent,
   CountryListEffect
 > {
-  private let repository: any CountriesRepository
+  private let getCountries: GetCountriesUseCase
   private lazy var searchInput: PassthroughSubject<String, Never> = makeSearchInput()
   private var fetchTask: Task<Void, Never>?
   private var searchProgressTask: Task<Void, Never>?
 
-  init(repository: any CountriesRepository) {
-    self.repository = repository
+  init(getCountries: GetCountriesUseCase) {
+    self.getCountries = getCountries
     super.init(initialState: CountryListState())
   }
 
@@ -163,8 +163,8 @@ final class CountryListViewModel: MVIViewModel<
 
   private func fetch(_ request: CountriesRequest) {
     fetchTask?.cancel()
-    fetchTask = launchEffect { [repository] in
-      try await repository.countries(matching: request.term, forceRefresh: request.forceRefresh)
+    fetchTask = launchEffect { [getCountries] in
+      try await getCountries(matching: request.term, forceRefresh: request.forceRefresh)
     } then: { result in
       switch result {
       case let .success(countries):

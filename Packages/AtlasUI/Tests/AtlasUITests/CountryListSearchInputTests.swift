@@ -1,3 +1,4 @@
+import AtlasDomain
 import AtlasMVITesting
 import Testing
 @testable import AtlasUI
@@ -58,7 +59,7 @@ struct CountryListSearchInputTests {
   }
 
   private func makeSUT() -> CountryListViewModel {
-    CountryListViewModel(repository: repository)
+    CountryListViewModel(getCountries: GetCountriesUseCase(repository: repository))
   }
 
   /// Searches `last`, then expects the repository to have been called for `terms` and then `last`.

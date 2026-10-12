@@ -9,15 +9,15 @@ final class CountryDetailViewModel: MVIViewModel<
   CountryDetailEffect
 > {
   private let countryCode: String
-  private let repository: any CountriesRepository
+  private let getCountryDetails: GetCountryDetailsUseCase
   private let locale: Locale
   private var fetchTask: Task<Void, Never>?
 
   /// Stores the dependencies and does nothing else: SwiftUI builds a view's initial `@State` value
   /// every time it creates the view.
-  init(countryCode: String, repository: any CountriesRepository, locale: Locale = .autoupdatingCurrent) {
+  init(countryCode: String, getCountryDetails: GetCountryDetailsUseCase, locale: Locale = .autoupdatingCurrent) {
     self.countryCode = countryCode
-    self.repository = repository
+    self.getCountryDetails = getCountryDetails
     self.locale = locale
     super.init(initialState: CountryDetailState())
   }
@@ -94,8 +94,8 @@ final class CountryDetailViewModel: MVIViewModel<
 
   private func fetch() {
     fetchTask?.cancel()
-    fetchTask = launchEffect { [repository, countryCode] in
-      try await repository.country(code: countryCode)
+    fetchTask = launchEffect { [getCountryDetails, countryCode] in
+      try await getCountryDetails(code: countryCode)
     } then: { result in
       switch result {
       case let .success(details):

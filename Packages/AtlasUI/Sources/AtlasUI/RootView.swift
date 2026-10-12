@@ -3,21 +3,23 @@ import SwiftUI
 
 /// Owns the selection both columns share.
 public struct RootView: View {
-  private let repository: any CountriesRepository
+  private let getCountries: GetCountriesUseCase
+  private let getCountryDetails: GetCountryDetailsUseCase
   /// The selected country's code. Each window keeps its own and restores it after relaunch.
   @SceneStorage("selectedCountryCode") private var selection: String?
 
-  public init(repository: any CountriesRepository) {
-    self.repository = repository
+  public init(getCountries: GetCountriesUseCase, getCountryDetails: GetCountryDetailsUseCase) {
+    self.getCountries = getCountries
+    self.getCountryDetails = getCountryDetails
   }
 
   public var body: some View {
     RootSplitView {
-      CountryListView(repository: repository, selection: $selection)
+      CountryListView(getCountries: getCountries, selection: $selection)
     } detail: {
       if let selection {
         // A view, and so a view model, per country: nothing from the previous one can show.
-        CountryDetailView(countryCode: selection, repository: repository)
+        CountryDetailView(countryCode: selection, getCountryDetails: getCountryDetails)
           .id(selection)
       } else {
         SelectCountryPlaceholder()

@@ -56,11 +56,14 @@ struct ErrorCopyTests {
   }
 
   private func makeSUT(result: Result<[CountrySummary], RequestError>) -> CountryListViewModel {
-    CountryListViewModel(repository: MockCountriesRepository(result: result))
+    CountryListViewModel(getCountries: GetCountriesUseCase(repository: MockCountriesRepository(result: result)))
   }
 
   private func makeSUT(detailResult: Result<CountryDetails, RequestError>) -> CountryDetailViewModel {
-    CountryDetailViewModel(countryCode: "CH", repository: MockCountriesRepository(detailResult: detailResult))
+    CountryDetailViewModel(
+      countryCode: "CH",
+      getCountryDetails: GetCountryDetailsUseCase(repository: MockCountriesRepository(detailResult: detailResult))
+    )
   }
 
   private func detailContent(after error: RequestError) async -> CountryDetailState.Content {
