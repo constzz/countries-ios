@@ -70,7 +70,6 @@ AtlasDomain holds the models, the use cases and the repository protocol, and imp
 
 ## Key decisions
 - **Search runs on the server.** The app sends the term to the API's `name` filter 300 ms after typing stops. Matching then happens in one place for every client and can grow, for example to ignore accents, without repeating the logic in each app. Filtering a downloaded list on the device would also leave no queries to debounce, and the brief asks for debounced queries.
-- **The repository has its own cache, and Apollo's is off.** It keeps only successful results, in memory until the app quits; pull-to-refresh skips it, and Try Again always reaches the network. Apollo's cache also stored responses with GraphQL errors, so a country that failed once read back as "not found".
 - **MVI on a small shared base.** A screen's state changes only in `reduce`, so even an old search answering after a newer one is [a plain test](Packages/AtlasUI/Tests/AtlasUITests/CountryListViewModelTests.swift#L260): send actions, check the state. The base is my own [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), 120 lines, not a framework like TCA.
 - **One request at a time.** A new load, search, refresh or retry cancels the running request, and a cancelled request never changes the screen.
 - **View models go through use cases.** Rules about the data stay out of the view models: `GetCountriesUseCase` sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only forwards the call, but I kept it so both screens get their data the same way.
