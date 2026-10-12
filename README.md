@@ -135,6 +135,7 @@ To check right-to-left layout or long text, choose Edit Scheme → Run → Optio
 - **A custom EnvironmentValues entry.** Only the root view would read one, and the brief asks for an entry more than one view needs. The custom ViewModifier, `.loadState`, is in, and both screens use it.
 - **Diacritic-insensitive search.** The API's regex matches names as written, so "Reunion" misses "Réunion".
 - **Localized country and continent names.** Search matches the English names. Currencies stay ISO codes and languages English names, as the API returns them.
+- **Git LFS for the snapshot images.** They take 8 MB at @1x, and each re-record adds the changed images to the history. With LFS, a clone without `git lfs` installed gets pointer files instead of images, so the snapshot tests fail, and every CI run downloads the images through LFS. I'd switch once the history grows much larger.
 
 ## With more time
 - **UI tests**, with accessibility identifiers and a stub repository chosen by launch argument, for navigation, going back, size changes and relaunch, which I check by hand today. Plus a unit test of the 15 s timeout over a transport that never answers.
