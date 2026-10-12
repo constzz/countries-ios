@@ -58,7 +58,7 @@ Both view models subclass [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MV
 3. Slow work starts with `launchEffect`, and its result comes back as an event, such as `.countriesLoaded`, through a second `reduce`. Only the view model can deliver an event, never the view.
 4. A one-time UI event goes out as an effect. After a search the list emits `.announce`, and its view posts the result count to VoiceOver.
 
-A view reads `state`, calls `send` and listens to `effects()`. That's all it can do.
+A view holds its view model as `MVIViewModelProtocol`, which has only `state`, `send` and `effects()`, so it can't call `reduce` or start work itself.
 
 ### Observation, @State, async/await and Combine
 - **Observation:** view models are `@MainActor @Observable`, and views observe a single `state` value.
@@ -75,7 +75,7 @@ Only AtlasData uses Apollo. The repository maps generated types to domain types,
 - **Why the cache is off:** Apollo stored the data of responses with GraphQL errors, so a country that failed once read back as "not found". The repository now caches only mapped successes ([tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift)).
 
 ### Testing
-123 Swift Testing tests. None touches the network.
+124 Swift Testing tests. None touches the network.
 
 - **TDD:** tests come before the code, and each test name starts with its acceptance criterion: `@Test("AC-1.5 no match shows the empty state with the query")`.
 - **`sut` and `makeSUT`:** each suite builds the object under test and its doubles in one private `makeSUT(…)`.
