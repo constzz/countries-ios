@@ -14,7 +14,7 @@ struct CountryListState: MVIState {
   var content: Content = .idle
   /// The search field's text, as typed.
   var searchText = ""
-  /// The term the search pipe settled on: trimmed and debounced.
+  /// The term the search pipeline settled on: trimmed and debounced.
   var query = ""
   /// A search is running over the current content.
   var isSearching = false

@@ -7,7 +7,7 @@ This document describes the target shape of the app. Each story builds its own s
 ```
                        Atlas
   (@main AppLauncher, AtlasApp, AppContainer: composition root)
-           │             │              │
+           ┌─────────────┼──────────────┐
            ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
            │
@@ -28,7 +28,7 @@ Foundation only. It defines what the app works with, independent of where the da
 - `CountriesRepository: Sendable`:
   - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, in the API's order;
   - `country(code:) async throws -> CountryDetails`.
-- Use cases, what the screens ask of the data: `GetCountriesUseCase`, which sorts the countries by name (the API sorts by code), and `GetCountryDetailsUseCase`. Each is a `Sendable` struct over the repository protocol with one `callAsFunction`, so a view model calls it like a function: `try await getCountries(matching: term, forceRefresh: false)`.
+- Use cases, what the screens ask of the data: `GetCountriesUseCase`, which sorts the countries by name (the API sorts by code), and `GetCountryDetailsUseCase`. Each is a `Sendable` struct over the repository protocol with one `callAsFunction`, so a view model calls it like a function: `try await getCountriesUseCase(matching: term, forceRefresh: false)`.
 - `RequestError: Error, Equatable, Sendable`, why any request in the app failed. No case belongs to one feature, so a new repository throws it too:
 
   | Case | When |
@@ -54,7 +54,7 @@ Implements the repository over two data sources: the API, through Apollo iOS, an
 - Internal pieces, each unit-tested:
   - mappers, one per GraphQL shape: `CountrySummaryMapper`, reused by `CountryDetailsMapper`;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
-  - `GraphQLClient`, the seam between the remote data source and `ApolloClient`, which always fetches from the network. Tests replace it with a fake that returns fixture data.
+  - `GraphQLClient`, the protocol the remote data source fetches through. Its implementation wraps `ApolloClient` and always fetches from the network. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `RequestError` and logs the real cause.
 
 ### AtlasMVI
@@ -85,7 +85,7 @@ SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, neve
 
 ## Concurrency
 - Swift 6 language mode with complete strict concurrency in every target. Isolation is explicit: view models are `@MainActor`; domain types, use cases, the repository and the data sources are `Sendable`; and the cache is an actor. Packages don't set a default actor isolation, and neither does the app target.
-- Everything is async/await. Combine appears only where the search field's input is debounced: the input pipe and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
+- Everything is async/await. Combine appears only where the search field's input is debounced: the input pipeline and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
@@ -95,13 +95,13 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **State** is one value with everything the screen shows.
 - **Actions** are what the view sends, named after what happened, never as commands: `.appeared`, `.searchTextChanged`, `.retryTapped`, `.refreshRequested`.
 - **Events** are what the view model's own work produced, named after the domain event: `.searchSettled`, `.searchProgressDue`, `.countriesLoaded`, `.countryFailedToLoad`. `launchEffect(_:then:)` and `subscribe(to:then:)` deliver them through the base's `receive(_:)`, which is internal to AtlasMVI, so a view can't send one; tests reach it with `@testable import AtlasMVI`. Each kind has its own `reduce`.
-- **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an action through `send`.
+- **`reduce(_ current:_ action:)`** is the only place the state changes, and it returns at once. It hands each action to a `handle…` method, and handlers read the `current` argument, never `state`. Async work starts through `launchEffect`, which returns the task so the handler can cancel it; its result comes back as an event through `receive`.
 - **Effects** are one-time UI events only: today the VoiceOver announcement, later navigation or alerts. The view model calls `emit`, and the view handles them in `.task { for await effect in viewModel.effects() { … } }`. Anything the screen must still show after a redraw is state, not an effect. An effect emitted while no view subscribes is dropped, so the view subscribes before it sends `.appeared`.
 - **The base** (`MVIViewModel`, `@MainActor @Observable`) owns `private(set) var state`. `send(_:)` runs `reduce`, assigns the state only when it changed, and returns a task that finishes when the work the action launched has, so `.refreshable` and tests can await it.
 - **Time comes from the base.** A view model debounces with `time.debounce(_:for:)` and waits with `time.wait(for:)`, whose deadline is fixed when it's called. `time` is `MVITime.current`, a task-local the base reads when the view model is created: `DispatchQueue.main` and `ContinuousClock` in the app. No view model takes a scheduler or a clock in its `init`.
 - **The view model prepares the text.** State and effects carry strings ready to show: the detail's rows are `CountryDetailValues`, which `CountryDetailViewModel` builds in its locale, and a search's announcement is the sentence VoiceOver reads. Views lay out text; they don't format domain values.
-- **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
-- **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.onAppear`.
+- **Views** use only `state`, `send(_:)` and `effects()`, and the compiler holds them to it: the outer view stores its view model as `any MVIViewModelProtocol<State, Action, Effect>`, which has nothing else. Swift has no `protected`, so the base's `reduce`, `launchEffect` and `emit` are public for subclasses in other packages. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
+- **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipelines are built on first use, and work starts when the view sends `.appeared` from `.onAppear`.
 - **One request at a time** per screen: a new fetch cancels the one in flight, and a response to a cancelled fetch is never applied.
 - **Stable identity:** a country's `code` is its `id` across reloads and filtering.
 - **Tests** drive a view model through `send`, await `send(_:).value`, replace its dependencies with test doubles, and check the state, the calls the doubles recorded and the effects. `MVIViewModelTests` covers the base on a toy view model.

@@ -6,7 +6,10 @@ struct AtlasApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView(getCountries: container.getCountries, getCountryDetails: container.getCountryDetails)
+      RootView(
+        getCountriesUseCase: container.getCountriesUseCase,
+        getCountryDetailsUseCase: container.getCountryDetailsUseCase
+      )
     }
   }
 }

@@ -1,11 +1,16 @@
 import Combine
 import Observation
 
-/// The base of every screen's view model. Views use only `state`, `send(_:)` and `effects()`; the
-/// view model's own work comes back as events, which only the base delivers.
+/// The base of every screen's view model. Views see it as `MVIViewModelProtocol`; the view model's
+/// own work comes back as events, which only the base delivers.
 @MainActor
 @Observable
-open class MVIViewModel<State: MVIState, Action: MVIAction, Event: MVIEvent, Effect: MVIEffect> {
+open class MVIViewModel<
+  State: MVIState,
+  Action: MVIAction,
+  Event: MVIEvent,
+  Effect: MVIEffect
+>: MVIViewModelProtocol {
   public private(set) var state: State
   public let time = MVITime.current
 

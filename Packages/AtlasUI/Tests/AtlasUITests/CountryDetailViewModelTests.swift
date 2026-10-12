@@ -204,7 +204,7 @@ struct CountryDetailViewModelTests {
     let repository = MockCountriesRepository(detailResult: detailResult)
     let sut = CountryDetailViewModel(
       countryCode: countryCode,
-      getCountryDetails: GetCountryDetailsUseCase(repository: repository),
+      getCountryDetailsUseCase: GetCountryDetailsUseCase(repository: repository),
       locale: locale
     )
     return (sut, repository)
@@ -218,7 +218,7 @@ struct CountryDetailViewModelTests {
     let repository = SuspendingDetailsRepository(honorsCancellation: honorsCancellation)
     let sut = CountryDetailViewModel(
       countryCode: countryCode,
-      getCountryDetails: GetCountryDetailsUseCase(repository: repository)
+      getCountryDetailsUseCase: GetCountryDetailsUseCase(repository: repository)
     )
     return (sut, repository)
   }

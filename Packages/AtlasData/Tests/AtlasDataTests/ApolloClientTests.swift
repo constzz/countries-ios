@@ -42,6 +42,6 @@ struct ApolloClientTests {
   ) throws -> (sut: ApolloGraphQLClient, session: StubURLSession) {
     let endpoint = try #require(URL(string: "https://countries.example/graphql"))
     let session = StubURLSession(bodies: responseBodies)
-    return (ApolloGraphQLClient(client: makeApolloClient(endpoint: endpoint, session: session)), session)
+    return (ApolloGraphQLClient(apolloClient: makeApolloClient(endpoint: endpoint, session: session)), session)
   }
 }

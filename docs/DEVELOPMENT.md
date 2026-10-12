@@ -26,8 +26,9 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 - **Layers:** `UI → Domain ← Data`; no layer is skipped. Apollo and generated types never leave AtlasData.
 - **Zero warnings.** Every warning in our code is a build error: `SWIFT_TREAT_WARNINGS_AS_ERRORS` in `Config/Shared.xcconfig` for the app, `.treatAllWarnings(as: .error)` in each `Package.swift`. Don't pass `SWIFT_TREAT_WARNINGS_AS_ERRORS` on the `xcodebuild` command line: it also reaches Apollo, whose warnings Xcode suppresses, and the two flags conflict.
 - **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project file stays in the "Xcode 16.0" format (`objectVersion = 77` in `project.pbxproj`; Project → File inspector → Project Format), because Xcode 26.0.1 knows no format newer than "Xcode 16.3". Check it after every project-file change.
-- **Concurrency:** async/await everywhere. Combine only in the search input pipe.
+- **Concurrency:** async/await everywhere. Combine only in the search input pipeline.
 - **Logging:** `os.Logger`, never `print`.
+- **Naming:** a stored dependency and its parameter end with its role: `remoteDataSource`, `summariesCache`, `getCountriesUseCase`, `graphQLClient`.
 - **UI:** every user-facing string is a String Catalog key, used through the symbol Xcode generates for it, layouts use leading/trailing only, and every UI change ships snapshot tests ([UI guidelines](UI_GUIDELINES.md)).
 - **Dependencies:** Apollo iOS is the only third-party library, pinned to an exact version. Tests use no third-party packages.
 
@@ -41,7 +42,7 @@ Work ships as user stories, one branch and one pull request each.
 6. Run `scripts/lint.sh` locally, then open a pull request with the AC checklist, how to verify it, and, for UI changes, the snapshot diffs.
 7. When CI is green, merge with a merge commit, never squash, so the story's commits stay in history.
 
-**Specs are committed; plans are not.** A spec records what a story delivers and why. While the story is open, the spec follows it: if scope changes, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests land. Once the story merges, the spec is frozen. The code and these guides describe the app as it is now; a later change goes into them, or into the next story's spec, and the old spec gains one line under "Changed since". Implementation plans are working notes and stay out of the repo.
+**Specs are committed; plans are not.** A spec records what a story delivers and why. While the story is open, the spec follows it: if scope changes, the spec changes in its own `docs(spec): …` commit, and ACs are ticked as their tests pass. Once the story merges, the spec is frozen. The code and these guides describe the app as it is now; a later change goes into them, or into the next story's spec, and the old spec gains one line under "Changed since". Implementation plans are working notes and stay out of the repo.
 
 ### Spec sections
 A spec says what and why, not how. Types, signatures, file layout and reducer logic live in the code and in [ARCHITECTURE.md](ARCHITECTURE.md), and a spec that repeats them goes stale with the first refactor.

@@ -16,6 +16,15 @@ struct MVIViewModelTests {
     #expect(sut.state.count == 1)
   }
 
+  @Test("a view model works through MVIViewModelProtocol, as views hold it")
+  func worksThroughTheProtocol() async {
+    let sut: any MVIViewModelProtocol<CounterState, CounterAction, CounterEffect> = makeSUT()
+
+    await sut.send(.incremented).value
+
+    #expect(sut.state.count == 1)
+  }
+
   @Test("an unchanged state doesn't notify observers")
   func unchangedStateDoesNotNotify() {
     let sut = makeSUT()

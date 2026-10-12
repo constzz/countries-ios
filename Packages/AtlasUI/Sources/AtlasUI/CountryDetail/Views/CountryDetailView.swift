@@ -1,13 +1,14 @@
 import AtlasDomain
+import AtlasMVI
 import SwiftUI
 
 struct CountryDetailView: View {
-  @State private var viewModel: CountryDetailViewModel
+  @State private var viewModel: any MVIViewModelProtocol<CountryDetailState, CountryDetailAction, CountryDetailEffect>
 
-  init(countryCode: String, getCountryDetails: GetCountryDetailsUseCase) {
+  init(countryCode: String, getCountryDetailsUseCase: GetCountryDetailsUseCase) {
     _viewModel = State(initialValue: CountryDetailViewModel(
       countryCode: countryCode,
-      getCountryDetails: getCountryDetails
+      getCountryDetailsUseCase: getCountryDetailsUseCase
     ))
   }
 
