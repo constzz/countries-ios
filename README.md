@@ -83,32 +83,48 @@ Each story started with a spec in [`docs/specs`](docs/specs) and its acceptance 
 | US-2 Country detail | [us-2-country-detail.md](docs/specs/us-2-country-detail.md) | [#3](https://github.com/constzz/countries-ios/pull/3) |
 
 ## Requirements map
-Each requirement in the brief, the acceptance criterion that covers it, and what checks it.
+Each line of the brief, in the brief's order, with the acceptance criterion that covers it and what checks it.
 
 <details>
 <summary>Show the map</summary>
 
 | Requirement | Story / AC | Checked by |
 |---|---|---|
-| At least two local Swift packages, data and UI; the app target only composes | US-0 / AC-0.6 | build; `AtlasUI` has no Apollo dependency |
-| The UI never sees Apollo-generated types | US-0 / AC-0.6 | generated code is `internal` to AtlasData |
-| Strict concurrency, no warnings | US-0 / AC-0.2 | warnings-as-errors build on Xcode 26.0.1 and 27.1 |
-| Schema downloaded, codegen configured | US-0 / AC-0.5 | [`apollo-codegen-config.json`](apollo-codegen-config.json); codegen reproduces the committed files with no diff |
-| SwiftLint and SwiftFormat | US-0 / AC-0.4 | `scripts/lint.sh` in CI |
-| A list of countries with flag, name and continent | US-1 / AC-1.1 | `GetCountriesUseCaseTests`, `CountriesRepositoryTests`, `CountryListViewModelTests`, `COUNTRY_LIST_LOADED_*` snapshots |
-| Search by name, debounced with Combine | US-1 / AC-1.2, AC-1.3 | `CountryListSearchInputTests`, `SearchPatternTests`, `CountriesRemoteDataSourceTests` |
-| Loading, empty and error states | US-1 / AC-1.4 to AC-1.6, AC-1.9 | `CountryListViewModelTests`, `ErrorCopyTests`, `CountryListSnapshotTests` |
-| Stable row identity across reloads and filtering | US-1 / AC-1.7 | `CountryListViewModelTests`; a country's `code` is its `id` |
-| `@Observable` and `@MainActor` view models | US-1 / AC-1.1, AC-1.11 | `CountryListViewModelTests` |
-| A protocol over the network layer; async/await only | — | `CountriesRepository` in AtlasDomain; `CountriesRemoteDataSource` and `GraphQLClient` in AtlasData |
-| Failures show an error state | US-1 / AC-1.6, US-2 / AC-2.4 | `CountryListViewModelTests`, `CountryDetailViewModelTests`, `ErrorCopyTests` |
-| Tests with a mocked network boundary | US-1 / AC-1.1, AC-1.3, AC-1.8, US-2 / AC-2.4 | `FakeGraphQLClient` and `FakeCountriesRemoteDataSource` in the data tests, `StubURLSession` under a real `ApolloClient`, `MockCountriesRepository` under the use cases and view models |
-| A test of the GraphQL to domain mapping | US-1 / AC-1.1, US-2 / AC-2.2, AC-2.3 | `CountrySummaryMapperTests`, `CountryDetailsMapperTests` |
-| Tap a country to see its name, flag, capital, currencies, languages and continent | US-2 / AC-2.1 to AC-2.3 | `CountryDetailsMapperTests`, `CountryDetailViewModelTests`, `COUNTRY_DETAIL_*` snapshots; navigation checked by hand |
-| A fragment shared by both screens' operations | US-2 | `CountryBasics.graphql`, spread by `CountriesQuery` and `CountryQuery` |
-| Detail loading and error states | US-2 / AC-2.4, AC-2.5, AC-2.10 | `CountryDetailViewModelTests`, `CountriesRepositoryTests`, `ErrorCopyTests`, `CountryDetailSnapshotTests` |
-| Optional: light and dark mode with semantic colors | US-1 / AC-1.9, US-2 / AC-2.6 | system colors only, through `Palette`; every snapshot in light and dark |
-| Optional: Dynamic Type at accessibility sizes | US-1 / AC-1.9, US-2 / AC-2.6 | `*_accessibilityXXXL` snapshots |
-| Optional: a custom ViewModifier and EnvironmentValues entry | — | `.loadState`, used by both screens; the environment entry is [left out](#left-out) |
+| **List screen** | | |
+| All countries with flag emoji, name and continent | US-1 / AC-1.1 | `CountryListViewModelTests`, `GetCountriesUseCaseTests`, `COUNTRY_LIST_LOADED_*` snapshots |
+| A search field that filters by country name | US-1 / AC-1.3 | `SearchPatternTests`, `CountriesRemoteDataSourceTests` |
+| A debounce, so typing doesn't send a query per keystroke | US-1 / AC-1.2 | `CountryListSearchInputTests`: "typing searches once, 300 ms after the last keystroke" |
+| Distinct loading, empty and error states | US-1 / AC-1.4 to AC-1.6, AC-1.9 | `CountryListViewModelTests`, `CountryListSnapshotTests` |
+| Tapping a country opens the detail screen | US-2 / AC-2.1 | checked by hand; UI tests are under [With more time](#with-more-time) |
+| **Detail screen** | | |
+| Name, flag emoji, capital, currency, languages and continent | US-2 / AC-2.2, AC-2.3 | `CountryDetailsMapperTests`, `CountryDetailViewModelTests`, `COUNTRY_DETAIL_*` snapshots |
+| Loading and error states | US-2 / AC-2.4 to AC-2.6 | `CountryDetailViewModelTests`, `CountryDetailSnapshotTests` |
+| **Both screens** | | |
+| Optional: light and dark mode with semantic colours only | US-1 / AC-1.9, US-2 / AC-2.6 | system colours only, through `Palette`; every snapshot in light and dark |
+| Optional: Dynamic Type, usable at accessibility sizes | US-1 / AC-1.9, US-2 / AC-2.6 | `*_accessibilityXXXL` snapshots |
+| **1. Modular structure** | | |
+| At least two local packages, data and UI; the app target only composes | US-0 / AC-0.6 | AtlasData, AtlasUI, AtlasDomain and AtlasMVI; `Atlas/` holds the entry point and `AppContainer` |
+| The UI doesn't depend on Apollo types; mapping at the data boundary | US-0 / AC-0.6 | AtlasUI has no Apollo dependency; generated code is `internal` to AtlasData, and its mappers build domain models |
+| Strict concurrency, no warnings | US-0 / AC-0.2 | Swift 6 language mode and warnings as errors in every target, built on Xcode 26.0.1 and 27.1 in CI |
+| **2. Networking** | | |
+| Apollo iOS with the downloaded schema and codegen | US-0 / AC-0.5 | [`schema.graphqls`](Packages/AtlasData/Sources/AtlasData/GraphQL/schema.graphqls), [`apollo-codegen-config.json`](apollo-codegen-config.json); CI checks codegen reproduces the committed files |
+| List and detail operations, sharing a fragment | US-1, US-2 | `CountriesQuery` and `CountryQuery`, both spreading `CountryBasics` |
+| The network layer behind a protocol | — | `CountriesRepository` in AtlasDomain; `CountriesRemoteDataSource` and `GraphQLClient` in AtlasData |
+| async/await, no completion handlers | — | every call from a view model down to Apollo is `async throws` |
+| A network error shows an error state, not a crash or a silent empty list | US-1 / AC-1.6, US-2 / AC-2.4 | `CountryListViewModelTests`, `CountryDetailViewModelTests`, `ErrorMappingTests`, `ErrorCopyTests`; `CountriesRemoteDataSourceTests`: "no countries for a blank term is a server error" |
+| **3. State and views** | | |
+| `@Observable` view models with `@MainActor` | — | both view models subclass `MVIViewModel`, which is `@MainActor @Observable` |
+| Combine for the search debounce | US-1 / AC-1.2 | `CountryListSearchInputTests` |
+| Optional: a custom ViewModifier and EnvironmentValues entry, each used by more than one view | — | `.loadState`, used by both screens; the environment entry is [left out](#left-out) |
+| Stable row identity across reloads and filtering | US-1 / AC-1.7 | `CountryListViewModelTests`: "rows keep their codes across refresh and filtering" |
+| **4. Tests** | | |
+| List view model: successful load, empty results and a network failure, over a mocked network boundary | US-1 / AC-1.1, AC-1.5, AC-1.6 | `CountryListViewModelTests` over `MockCountriesRepository`: "a response shows the loaded rows", "no match shows the empty state with the query", "a failure shows the error" |
+| At least one test of the GraphQL to domain mapping | US-1 / AC-1.1, US-2 / AC-2.2, AC-2.3 | `CountrySummaryMapperTests`, `CountryDetailsMapperTests` |
+| Swift Testing or XCTest, with no network requests | — | 124 Swift Testing tests over doubles; `StubURLSession` under a real `ApolloClient` |
+| **Submission** | | |
+| A public repository with its commit history | — | this repository; each story merged as a pull request with a merge commit |
+| Build and run instructions with the Xcode version, deployment target and simulator | — | [Build and run](#build-and-run) |
+| Key decisions, what's left out, and what I'd change with more time | — | [Key decisions](#key-decisions), [Left out](#left-out), [With more time](#with-more-time) |
+| SwiftFormat and SwiftLint configuration | US-0 / AC-0.4 | [`.swiftformat`](.swiftformat), [`.swiftlint.yml`](.swiftlint.yml); `scripts/lint.sh` in CI |
 
 </details>
