@@ -1,6 +1,6 @@
 import Apollo
 
-/// The seam between the remote data source and Apollo.
+/// Lets tests replace Apollo with a fake.
 protocol GraphQLClient: Sendable {
   /// The query's data, fetched from the network. Throws `RequestError`, or `CancellationError` when
   /// cancelled.

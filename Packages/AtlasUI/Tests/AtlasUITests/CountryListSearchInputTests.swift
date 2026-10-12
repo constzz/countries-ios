@@ -3,7 +3,7 @@ import AtlasMVITesting
 import Testing
 @testable import AtlasUI
 
-/// The search field's input pipe: trim, debounce 300 ms, drop duplicates. The debounce waits on a
+/// The search field's input pipeline: trim, debounce 300 ms, drop duplicates. The debounce waits on a
 /// test scheduler, so each test moves the clock itself. A keystroke that must not search is
 /// followed by one that does, so a search it started would show in the calls before the last one.
 @Suite("CountryListViewModel search input", .testTime)

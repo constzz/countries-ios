@@ -133,8 +133,8 @@ struct CountryListViewModelTests {
     #expect(!sut.state.isSearching)
   }
 
-  @Test("AC-1.2 typing updates the search text and feeds the search pipe")
-  func typingFeedsTheSearchPipe() async {
+  @Test("AC-1.2 typing updates the search text and sends it to the search pipeline")
+  func typingSendsTextToTheSearchPipeline() async {
     let (sut, repository) = makeSUT(result: .success(rows))
     let scheduler = TestTime.scheduler
     await sut.send(.appeared).value

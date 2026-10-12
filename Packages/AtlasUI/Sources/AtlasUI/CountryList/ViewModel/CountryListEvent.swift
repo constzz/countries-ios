@@ -2,7 +2,7 @@ import AtlasDomain
 import AtlasMVI
 
 enum CountryListEvent: MVIEvent {
-  /// The search pipe settled on a trimmed term.
+  /// The search pipeline settled on a trimmed term.
   case searchSettled(String)
   /// A search is still running long enough after it started to show its progress.
   case searchProgressDue

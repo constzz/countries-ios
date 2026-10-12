@@ -3,10 +3,10 @@
 > Delivered in [PR #1](https://github.com/constzz/countries-ios/pull/1) on 2026-10-10. The spec isn't updated after merge: the code and the guides in `docs/` describe the app as it is now.
 > **Changed since:** snapshots are drawn at @1x and matched within 2 of 255 per channel (US-1); the repository reaches the screens through `RootView`'s `init`, with no environment entry (US-2); a fourth local package, `AtlasMVI`, holds the MVI layer and its test helpers, and AtlasUI depends on it (PR #13); AC-0.8 is ticked: its verification commands pass, and the project still opens in Xcode 26.0.1; the screens get use cases instead of the repository: `AppContainer` builds `GetCountriesUseCase` and `GetCountryDetailsUseCase` over it, and `RootView` takes them (PR #17).
 
-*As a reviewer or developer, I can clone the repo, open it in Xcode, and run the app, its tests and its linters, so every feature story lands on a working, warning-free baseline.*
+*As a reviewer or developer, I can clone the repo, open it in Xcode, and run the app, its tests and its linters, so every feature story starts from a working, warning-free baseline.*
 
 ## Scope
-- `Atlas.xcodeproj` with an app target and three local packages under `Packages/`: `AtlasDomain`, `AtlasData` (Apollo iOS) and `AtlasUI`, wired as `UI → Domain ← Data`, with the app composing all three.
+- `Atlas.xcodeproj` with an app target and three local packages under `Packages/`: `AtlasDomain`, `AtlasData` (Apollo iOS) and `AtlasUI`, with dependencies `UI → Domain ← Data`, with the app composing all three.
 - A placeholder root screen in `AtlasUI` whose title comes from the String Catalog.
 - Swift 6 language mode and strict concurrency everywhere, iOS 17.0 deployment target, zero warnings on Xcode 26.0.1 and Xcode 27.1.
 - One test plan (`Atlas.xctestplan`) that runs every package test target, an app-hosted snapshot test target with its own helper, and localization tests.

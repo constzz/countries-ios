@@ -239,7 +239,7 @@ private func describe(_ imageView: UIImageView) -> String {
 }
 
 /// Removes animations with a finite duration, such as a spinner's frames or a fade UIKit starts
-/// itself, so each layer draws its final state instead of whichever frame the capture lands on.
+/// itself, so each layer draws its final state instead of whichever frame is on screen at capture.
 /// Liquid Glass ties its shapes to other layers with animations of infinite duration; those stay.
 @MainActor
 private func removeMotion(from layer: CALayer) {

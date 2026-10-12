@@ -54,7 +54,7 @@ Implements the repository over two data sources: the API, through Apollo iOS, an
 - Internal pieces, each unit-tested:
   - mappers, one per GraphQL shape: `CountrySummaryMapper`, reused by `CountryDetailsMapper`;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
-  - `GraphQLClient`, the seam between the remote data source and `ApolloClient`, which always fetches from the network. Tests replace it with a fake that returns fixture data.
+  - `GraphQLClient`, the protocol the remote data source fetches through. Its implementation wraps `ApolloClient` and always fetches from the network. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `RequestError` and logs the real cause.
 
 ### AtlasMVI
@@ -85,7 +85,7 @@ SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, neve
 
 ## Concurrency
 - Swift 6 language mode with complete strict concurrency in every target. Isolation is explicit: view models are `@MainActor`; domain types, use cases, the repository and the data sources are `Sendable`; and the cache is an actor. Packages don't set a default actor isolation, and neither does the app target.
-- Everything is async/await. Combine appears only where the search field's input is debounced: the input pipe and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
+- Everything is async/await. Combine appears only where the search field's input is debounced: the input pipeline and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
 ## Presentation
@@ -101,7 +101,7 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 - **Time comes from the base.** A view model debounces with `time.debounce(_:for:)` and waits with `time.wait(for:)`, whose deadline is fixed when it's called. `time` is `MVITime.current`, a task-local the base reads when the view model is created: `DispatchQueue.main` and `ContinuousClock` in the app. No view model takes a scheduler or a clock in its `init`.
 - **The view model prepares the text.** State and effects carry strings ready to show: the detail's rows are `CountryDetailValues`, which `CountryDetailViewModel` builds in its locale, and a search's announcement is the sentence VoiceOver reads. Views lay out text; they don't format domain values.
 - **Views** use only `state`, `send(_:)` and `effects()`. Each screen has an outer view that owns its view model with `@State` and handles its effects, and an inner view that draws a given state and sends actions. Previews and snapshot tests render the inner view.
-- **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipes are built on first use, and work starts when the view sends `.appeared` from `.onAppear`.
+- **No work in `init`.** A view model's `init` only stores its dependencies: SwiftUI builds a view's initial `@State` value every time it creates the view and discards all but the first. Pipelines are built on first use, and work starts when the view sends `.appeared` from `.onAppear`.
 - **One request at a time** per screen: a new fetch cancels the one in flight, and a response to a cancelled fetch is never applied.
 - **Stable identity:** a country's `code` is its `id` across reloads and filtering.
 - **Tests** drive a view model through `send`, await `send(_:).value`, replace its dependencies with test doubles, and check the state, the calls the doubles recorded and the effects. `MVIViewModelTests` covers the base on a toy view model.
