@@ -1,8 +1,9 @@
 import AtlasDomain
+import AtlasMVI
 import SwiftUI
 
 struct CountryListView: View {
-  @State private var viewModel: CountryListViewModel
+  @State private var viewModel: any MVIViewModelProtocol<CountryListState, CountryListAction, CountryListEffect>
   @Binding private var selection: String?
 
   init(getCountriesUseCase: GetCountriesUseCase, selection: Binding<String?>) {
