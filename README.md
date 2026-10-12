@@ -90,25 +90,7 @@ To see the other states in the app: search "zzz" for the empty state, open Antar
 - **Deployment target:** iOS 17.0, the first release with the Observation framework.
 - **Simulator:** iPhone 17 Pro, iOS 27.0.
 
-Open `Atlas.xcodeproj` and press ⌘R. There's nothing to install: the generated GraphQL code is committed, and Apollo iOS 2.4.0 is the only dependency, pinned to that exact version.
-
-### Tested with
-| Xcode | Simulator | Local | CI |
-|---|---|---|---|
-| 27.1 | iPhone 17 Pro, iOS 27.0 | ✓ (with snapshots) | every pull request and push to main; snapshots in their own workflow |
-| 27.1 | iPhone 15 Pro, iOS 17.0 | ✓ | not run: no CI image has the iOS 17.0 runtime |
-| 26.0.1 | iPhone 17 Pro, iOS 26.0 | ✓ | every pull request and push to main |
-
-### Commands
-| Task | Command |
-|---|---|
-| All tests | `xcodebuild test -scheme Atlas -testPlan Atlas -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never` |
-| Test matrix (Xcode 26 and 27) | `scripts/test-matrix.sh` |
-| Lint | `scripts/lint.sh` (needs `brew install swiftlint swiftformat`) |
-| Record snapshots | the `RecordSnapshots` test plan ([details](docs/DEVELOPMENT.md#snapshot-tests)) |
-| Codegen | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#codegen) |
-
-To check right-to-left layout or long text, choose Edit Scheme → Run → Options → App Language → Right-to-Left Pseudolanguage or Double-Length Pseudolanguage.
+Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. ⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. I also ran the tests on the iOS 17.0 simulator, which no CI image has. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
 
 ## Key decisions
 - **Search on the server**, at most one query per 300 ms pause. `SearchPattern` makes the API's case-sensitive regex match any case (`fr` → `[fF][rR]`) and escapes metacharacters. Not filtering on the device: typing would send no queries, so the debounce would do nothing.
