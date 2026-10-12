@@ -61,10 +61,10 @@ Both view models subclass [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MV
 A view reads `state`, calls `send` and listens to `effects()`. That's all it can do.
 
 ### Observation, @State, async/await and Combine
-- **Observation.** `MVIViewModel` is `@MainActor @Observable`. Its bookkeeping is `@ObservationIgnored`, so `state` is the only property views observe, and `state` is assigned only when `reduce` returns a different value: an action that changes nothing redraws nothing.
-- **@State.** Each screen's view owns its view model in `@State`. SwiftUI keeps the first instance but runs the view's `init` on every parent redraw, so a view model's `init` only stores its dependencies, and loading starts from `.onAppear`. `RootView` keeps the selected country code in `@SceneStorage` and hands it to the list as a `@Binding`. The detail view gets `.id(code)`, so each country gets a new view model.
-- **async/await.** Everything below the view model is `async throws`: the use cases, the repository protocol, the remote data source and Apollo's `fetch`. The cache is an actor, and the protocols and use cases are `Sendable`. `launchEffect` runs the work in a `Task` the view model can cancel, and a cancelled task never reaches `reduce`. `send` returns a task that ends when the work it started has, so `.refreshable { await send(.refreshRequested).value }` keeps the refresh spinner up until the answer arrives, and tests await the same task.
-- **Combine** is used only for the search field's input. Keystrokes go into a `PassthroughSubject`, are trimmed, debounced for 300 ms and deduplicated, and come back as a `.searchSettled` event through the base's `subscribe(to:then:)`. The debounce runs on the scheduler in [`MVITime`](Packages/AtlasMVI/Sources/AtlasMVI/MVITime.swift), a task-local the tests replace. No API in the app returns a publisher.
+- **Observation:** view models are `@MainActor @Observable`, and views observe a single `state` value.
+- **@State:** each screen's view owns its view model in `@State`. The view model's `init` only stores dependencies; loading starts in `.onAppear`.
+- **async/await:** every call from the view model down to Apollo is `async throws`, checked by Swift 6 strict concurrency. A new request cancels the one in flight.
+- **Combine:** only for the search field's 300 ms debounce. No API returns a publisher.
 
 ### Apollo iOS
 Only AtlasData uses Apollo. The repository maps generated types to domain types, so the UI never sees them.
