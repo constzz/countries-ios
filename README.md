@@ -90,7 +90,7 @@ To see the other states in the app: search "zzz" for the empty state, open Antar
 - **Deployment target:** iOS 17.0, the first release with the Observation framework.
 - **Simulator:** iPhone 17 Pro, iOS 27.0.
 
-Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. ⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. I also ran the tests on an iOS 17.0 simulator on my Mac. CI can't, because GitHub's macOS machines don't come with the iOS 17.0 simulator. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
+Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. ⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
 
 ## Key decisions
 - **Search on the server**, at most one query per 300 ms pause. `SearchPattern` makes the API's case-sensitive regex match any case (`fr` → `[fF][rR]`) and escapes metacharacters. Not filtering on the device: typing would send no queries, so the debounce would do nothing.
