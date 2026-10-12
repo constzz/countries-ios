@@ -28,7 +28,7 @@ Foundation only. It defines what the app works with, independent of where the da
 - `CountriesRepository: Sendable`:
   - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, in the API's order;
   - `country(code:) async throws -> CountryDetails`.
-- Use cases, what the screens ask of the data: `GetCountriesUseCase`, which sorts the countries by name (the API sorts by code), and `GetCountryDetailsUseCase`. Each is a `Sendable` struct over the repository protocol with one `callAsFunction`, so a view model calls it like a function: `try await getCountries(matching: term, forceRefresh: false)`.
+- Use cases, what the screens ask of the data: `GetCountriesUseCase`, which sorts the countries by name (the API sorts by code), and `GetCountryDetailsUseCase`. Each is a `Sendable` struct over the repository protocol with one `callAsFunction`, so a view model calls it like a function: `try await getCountriesUseCase(matching: term, forceRefresh: false)`.
 - `RequestError: Error, Equatable, Sendable`, why any request in the app failed. No case belongs to one feature, so a new repository throws it too:
 
   | Case | When |

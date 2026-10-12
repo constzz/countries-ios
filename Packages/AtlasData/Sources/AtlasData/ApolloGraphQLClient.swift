@@ -5,10 +5,10 @@ import os
 
 /// Fetches through `ApolloClient` and maps every failure to `RequestError`, logging its cause.
 struct ApolloGraphQLClient: GraphQLClient {
-  private let client: ApolloClient
+  private let apolloClient: ApolloClient
 
-  init(client: ApolloClient) {
-    self.client = client
+  init(apolloClient: ApolloClient) {
+    self.apolloClient = apolloClient
   }
 
   func fetch<Query: GraphQLQuery>(
@@ -16,7 +16,7 @@ struct ApolloGraphQLClient: GraphQLClient {
   ) async throws -> Query.Data where Query.ResponseFormat == SingleResponseFormat {
     let response: GraphQLResponse<Query>
     do {
-      response = try await client.fetch(query: query, cachePolicy: .networkOnly)
+      response = try await apolloClient.fetch(query: query, cachePolicy: .networkOnly)
     } catch {
       let mapped = Self.mapped(error)
       if mapped is RequestError {

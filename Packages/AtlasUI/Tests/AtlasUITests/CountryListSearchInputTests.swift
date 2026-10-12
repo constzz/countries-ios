@@ -59,7 +59,7 @@ struct CountryListSearchInputTests {
   }
 
   private func makeSUT() -> CountryListViewModel {
-    CountryListViewModel(getCountries: GetCountriesUseCase(repository: repository))
+    CountryListViewModel(getCountriesUseCase: GetCountriesUseCase(repository: repository))
   }
 
   /// Searches `last`, then expects the repository to have been called for `terms` and then `last`.

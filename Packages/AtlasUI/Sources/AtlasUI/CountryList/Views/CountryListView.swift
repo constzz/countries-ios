@@ -5,8 +5,8 @@ struct CountryListView: View {
   @State private var viewModel: CountryListViewModel
   @Binding private var selection: String?
 
-  init(getCountries: GetCountriesUseCase, selection: Binding<String?>) {
-    _viewModel = State(initialValue: CountryListViewModel(getCountries: getCountries))
+  init(getCountriesUseCase: GetCountriesUseCase, selection: Binding<String?>) {
+    _viewModel = State(initialValue: CountryListViewModel(getCountriesUseCase: getCountriesUseCase))
     _selection = selection
   }
 

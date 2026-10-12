@@ -59,6 +59,6 @@ struct CountryListAnnouncementTests {
     result: Result<[CountrySummary], RequestError>
   ) -> (sut: CountryListViewModel, repository: MockCountriesRepository) {
     let repository = MockCountriesRepository(result: result)
-    return (CountryListViewModel(getCountries: GetCountriesUseCase(repository: repository)), repository)
+    return (CountryListViewModel(getCountriesUseCase: GetCountriesUseCase(repository: repository)), repository)
   }
 }

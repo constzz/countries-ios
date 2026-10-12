@@ -16,8 +16,8 @@ struct RootViewTests {
   private func makeSUT() -> RootView {
     let repository = MockCountriesRepository()
     return RootView(
-      getCountries: GetCountriesUseCase(repository: repository),
-      getCountryDetails: GetCountryDetailsUseCase(repository: repository)
+      getCountriesUseCase: GetCountriesUseCase(repository: repository),
+      getCountryDetailsUseCase: GetCountryDetailsUseCase(repository: repository)
     )
   }
 }
