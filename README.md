@@ -15,6 +15,15 @@ Atlas browses the world's countries from the public [Countries GraphQL API](http
 
 These are the snapshot tests' reference images, so CI fails when a screen no longer matches them.
 
+## Build and run
+- **Xcode:** 26.0.1 or later. I developed on Xcode 27.1 (27A9269).
+- **Deployment target:** iOS 17.0, the first release with the Observation framework.
+- **Simulator:** iPhone 17 Pro, iOS 27.0.
+
+Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. To see the other states, search "zzz" for the empty state, open Antarctica for "None" values, and go offline for the error states.
+
+⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
+
 ## Code walkthrough
 Each part links to the files that show it.
 
@@ -82,15 +91,6 @@ Only AtlasData uses Apollo. The repository maps generated types to domain types,
 - **Unit tests per layer**, each over doubles of the layer below. [`StubURLSession`](Packages/AtlasData/Tests/AtlasDataTests/Doubles/StubURLSession.swift) runs a real `ApolloClient` without the network.
 - **Async tests without sleeps:** tests await the task `send` returns, [`SuspendingCountriesRepository`](Packages/AtlasUI/Tests/AtlasUITests/Doubles/SuspendingCountriesRepository.swift) holds each request until the test answers it, and the [`.testTime`](Packages/AtlasMVI/Sources/AtlasMVITesting/TestTime.swift) trait lets a test advance the debounce clock itself.
 - **Snapshots:** [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift), my own helper, renders on iPhone 17 Pro, iPhone Duo folded and unfolded, and iPad in portrait and landscape, in light and dark, plus the largest text size and right-to-left.
-
-To see the other states in the app: search "zzz" for the empty state, open Antarctica for "None" values, and go offline for the error states.
-
-## Build and run
-- **Xcode:** 26.0.1 or later. I developed on Xcode 27.1 (27A9269).
-- **Deployment target:** iOS 17.0, the first release with the Observation framework.
-- **Simulator:** iPhone 17 Pro, iOS 27.0.
-
-Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. ⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
 
 ## Key decisions
 - **Search runs on the server.** The app sends the search term to the API's `name` filter, 300 ms after the user stops typing. That filter is a case-sensitive regex, so `SearchPattern` turns `fr` into `[fF][rR]` to match "France", and escapes characters such as `(` that would break the regex. I didn't download all countries and filter them on the device: the brief asks to debounce queries, and with local filtering there would be no queries to debounce.
