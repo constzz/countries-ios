@@ -8,6 +8,8 @@ public struct GetCountriesUseCase: Sendable {
   }
 
   public func callAsFunction(matching term: String, forceRefresh: Bool) async throws -> [CountrySummary] {
+    // The API sorts by code.
     try await repository.countries(matching: term, forceRefresh: forceRefresh)
+      .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
   }
 }
