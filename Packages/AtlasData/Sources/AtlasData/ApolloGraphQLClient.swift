@@ -12,12 +12,11 @@ struct ApolloGraphQLClient: GraphQLClient {
   }
 
   func fetch<Query: GraphQLQuery>(
-    _ query: Query,
-    cachePolicy: CachePolicy.Query.SingleResponse
+    _ query: Query
   ) async throws -> Query.Data where Query.ResponseFormat == SingleResponseFormat {
     let response: GraphQLResponse<Query>
     do {
-      response = try await client.fetch(query: query, cachePolicy: cachePolicy)
+      response = try await client.fetch(query: query, cachePolicy: .networkOnly)
     } catch {
       let mapped = Self.mapped(error)
       if mapped is RequestError {
