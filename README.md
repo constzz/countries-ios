@@ -13,7 +13,7 @@ Atlas browses the world's countries from the public [Countries GraphQL API](http
 </p>
 <img src="AtlasUISnapshotTests/snapshots/COUNTRY_DETAIL_LOADED_iPad11Landscape_light.png" width="816" alt="The list and Bolivia's details side by side on iPad">
 
-The images are the snapshot tests' reference images, so CI fails if the app stops rendering them.
+These are the snapshot tests' reference images, so CI fails when a screen no longer matches them.
 
 ## Code walkthrough
 Each part links to the files that show it.
@@ -77,7 +77,7 @@ Only AtlasData uses Apollo. The repository maps generated types to domain types,
 ### Testing
 124 Swift Testing tests. None touches the network.
 
-- **TDD:** tests come before the code, and each test name starts with its acceptance criterion: `@Test("AC-1.5 no match shows the empty state with the query")`.
+- **TDD:** tests come before the code, and a test that covers an acceptance criterion starts its name with it: `@Test("AC-1.5 no match shows the empty state with the query")`.
 - **`sut` and `makeSUT`:** each suite builds the object under test and its doubles in one private `makeSUT(…)`.
 - **Unit tests per layer**, each over doubles of the layer below. [`StubURLSession`](Packages/AtlasData/Tests/AtlasDataTests/Doubles/StubURLSession.swift) runs a real `ApolloClient` without the network.
 - **Async tests without sleeps:** tests await the task `send` returns, [`SuspendingCountriesRepository`](Packages/AtlasUI/Tests/AtlasUITests/Doubles/SuspendingCountriesRepository.swift) holds each request until the test answers it, and the [`.testTime`](Packages/AtlasMVI/Sources/AtlasMVITesting/TestTime.swift) trait lets a test advance the debounce clock itself.
