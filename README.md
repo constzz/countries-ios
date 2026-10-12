@@ -93,7 +93,7 @@ To see the other states in the app: search "zzz" for the empty state, open Antar
 Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. ⌘U runs the tests, and `scripts/lint.sh` runs SwiftLint and SwiftFormat. CI builds and tests every pull request on Xcode 26.0.1 and 27.1. Every other command is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
 
 ## Key decisions
-- **Search on the server**, at most one query per 300 ms pause. `SearchPattern` makes the API's case-sensitive regex match any case (`fr` → `[fF][rR]`) and escapes metacharacters. Not filtering on the device: typing would send no queries, so the debounce would do nothing.
+- **Search runs on the server.** The app sends the search term to the API's `name` filter, 300 ms after the user stops typing. That filter is a case-sensitive regex, so `SearchPattern` turns `fr` into `[fF][rR]` to match "France", and escapes characters such as `(` that would break the regex. I didn't download all countries and filter them on the device: the brief asks to debounce queries, and with local filtering there would be no queries to debounce.
 - **MVI on a shared base.** The hard cases are about order: a stale search, a retry during a refresh. One `reduce` turns each into a test of one state value. Not a pure reducer returning effects, which splits a screen across two types.
 - **One request at a time.** A new load, search, refresh or retry cancels the one in flight, and a cancelled request never touches the state.
 - **The detail screen loads by code, from its own query.** Not showing the list's row first, which would tie the screens together.
