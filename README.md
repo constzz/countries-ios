@@ -131,20 +131,6 @@ To check right-to-left layout or long text, choose Edit Scheme → Run → Optio
 - **Selection per window, in `@SceneStorage`.** `List(selection:)` with `NavigationLink(value:)` lets the split view highlight, push and clear the selection by itself.
 - **Snapshots at @1x, within 2/255 per channel.** Liquid Glass over search text varies by 1–2 per channel between runs. @1x took the list's images from 27 MB to under 7 MB ([details](docs/specs/us-1-country-list.md#decisions)).
 
-## Beyond the brief
-Some of the work went into things the brief didn't ask for. Each has a cost:
-
-| Extra | Why | Cost, and what I'd cut under a deadline |
-|---|---|---|
-| Split view on iPad and iPhone Duo, with the selection restored per window | List and detail side by side is the standard layout on wide screens, and `NavigationSplitView` collapses to a push stack on iPhone by itself | Its selection cases (a search hides the selected row, the Duo folds, the app relaunches) are checked by hand until there are UI tests. I'd keep the split view and drop the restore after relaunch. |
-| 75 snapshot images across five device presets, in light and dark, plus the largest accessibility size and right-to-left | They're how I checked dark mode, Dynamic Type and mirroring everywhere without clicking through each state | 8 MB in the repo, and a re-record after every visual change. I'd keep iPhone only. |
-| AtlasMVI, a shared MVI base | One `reduce` per screen makes the ordering cases testable (see Key decisions) | A base class to learn. Two plain `@Observable` view models would also do. |
-| Use cases and data sources between the screens and Apollo | A use case holds the rules about the data, the repository decides where the data comes from, and each data source talks to one store | More types to read, and one use case only passes the call on. Under a deadline I'd let view models call the repository until a use case has a rule. |
-| Localization-ready: String Catalog, leading and trailing layout only, locale list formatting | Adding a language is a catalog change with no code changes | Little, done from the start. Retrofitting it later is what's expensive. |
-| A spec per story, and tests named after its acceptance criteria | Every requirement in the brief traces to a criterion and a test ([map below](#requirements-map)) | Writing time. On a team, the ticket does this job. |
-| CI on Xcode 26.0.1 and 27.1, with warnings as errors | A reviewer may open the project on either, and the brief asks for no concurrency warnings | CI minutes, and no iOS 27 APIs. |
-| Timers on an injected scheduler and clock in tests | The debounce tests used to shorten the delays and sleep. Now they check the real 300 ms and 500 ms without waiting | A task-local time source in the MVI base. |
-
 ## Left out
 - **A custom EnvironmentValues entry.** Only the root view would read one, and the brief asks for an entry more than one view needs. The custom ViewModifier, `.loadState`, is in, and both screens use it.
 - **Diacritic-insensitive search.** The API's regex matches names as written, so "Reunion" misses "Réunion".
