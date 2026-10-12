@@ -15,14 +15,85 @@ Atlas browses the world's countries from the public [Countries GraphQL API](http
 
 The images are the snapshot tests' reference images, so CI fails if the app stops rendering them.
 
-## Where to look
-If you have ten minutes, these five places show the most:
+## A tour of the code
+Each part links to the files that show it.
 
-1. [`CountriesRepositoryImpl`](Packages/AtlasData/Sources/AtlasData/CountriesRepositoryImpl.swift) and [`CountriesRemoteDataSourceImpl`](Packages/AtlasData/Sources/AtlasData/DataSources/CountriesRemoteDataSourceImpl.swift). Apollo stops at the remote data source, which returns generated types. The repository maps them to domain types and decides whether a request needs the network at all. The generated code is compiled into AtlasData as `internal`, so the compiler keeps generated types out of the UI. [`SearchPattern`](Packages/AtlasData/Sources/AtlasData/SearchPattern.swift) works around the API's case-sensitive regex filter.
-2. [`CountryListViewModel`](Packages/AtlasUI/Sources/AtlasUI/CountryList/ViewModel/CountryListViewModel.swift) and [its tests](Packages/AtlasUI/Tests/AtlasUITests/CountryListViewModelTests.swift). Load, search, refresh and retry all go through one `reduce`. The tests move a test scheduler and clock by hand, so they check the real 300 ms debounce without sleeping.
-3. The cache, and the bug that moved it. While testing retry I found that Apollo caches the data of a response that also has GraphQL errors, with each failed field stored as `null`. Read back with `.cacheFirst`, a country that had failed to load showed as "not found" until relaunch. I first fixed that with a cache interceptor. When I split the data layer into data sources, the cache moved into the repository: [`InMemoryCache`](Packages/AtlasData/Sources/AtlasData/DataSources/InMemoryCache.swift) holds only mapped successes, and [`NoCacheInterceptor`](Packages/AtlasData/Sources/AtlasData/Interceptors/NoCacheInterceptor.swift) keeps Apollo's store empty. Two [repository tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift) run a real `ApolloClient` over a stubbed `URLSession` to pin it down.
-4. [The US-1 spec](docs/specs/us-1-country-list.md) and [PR #2](https://github.com/constzz/countries-ios/pull/2), to see how each story went: acceptance criteria first, then tests named after them, then the code, in red and green commits.
-5. [The snapshot images](AtlasUISnapshotTests/snapshots): every screen state, with the content states on iPhone, iPhone Duo and iPad in light and dark, plus the largest accessibility text size and right-to-left.
+### The two screens
+| | Country list | Country detail |
+|---|---|---|
+| View: owns the view model | [`CountryListView`](Packages/AtlasUI/Sources/AtlasUI/CountryList/Views/CountryListView.swift) | [`CountryDetailView`](Packages/AtlasUI/Sources/AtlasUI/CountryDetail/Views/CountryDetailView.swift) |
+| Content: draws a state | [`CountryListContent`](Packages/AtlasUI/Sources/AtlasUI/CountryList/Views/CountryListContent.swift) | [`CountryDetailContent`](Packages/AtlasUI/Sources/AtlasUI/CountryDetail/Views/CountryDetailContent.swift) |
+| View model | [`CountryListViewModel`](Packages/AtlasUI/Sources/AtlasUI/CountryList/ViewModel/CountryListViewModel.swift) | [`CountryDetailViewModel`](Packages/AtlasUI/Sources/AtlasUI/CountryDetail/ViewModel/CountryDetailViewModel.swift) |
+| Use case | [`GetCountriesUseCase`](Packages/AtlasDomain/Sources/AtlasDomain/GetCountriesUseCase.swift) | [`GetCountryDetailsUseCase`](Packages/AtlasDomain/Sources/AtlasDomain/GetCountryDetailsUseCase.swift) |
+| Repository method | `countries(matching:forceRefresh:)` | `country(code:)` |
+| GraphQL query | [`CountriesQuery`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountriesQuery.graphql) | [`CountryQuery`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountryQuery.graphql) |
+| Tests | [view model](Packages/AtlasUI/Tests/AtlasUITests/CountryListViewModelTests.swift), [search input](Packages/AtlasUI/Tests/AtlasUITests/CountryListSearchInputTests.swift), [snapshots](AtlasUISnapshotTests/CountryListSnapshotTests.swift) | [view model](Packages/AtlasUI/Tests/AtlasUITests/CountryDetailViewModelTests.swift), [snapshots](AtlasUISnapshotTests/CountryDetailSnapshotTests.swift) |
+
+Both use cases call one [`CountriesRepository`](Packages/AtlasDomain/Sources/AtlasDomain/CountriesRepository.swift), a protocol in AtlasDomain. [`CountriesRepositoryImpl`](Packages/AtlasData/Sources/AtlasData/CountriesRepositoryImpl.swift) in AtlasData implements it over two data sources, [`CountriesRemoteDataSourceImpl`](Packages/AtlasData/Sources/AtlasData/DataSources/CountriesRemoteDataSourceImpl.swift) and [`InMemoryCache`](Packages/AtlasData/Sources/AtlasData/DataSources/InMemoryCache.swift). [`RootView`](Packages/AtlasUI/Sources/AtlasUI/RootView.swift) puts the two screens in a `NavigationSplitView`, and the app's [`AppContainer`](Atlas/AppContainer.swift) builds the repository and the use cases and hands them to it.
+
+### Clean architecture
+```
+                       Atlas
+           │             │              │
+           ▼             ▼              ▼
+        AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
+           │
+           ▼
+        AtlasMVI
+```
+
+Dependencies point at AtlasDomain, which imports only Foundation and holds the models, the use cases, the repository protocol and `RequestError`. AtlasData implements the protocol, AtlasUI calls the use cases and never imports Apollo, and the app target only composes. Every request takes the same path: view model → use case → repository → data sources.
+
+- **Use cases** hold the rules about the data. `GetCountriesUseCase` sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only passes the call on.
+- **The repository** decides where the data comes from: the cache when it has the answer, the network otherwise. It maps generated types to domain types and caches only successes.
+- **Data sources** each talk to one store. The remote one always reaches the network.
+
+Every target builds in the Swift 6 language mode with complete concurrency checking, and a warning fails the build. The details are in [ARCHITECTURE.md](docs/ARCHITECTURE.md), [UI_GUIDELINES.md](docs/UI_GUIDELINES.md) and [DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+### MVI
+Both view models subclass [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), the base in AtlasMVI, and data moves one way:
+
+1. The view sends an action, such as `.appeared`, `.searchTextChanged` or `.retryTapped`.
+2. `reduce(_:_:)` returns the next state. It's the only place the state changes, and it hands each case to a `handle…` method.
+3. Slow work starts with `launchEffect`, and its result comes back as an event, such as `.countriesLoaded`, through a second `reduce`. Only the view model can deliver an event, never the view.
+4. A one-time UI event goes out as an effect. After a search the list emits `.announce`, and its view posts the result count to VoiceOver.
+
+A view reads `state`, calls `send` and listens to `effects()`. That's all it can do.
+
+### Observation, @State, async/await and Combine
+- **Observation.** `MVIViewModel` is `@MainActor @Observable`. Its bookkeeping is `@ObservationIgnored`, so `state` is the only property views observe, and `state` is assigned only when `reduce` returns a different value: an action that changes nothing redraws nothing.
+- **@State.** Each screen's view owns its view model in `@State`. SwiftUI keeps the first instance but runs the view's `init` on every parent redraw, so a view model's `init` only stores its dependencies, and loading starts from `.onAppear`. `RootView` keeps the selected country code in `@SceneStorage` and hands it to the list as a `@Binding`. The detail view gets `.id(code)`, so each country gets a new view model.
+- **async/await.** Everything below the view model is `async throws`: the use cases, the repository protocol, the remote data source and Apollo's `fetch`. The cache is an actor, and the protocols and use cases are `Sendable`. `launchEffect` runs the work in a `Task` the view model can cancel, and a cancelled task never reaches `reduce`. `send` returns a task that ends when the work it started has, so `.refreshable { await send(.refreshRequested).value }` keeps the refresh spinner up until the answer arrives, and tests await the same task.
+- **Combine** only feeds the search field. Keystrokes go into a `PassthroughSubject`, are trimmed, debounced for 300 ms and deduplicated, and come back as a `.searchSettled` event through the base's `subscribe(to:then:)`. The debounce runs on the scheduler in [`MVITime`](Packages/AtlasMVI/Sources/AtlasMVI/MVITime.swift), a task-local the tests replace. No API in the app returns a publisher.
+
+### Apollo iOS
+Apollo stops at the remote data source, which returns generated types. The repository maps them to domain types, so nothing in AtlasDomain or AtlasUI sees one.
+
+- **Codegen.** The schema is downloaded by introspection into [`schema.graphqls`](Packages/AtlasData/Sources/AtlasData/GraphQL/schema.graphqls). Both queries spread the [`CountryBasics`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountryBasics.graphql) fragment, so both screens map a country with the same code. [`apollo-codegen-config.json`](apollo-codegen-config.json) writes the Swift into AtlasData as `internal`. The output is committed, and CI runs [`check-codegen.sh`](scripts/check-codegen.sh) to check that codegen still reproduces it.
+- **The client.** [`makeApolloClient`](Packages/AtlasData/Sources/AtlasData/ApolloClientFactory.swift) sets a 15 s timeout instead of URLSession's 60 s, and puts [`NoCacheInterceptor`](Packages/AtlasData/Sources/AtlasData/Interceptors/NoCacheInterceptor.swift) in the request chain, so Apollo's store stays empty.
+- **The seam.** [`ApolloGraphQLClient`](Packages/AtlasData/Sources/AtlasData/ApolloGraphQLClient.swift), behind the `GraphQLClient` protocol, is the only type that fetches through `ApolloClient`. It fetches with `.networkOnly` and turns every failure into a `RequestError`: no connection is `.offline`, any other transport or HTTP failure `.network`, a parse failure `.decoding`, and GraphQL errors `.server`. The cause goes to `os.Logger`; the screen only gets the case.
+- **Queries.** `CountriesRemoteDataSourceImpl` builds the `GraphQLNullable` filter from [`SearchPattern`](Packages/AtlasData/Sources/AtlasData/SearchPattern.swift), and the repository maps the results with [`CountrySummaryMapper`](Packages/AtlasData/Sources/AtlasData/CountrySummaryMapper.swift) and [`CountryDetailsMapper`](Packages/AtlasData/Sources/AtlasData/CountryDetailsMapper.swift).
+- **Why Apollo's cache is off.** While testing retry I found that Apollo caches the data of a response that also has GraphQL errors, with each failed field stored as `null`. Read back with `.cacheFirst`, a country that had failed to load showed as "not found" until relaunch. Now the repository caches mapped successes itself, and two [repository tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift) run a real `ApolloClient` over a stubbed `URLSession` to pin it down.
+
+### Testing
+123 `@Test` functions, all Swift Testing, run by one test plan. None touches the network.
+
+- **Tests first.** Each story's spec numbers its acceptance criteria, and a test that checks one starts with its number: `@Test("AC-1.5 no match shows the empty state with the query")`. `grep -rn "AC-1\." Packages AtlasUISnapshotTests` lists everything that checks US-1. The tests came before the code, story by story ([How I worked](#how-i-worked)).
+- **`sut` and `makeSUT`.** The object under test is `sut`, built by a private `makeSUT(…)` at the end of the suite, which also returns the doubles a test checks: `let (sut, repository) = makeSUT(result: .success(rows))`.
+- **Swift Testing.** Suites are structs, checks are `#expect` and `#require`, and traits do the setup: [`.testTime`](Packages/AtlasMVI/Sources/AtlasMVITesting/TestTime.swift) gives each test its own scheduler and clock, and `.enabled(if:)` skips snapshots anywhere but the reference simulator.
+- **Unit tests, layer by layer**, each against doubles of the layer below:
+  - Domain: the use cases over `MockCountriesRepository`.
+  - Data: the mappers against JSON fixtures, `SearchPattern`, error mapping, the remote data source over `FakeGraphQLClient`, and the repository over `FakeCountriesRemoteDataSource` and a real cache. The Apollo client tests, and two repository tests of the whole data stack, run a real `ApolloClient` over [`StubURLSession`](Packages/AtlasData/Tests/AtlasDataTests/Doubles/StubURLSession.swift).
+  - View models: driven through `send`, with real use cases over a repository double.
+  - AtlasMVI: the base itself, over a small counter view model.
+- **Async tests that don't sleep.**
+  - `await sut.send(.appeared).value` waits for exactly the work that action started.
+  - [`SuspendingCountriesRepository`](Packages/AtlasUI/Tests/AtlasUITests/Doubles/SuspendingCountriesRepository.swift), an actor, holds each request until the test answers it. A test can answer an older search after a newer one and check that the stale answer never shows.
+  - Under `.testTime`, time moves only when the test advances it. The debounce test types three letters 200 ms apart, advances 299 ms and checks that nothing has settled, then 1 ms more and checks that "ger" has.
+  - Where there's no task to await, [`eventually`](Packages/AtlasMVI/Sources/AtlasMVITesting/Eventually.swift) polls a condition a bounded number of times.
+- **Snapshots on iPhone, iPhone Duo and iPad.** [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift), a small helper I wrote instead of adding a dependency, renders on five [presets](AtlasUISnapshotTests/Helpers/SnapshotPreset.swift) measured on the simulators: iPhone 17 Pro, iPhone Duo folded and unfolded, and iPad 11-inch in portrait and landscape, each in light and dark. Content states render on all five; loading, empty and error states on iPhone only. Every state also renders at the largest accessibility text size, and the loaded screens right-to-left. The tests draw the `…Content` views from a fixed state, so nothing loads or waits. They run hosted by the app, because capturing Liquid Glass needs a window scene, and compare only on Xcode 27.1 with the iOS 27.0 simulator.
+
+To see each state yourself: the [snapshot images](AtlasUISnapshotTests/snapshots), the SwiftUI previews, or the app. Search "zzz" for the empty state, open Antarctica for "None" values, and turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
 
 ## Build and run
 - **Xcode:** 26.0.1 or later. I developed on Xcode 27.1 (27A9269).
@@ -49,36 +120,16 @@ Open `Atlas.xcodeproj` and press ⌘R. There's nothing to install: the generated
 
 To check right-to-left layout or long text, choose Edit Scheme → Run → Options → App Language → Right-to-Left Pseudolanguage or Double-Length Pseudolanguage.
 
-## Architecture
-```
-                       Atlas
-           │             │              │
-           ▼             ▼              ▼
-        AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
-           │
-           ▼
-        AtlasMVI
-```
-
-AtlasDomain has the models, the use cases, the `CountriesRepository` protocol and `RequestError`, and imports only Foundation. AtlasData implements the repository over two data sources: the API, through Apollo iOS, and an in-memory cache. AtlasUI has the two screens and their `@MainActor @Observable` view models, which call use cases and never import Apollo. AtlasMVI is the small base both view models subclass. The app target reads the API URL from its Info.plist, builds the repository and the use cases over it, and hands the use cases to the root view; that's all it does.
-
-A request always takes the same path: view model → use case → repository → data sources.
-
-Every target builds in the Swift 6 language mode with complete concurrency checking, and a warning fails the build.
-
-The details are in [ARCHITECTURE.md](docs/ARCHITECTURE.md), [UI_GUIDELINES.md](docs/UI_GUIDELINES.md) and [DEVELOPMENT.md](docs/DEVELOPMENT.md).
-
 ## Key decisions
-- **I search on the server.** The brief ties the debounce to "a query is not issued on every keystroke", and the API has a `name` filter, so typing sends at most one query per 300 ms pause, and none when the trimmed term hasn't changed. The filter is a case-sensitive regex with no case-insensitive flag, so each letter becomes a class of both cases (`fr` becomes `[fF][rR]`), and metacharacters are escaped, because an unbalanced `(` is a server error. I rejected loading all 250 countries once and filtering on the device. It matches better, diacritics included, but leaves the debounce with nothing to gate.
-- **Each screen is MVI on a small shared base.** A view model subclasses `MVIViewModel` and overrides `reduce`, the only place its state changes. Actions come from the view, events come back from the view model's own async work, and effects are one-time UI events such as a VoiceOver announcement. For two screens that's more structure than they strictly need. I chose it because the tricky parts of this app are about order: a search that answers after a newer one, a retry during a refresh. With one `reduce`, each of those is a test that sends actions and checks one state value. I rejected a pure reducer that returns effects as values, which splits each screen across two types, and a view model with one method and one observable property per interaction.
-- **Combine appears only in the search field's input pipe**, where the debounce lives. Everything else is async/await, and no API in the app returns a publisher.
-- **One request at a time.** A new load, search, refresh or retry cancels the request in flight, and a cancelled request never touches the state, so a slow search can't overwrite a newer one.
-- **The detail screen loads from its own query.** It takes only a country code and shows loading until `CountryQuery` answers. Both queries spread the `CountryBasics` fragment and share its mapper, so either screen can add fields without touching the other. I rejected showing the list's row at once while the rest loads, which would tie the two screens together.
-- **Every layer is there, even where it only passes the call on.** View models call use cases, use cases call the repository protocol, and the repository calls its data sources. `GetCountriesUseCase` holds a real rule: it sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only forwards the call. I kept it anyway, so both screens get their data the same way and the next rule has an obvious place to go. I started without use cases or data sources and added both in [PR #17](https://github.com/constzz/countries-ios/pull/17).
-- **The repository owns the cache, and Apollo's is off.** The repository returns a mapped result from `InMemoryCache` when it has one. Otherwise it asks the remote data source, which always reaches the network. Pull-to-refresh skips the cached value, and only successes are stored, so Try Again after a failure always reaches the network. I rejected keeping Apollo's normalized cache inside the remote data source: the repository would have to pass Apollo's cache policies through, and Apollo also stores the data of responses that failed.
-- **Generated code stays inside AtlasData.** Codegen writes into the data target with `internal` access instead of a separate generated module, so the compiler, not code review, keeps generated types out of the UI.
-- **Selection lives in the root view, per window.** `@SceneStorage` keeps the selected country code, so each iPad window restores its own selection after relaunch, and rotating or folding keeps it. Rows are `NavigationLink`s in `List(selection:)`, so the split view highlights, pushes and clears the selection itself, and each country gets a fresh detail view and view model.
-- **Snapshots allow 2/255 per color channel.** Liquid Glass over a search field with text in it renders slightly differently from run to run. Images are drawn at @1x, which took the list's images from 27 MB to under 7 MB ([details](docs/specs/us-1-country-list.md#decisions)).
+- **Search on the server**, at most one query per 300 ms pause. `SearchPattern` makes the API's case-sensitive regex match any case (`fr` → `[fF][rR]`) and escapes metacharacters. Not filtering on the device: that leaves the debounce nothing to gate.
+- **MVI on a shared base.** The hard cases are about order: a stale search, a retry during a refresh. One `reduce` turns each into a test of one state value. Not a pure reducer returning effects, which splits a screen across two types.
+- **One request at a time.** A new load, search, refresh or retry cancels the one in flight, and a cancelled request never touches the state.
+- **The detail screen loads by code, from its own query.** Not showing the list's row first, which would tie the screens together.
+- **Every layer, even a pass-through.** `GetCountryDetailsUseCase` only forwards, but both screens fetch the same way and the next rule has a home. Added in [PR #17](https://github.com/constzz/countries-ios/pull/17).
+- **The repository owns the cache; Apollo's is off.** Only mapped successes are stored, pull-to-refresh skips the cache, and Try Again after a failure always reaches the network. Not Apollo's normalized cache: it stores the data of failed responses, and its cache policies would leak through the repository.
+- **Generated code is `internal` to AtlasData**, not a module of its own, so the compiler keeps it out of the UI.
+- **Selection per window, in `@SceneStorage`.** `List(selection:)` with `NavigationLink(value:)` lets the split view highlight, push and clear the selection by itself.
+- **Snapshots at @1x, within 2/255 per channel.** Liquid Glass over search text varies by 1–2 per channel between runs. @1x took the list's images from 27 MB to under 7 MB ([details](docs/specs/us-1-country-list.md#decisions)).
 
 ## Beyond the brief
 Some of the work went into things the brief didn't ask for. Each has a cost:
@@ -94,22 +145,12 @@ Some of the work went into things the brief didn't ask for. Each has a cost:
 | CI on Xcode 26.0.1 and 27.1, with warnings as errors | A reviewer may open the project on either, and the brief asks for no concurrency warnings | CI minutes, and no iOS 27 APIs. |
 | Timers on an injected scheduler and clock in tests | The debounce tests used to shorten the delays and sleep. Now they check the real 300 ms and 500 ms without waiting | A task-local time source in the MVI base. |
 
-## Testing
-123 `@Test` functions, all Swift Testing, run by one test plan. None touches the network, and each layer is tested against doubles of the layer below it.
-- **Domain:** the use cases over `MockCountriesRepository`.
-- **Data:** the mappers against JSON fixtures, `SearchPattern`, error mapping, the remote data source over `FakeGraphQLClient`, and the repository over `FakeCountriesRemoteDataSource` and a real cache. The Apollo client tests, and two repository tests of the whole data stack, run a real `ApolloClient` over `StubURLSession`.
-- **View models:** driven through `send`, with real use cases over `MockCountriesRepository`, or over a suspending double when a test needs a request to stay in flight. Timers run on `TestScheduler` and `TestClock` from AtlasMVITesting.
-- **Snapshots:** a small helper I wrote instead of adding a dependency. The tests run hosted by the app, because capturing Liquid Glass needs a window scene.
-- Each test of a requirement starts with its acceptance criterion, as in `@Test("AC-1.5 no match shows the empty state with the query")`, so `grep -rn "AC-1\." Packages AtlasUISnapshotTests` lists everything that checks US-1.
-
-To see each state yourself: the [snapshot images](AtlasUISnapshotTests/snapshots), the SwiftUI previews, or the app. Search "zzz" for the empty state, open Antarctica for "None" values, and turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
-
 ## Left out
-- **A custom EnvironmentValues entry.** I added one for the repository in US-1 and removed it in US-2: only the root view read it, and the brief asks for an entry that more than one view needs. Locale, Dynamic Type and color scheme already come from SwiftUI's own entries. The custom ViewModifier, `.loadState`, is in, and both screens use it for their loading, empty and error states.
-- **A package per feature.** One UI package with a folder per screen. Separate packages would need a shared design-system package, plus a string catalog and test target each, for two screens.
-- **Diacritic-insensitive search.** "Reunion" doesn't find "Réunion", because the API's regex matches names as written.
-- **Localized country and continent names.** They stay in English, because search matches the English names. Currencies show as ISO codes and languages by their English names, as the API returns them.
-- **Offline storage.** The cache lives in memory only, so a cold start without a network shows the offline state.
+- **A custom EnvironmentValues entry.** Only the root view would read one, and the brief asks for an entry more than one view needs. The custom ViewModifier, `.loadState`, is in, and both screens use it.
+- **A package per feature.** For two screens it would take a shared design-system package, plus a string catalog and test target each.
+- **Diacritic-insensitive search.** The API's regex matches names as written, so "Reunion" misses "Réunion".
+- **Localized country and continent names.** Search matches the English names. Currencies stay ISO codes and languages English names, as the API returns them.
+- **Offline storage.** The cache is in memory, so a cold start offline shows the offline state.
 
 ## With more time
 - UI tests, with accessibility identifiers and a stub repository chosen by launch argument. They'd cover navigation, going back, size changes and relaunch, which I check by hand today.
