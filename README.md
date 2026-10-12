@@ -67,33 +67,23 @@ A view reads `state`, calls `send` and listens to `effects()`. That's all it can
 - **Combine** is used only for the search field's input. Keystrokes go into a `PassthroughSubject`, are trimmed, debounced for 300 ms and deduplicated, and come back as a `.searchSettled` event through the base's `subscribe(to:then:)`. The debounce runs on the scheduler in [`MVITime`](Packages/AtlasMVI/Sources/AtlasMVI/MVITime.swift), a task-local the tests replace. No API in the app returns a publisher.
 
 ### Apollo iOS
-Apollo is used only inside AtlasData. The remote data source returns generated types, and the repository maps them to domain types, so nothing in AtlasDomain or AtlasUI sees one.
+Only AtlasData uses Apollo. The repository maps generated types to domain types, so the UI never sees them.
 
-- **Codegen.** The schema is downloaded by introspection into [`schema.graphqls`](Packages/AtlasData/Sources/AtlasData/GraphQL/schema.graphqls). Both queries spread the [`CountryBasics`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountryBasics.graphql) fragment, so both screens map a country with the same code. [`apollo-codegen-config.json`](apollo-codegen-config.json) writes the Swift into AtlasData as `internal`. The output is committed, and CI runs [`check-codegen.sh`](scripts/check-codegen.sh) to check that codegen still reproduces it.
-- **The client.** [`makeApolloClient`](Packages/AtlasData/Sources/AtlasData/ApolloClientFactory.swift) sets a 15 s timeout instead of URLSession's 60 s, and puts [`NoCacheInterceptor`](Packages/AtlasData/Sources/AtlasData/Interceptors/NoCacheInterceptor.swift) in the request chain, so Apollo's store stays empty.
-- **Fetching.** [`ApolloGraphQLClient`](Packages/AtlasData/Sources/AtlasData/ApolloGraphQLClient.swift) implements the `GraphQLClient` protocol and is the only type that fetches through `ApolloClient`. It fetches with `.networkOnly` and turns every failure into a `RequestError`: no connection is `.offline`, any other transport or HTTP failure `.network`, a parse failure `.decoding`, and GraphQL errors `.server`. The cause goes to `os.Logger`; the screen only gets the case.
-- **Queries.** `CountriesRemoteDataSourceImpl` builds the `GraphQLNullable` filter from [`SearchPattern`](Packages/AtlasData/Sources/AtlasData/SearchPattern.swift), and the repository maps the results with [`CountrySummaryMapper`](Packages/AtlasData/Sources/AtlasData/CountrySummaryMapper.swift) and [`CountryDetailsMapper`](Packages/AtlasData/Sources/AtlasData/CountryDetailsMapper.swift).
-- **Why Apollo's cache is off.** While testing retry I found that Apollo caches the data of a response that also has GraphQL errors, with each failed field stored as `null`. Read back with `.cacheFirst`, a country that had failed to load showed as "not found" until relaunch. Now the repository caches mapped successes itself, and two [repository tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift) run a real `ApolloClient` over a stubbed `URLSession` to check this end to end.
+- **Codegen:** [`apollo-codegen-config.json`](apollo-codegen-config.json) generates `internal` Swift into AtlasData. Both queries share the [`CountryBasics`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountryBasics.graphql) fragment. CI runs [`check-codegen.sh`](scripts/check-codegen.sh) against the committed output.
+- **Client:** [`makeApolloClient`](Packages/AtlasData/Sources/AtlasData/ApolloClientFactory.swift) sets a 15 s timeout and turns Apollo's cache off with [`NoCacheInterceptor`](Packages/AtlasData/Sources/AtlasData/Interceptors/NoCacheInterceptor.swift).
+- **Fetching:** [`ApolloGraphQLClient`](Packages/AtlasData/Sources/AtlasData/ApolloGraphQLClient.swift) fetches with `.networkOnly` and maps every failure to a `RequestError`.
+- **Why the cache is off:** Apollo stored the data of responses with GraphQL errors, so a country that failed once read back as "not found". The repository now caches only mapped successes ([tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift)).
 
 ### Testing
-123 `@Test` functions, all Swift Testing, run by one test plan. None touches the network.
+123 Swift Testing tests. None touches the network.
 
-- **Tests first.** Each story's spec numbers its acceptance criteria, and a test that checks one starts with its number: `@Test("AC-1.5 no match shows the empty state with the query")`. `grep -rn "AC-1\." Packages AtlasUISnapshotTests` lists everything that checks US-1. The tests came before the code, story by story ([How I worked](#how-i-worked)).
-- **`sut` and `makeSUT`.** The object under test is `sut`, built by a private `makeSUT(…)` at the end of the suite, which also returns the doubles a test checks: `let (sut, repository) = makeSUT(result: .success(rows))`.
-- **Swift Testing.** Suites are structs, checks are `#expect` and `#require`, and traits do the setup: [`.testTime`](Packages/AtlasMVI/Sources/AtlasMVITesting/TestTime.swift) gives each test its own scheduler and clock, and `.enabled(if:)` skips snapshots anywhere but the reference simulator.
-- **Unit tests, layer by layer**, each against doubles of the layer below:
-  - Domain: the use cases over `MockCountriesRepository`.
-  - Data: the mappers against JSON fixtures, `SearchPattern`, error mapping, the remote data source over `FakeGraphQLClient`, and the repository over `FakeCountriesRemoteDataSource` and a real cache. The Apollo client tests, and two repository tests of the whole data stack, run a real `ApolloClient` over [`StubURLSession`](Packages/AtlasData/Tests/AtlasDataTests/Doubles/StubURLSession.swift).
-  - View models: driven through `send`, with real use cases over a repository double.
-  - AtlasMVI: the base itself, over a small counter view model.
-- **Async tests that don't sleep.**
-  - `await sut.send(.appeared).value` waits for exactly the work that action started.
-  - [`SuspendingCountriesRepository`](Packages/AtlasUI/Tests/AtlasUITests/Doubles/SuspendingCountriesRepository.swift), an actor, holds each request until the test answers it. A test can answer an older search after a newer one and check that the stale answer never shows.
-  - Under `.testTime`, time moves only when the test advances it. The debounce test types three letters 200 ms apart, advances 299 ms and checks that nothing has settled, then 1 ms more and checks that "ger" has.
-  - Where there's no task to await, [`eventually`](Packages/AtlasMVI/Sources/AtlasMVITesting/Eventually.swift) polls a condition a bounded number of times.
-- **Snapshots on iPhone, iPhone Duo and iPad.** [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift), a small helper I wrote instead of adding a dependency, renders on five [presets](AtlasUISnapshotTests/Helpers/SnapshotPreset.swift) measured on the simulators: iPhone 17 Pro, iPhone Duo folded and unfolded, and iPad 11-inch in portrait and landscape, each in light and dark. Content states render on all five; loading, empty and error states on iPhone only. Every state also renders at the largest accessibility text size, and the loaded screens right-to-left. The tests draw the `…Content` views from a fixed state, so nothing loads or waits. They run hosted by the app, because capturing Liquid Glass needs a window scene, and compare only on Xcode 27.1 with the iOS 27.0 simulator.
+- **TDD:** tests come before the code, and each test name starts with its acceptance criterion: `@Test("AC-1.5 no match shows the empty state with the query")`.
+- **`sut` and `makeSUT`:** each suite builds the object under test and its doubles in one private `makeSUT(…)`.
+- **Unit tests per layer**, each over doubles of the layer below. [`StubURLSession`](Packages/AtlasData/Tests/AtlasDataTests/Doubles/StubURLSession.swift) runs a real `ApolloClient` without the network.
+- **Async tests without sleeps:** tests await the task `send` returns, [`SuspendingCountriesRepository`](Packages/AtlasUI/Tests/AtlasUITests/Doubles/SuspendingCountriesRepository.swift) holds each request until the test answers it, and the [`.testTime`](Packages/AtlasMVI/Sources/AtlasMVITesting/TestTime.swift) trait lets a test advance the debounce clock itself.
+- **Snapshots:** [`assertSnapshots`](AtlasUISnapshotTests/Helpers/AssertSnapshots.swift), my own helper, renders on iPhone 17 Pro, iPhone Duo folded and unfolded, and iPad in portrait and landscape, in light and dark, plus the largest text size and right-to-left.
 
-To see each state yourself: the [snapshot images](AtlasUISnapshotTests/snapshots), the SwiftUI previews, or the app. Search "zzz" for the empty state, open Antarctica for "None" values, and turn the Mac's network off, or set Network Link Conditioner to 100% loss, for the offline and error states.
+To see the other states in the app: search "zzz" for the empty state, open Antarctica for "None" values, and go offline for the error states.
 
 ## Build and run
 - **Xcode:** 26.0.1 or later. I developed on Xcode 27.1 (27A9269).
