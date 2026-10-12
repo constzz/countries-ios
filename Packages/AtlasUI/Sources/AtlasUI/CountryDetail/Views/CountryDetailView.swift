@@ -4,8 +4,11 @@ import SwiftUI
 struct CountryDetailView: View {
   @State private var viewModel: CountryDetailViewModel
 
-  init(countryCode: String, repository: any CountriesRepository) {
-    _viewModel = State(initialValue: CountryDetailViewModel(countryCode: countryCode, repository: repository))
+  init(countryCode: String, getCountryDetails: GetCountryDetailsUseCase) {
+    _viewModel = State(initialValue: CountryDetailViewModel(
+      countryCode: countryCode,
+      getCountryDetails: getCountryDetails
+    ))
   }
 
   var body: some View {

@@ -285,7 +285,7 @@ struct CountryListViewModelTests {
     result: Result<[CountrySummary], RequestError>
   ) -> (sut: CountryListViewModel, repository: MockCountriesRepository) {
     let repository = MockCountriesRepository(result: result)
-    return (CountryListViewModel(repository: repository), repository)
+    return (CountryListViewModel(getCountries: GetCountriesUseCase(repository: repository)), repository)
   }
 
   /// A view model whose repository holds each request until the test answers it.
@@ -293,7 +293,7 @@ struct CountryListViewModelTests {
     honorsCancellation: Bool = true
   ) -> (sut: CountryListViewModel, repository: SuspendingCountriesRepository) {
     let repository = SuspendingCountriesRepository(honorsCancellation: honorsCancellation)
-    return (CountryListViewModel(repository: repository), repository)
+    return (CountryListViewModel(getCountries: GetCountriesUseCase(repository: repository)), repository)
   }
 
   /// A view model whose first load returned `loaded`, over a repository that holds each request

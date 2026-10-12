@@ -4,7 +4,7 @@ import Foundation
 /// How long a request may wait for data before it fails, instead of URLSession's 60 s.
 private let requestTimeout: TimeInterval = 15
 
-/// The client with an in-memory cache that never stores a response with GraphQL errors.
+/// The client, which caches nothing: Apollo requires a store, but no request reads or writes it.
 func makeApolloClient(
   endpoint: URL,
   session: any ApolloURLSession = URLSession(configuration: .default)

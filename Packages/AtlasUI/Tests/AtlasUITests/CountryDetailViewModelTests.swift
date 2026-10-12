@@ -202,7 +202,12 @@ struct CountryDetailViewModelTests {
     locale: Locale = .autoupdatingCurrent
   ) -> (sut: CountryDetailViewModel, repository: MockCountriesRepository) {
     let repository = MockCountriesRepository(detailResult: detailResult)
-    return (CountryDetailViewModel(countryCode: countryCode, repository: repository, locale: locale), repository)
+    let sut = CountryDetailViewModel(
+      countryCode: countryCode,
+      getCountryDetails: GetCountryDetailsUseCase(repository: repository),
+      locale: locale
+    )
+    return (sut, repository)
   }
 
   /// A view model whose repository holds each request until the test answers it.
@@ -211,7 +216,11 @@ struct CountryDetailViewModelTests {
     honorsCancellation: Bool = true
   ) -> (sut: CountryDetailViewModel, repository: SuspendingDetailsRepository) {
     let repository = SuspendingDetailsRepository(honorsCancellation: honorsCancellation)
-    return (CountryDetailViewModel(countryCode: countryCode, repository: repository), repository)
+    let sut = CountryDetailViewModel(
+      countryCode: countryCode,
+      getCountryDetails: GetCountryDetailsUseCase(repository: repository)
+    )
+    return (sut, repository)
   }
 
   /// What the detail shows once `details` loads, or `nil` if it didn't load.

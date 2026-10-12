@@ -3,9 +3,12 @@ import AtlasDomain
 
 /// The composition root: builds the app's dependencies. Startup does nothing else.
 struct AppContainer {
-  let countriesRepository: any CountriesRepository
+  let getCountries: GetCountriesUseCase
+  let getCountryDetails: GetCountryDetailsUseCase
 
   init(environment: AppEnvironment) {
-    countriesRepository = makeCountriesRepository(endpoint: environment.countriesAPIURL)
+    let repository = makeCountriesRepository(endpoint: environment.countriesAPIURL)
+    getCountries = GetCountriesUseCase(repository: repository)
+    getCountryDetails = GetCountryDetailsUseCase(repository: repository)
   }
 }

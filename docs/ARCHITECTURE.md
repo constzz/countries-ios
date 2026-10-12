@@ -17,6 +17,8 @@ This document describes the target shape of the app. Each story builds its own s
 
 The dependency direction is `UI → Domain ← Data`, and AtlasUI builds its screens on AtlasMVI, which depends on nothing. The app target is the only place that sees AtlasUI, AtlasDomain and AtlasData together.
 
+A request crosses the layers in one order: view model → use case → repository protocol → repository → data sources.
+
 ### AtlasDomain
 Foundation only. It defines what the app works with, independent of where the data comes from.
 - `Sendable` value models:
@@ -24,8 +26,9 @@ Foundation only. It defines what the app works with, independent of where the da
   - `CountryDetails`: a `summary: CountrySummary` plus `capital: String?`, `currencies: [String]` and `languages: [Language]`.
   - `Continent` and `Language`.
 - `CountriesRepository: Sendable`:
-  - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, sorted by name;
+  - `countries(matching:forceRefresh:) async throws -> [CountrySummary]`, in the API's order;
   - `country(code:) async throws -> CountryDetails`.
+- Use cases, what the screens ask of the data: `GetCountriesUseCase`, which sorts the countries by name (the API sorts by code), and `GetCountryDetailsUseCase`. Each is a `Sendable` struct over the repository protocol with one `callAsFunction`, so a view model calls it like a function: `try await getCountries(matching: term, forceRefresh: false)`.
 - `RequestError: Error, Equatable, Sendable`, why any request in the app failed. No case belongs to one feature, so a new repository throws it too:
 
   | Case | When |
@@ -39,15 +42,19 @@ Foundation only. It defines what the app works with, independent of where the da
   Cancellation (`CancellationError`, `URLError.cancelled`) is not a failure: it never becomes an error state. The domain error carries no user-facing text; the copy lives in AtlasUI.
 
 ### AtlasData
-Implements the repository with Apollo iOS.
+Implements the repository over two data sources: the API, through Apollo iOS, and memory.
 - Operations `CountriesQuery($filter:)` and `CountryQuery($code:)`, both built on the fragment `CountryBasics { code name emoji continent { code name } }`. Each screen has its own query, so the detail screen can gain fields without touching the list.
 - Apollo's generated code is embedded in this target with `internal` access. No public API can expose a generated type: the compiler rejects it.
-- `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout and Apollo's default in-memory cache.
-- `Interceptors/`: the client keeps Apollo's default interceptors but one: `CountriesInterceptorProvider` swaps in `ErrorFreeCacheInterceptor`, which never writes a response with GraphQL errors to the cache and otherwise does what Apollo's default cache interceptor does. Apollo would store the data such a response carries, with each failed field as `null`, and `.cacheFirst` would later read those as real values: a failed country as not found, a failed capital as missing.
+- `CountriesRepositoryImpl` is internal and created through one public factory, `makeCountriesRepository(endpoint:)`, which builds the `ApolloClient` with a 15 s request timeout, the remote data source and the caches.
+- `DataSources/`, one data source per storage system:
+  - `CountriesRemoteDataSource`, the API. It builds the queries, reaches the network on every call and returns generated types, so the protocol is internal. `CountriesRemoteDataSourceImpl` sends the queries through `GraphQLClient`. No countries for a blank term is a server fault: every country has a name.
+  - `InMemoryCache<Key, Value>`, a generic actor that keeps values until the app quits. It never evicts: all the API's data is a few hundred small records.
+- The repository decides where data comes from. It returns a cached value when there is one; otherwise it asks the remote data source, maps the result to domain types and caches it. Force refresh skips the cached value. Countries are cached by the trimmed search term, details by code. Only successes are cached, so a failure, including a response with GraphQL errors, is never served again, and Try Again always reaches the network.
+- `Interceptors/`: the client keeps Apollo's default interceptors but one: `CountriesInterceptorProvider` swaps in `NoCacheInterceptor`, which never reads or writes Apollo's store. Apollo requires a store, but the repository's cache is the only one. Apollo's would hold a second copy nobody reads, and it would also store the data of a response with GraphQL errors, with each failed field as `null`.
 - Internal pieces, each unit-tested:
   - mappers, one per GraphQL shape: `CountrySummaryMapper`, reused by `CountryDetailsMapper`;
   - `SearchPattern`, which turns the search term into a case-insensitive regex filter for the API;
-  - `GraphQLClient`, the seam over `ApolloClient`. Tests replace it with a fake that returns fixture data.
+  - `GraphQLClient`, the seam between the remote data source and `ApolloClient`, which always fetches from the network. Tests replace it with a fake that returns fixture data.
 - The Apollo adapter maps transport errors and GraphQL errors to `RequestError` and logs the real cause.
 
 ### AtlasMVI
@@ -57,7 +64,7 @@ The MVI layer every screen is built on, with no knowledge of countries.
 - `AtlasMVITests` test the base on a toy counter view model.
 
 ### AtlasUI
-SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, never Apollo.
+SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, never Apollo. View models get use cases, never a repository.
 - `CountryList/` and `CountryDetail/`, one folder per feature, each grouped the same way:
   - `ViewModel/`: the view model, its state, actions and effects, and the values the state holds;
   - `Views/`: the screen's view, the view that draws its state, and their subviews;
@@ -66,18 +73,18 @@ SwiftUI screens and their view models. It imports AtlasDomain and AtlasMVI, neve
 - `Resources/Localizable.xcstrings`: all user-facing copy.
 
 ### Atlas
-`AppLauncher`, the `@main` entry point; the `AtlasApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through AtlasData's public factory, and `AtlasApp` passes it to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves AtlasData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `AtlasApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
+`AppLauncher`, the `@main` entry point; the `AtlasApp` App; `AppEnvironment`, the settings read from the app's Info.plist; and `AppContainer`, the composition root. `AppEnvironment` holds the API endpoint (`CountriesAPIURL`, set from the `COUNTRIES_API_URL` build setting in `Config/Shared.xcconfig`) and stops the app if it is missing or invalid. `AppContainer` takes an `AppEnvironment`, so it never reads the bundle, creates the repository through AtlasData's public factory and the use cases over it, and `AtlasApp` passes the use cases to `RootView`'s `init`; the factory builds the `ApolloClient`, so Apollo never leaves AtlasData. While the app hosts tests, `AppLauncher` runs `TestHostApp`, one empty window, instead of `AtlasApp`, so no test run builds the app's dependencies or touches the network. `AppContainer` knows nothing about tests, and its dependencies are never optional. Startup does nothing else.
 
 ## Rules
 - Never skip a layer, and map at each boundary: generated types stay in AtlasData, and domain types are what crosses into the UI.
-- Protocols are `public`; implementations are `internal`.
+- Domain protocols are `public`; implementations are `internal`.
 - A mapper is a `final class …Mapper` with a `private init()` and one `static func map`, tested on its own. It is never an initializer in an extension on the type it builds, where it would sit among that type's own initializers.
 - Dependencies come in through `init`. No singletons.
-- No use-case layer: view models call the repository protocol directly. At this size, use cases would only pass calls through. They are the first thing to add if business rules appear.
+- A view model calls use cases; a use case calls repository protocols; a repository calls data sources and mappers. No layer reaches past the one below it, even when a use case only passes the call on: every screen gets its data the same way, and a new rule has one place to go. A rule about the data, such as the list's order, belongs in a use case; where the data comes from is the repository's decision.
 - One UI package with a folder per feature. The split view composes both screens and their shared selection. A package per feature would add a shared design-system package and a catalog and test targets per package, all for two screens.
 
 ## Concurrency
-- Swift 6 language mode with complete strict concurrency in every target. Isolation is explicit: view models are `@MainActor`, and domain types and the repository are `Sendable`. Packages don't set a default actor isolation, and neither does the app target.
+- Swift 6 language mode with complete strict concurrency in every target. Isolation is explicit: view models are `@MainActor`; domain types, use cases, the repository and the data sources are `Sendable`; and the cache is an actor. Packages don't set a default actor isolation, and neither does the app target.
 - Everything is async/await. Combine appears only where the search field's input is debounced: the input pipe and `MVITime.debounce(_:for:)`. No `@Published`, and no publishers in any API.
 - The code compiles with zero warnings on Swift 6.2 (Xcode 26.0.1) and Swift 6.4 (Xcode 27.1).
 
@@ -101,10 +108,10 @@ MVI with one-way data flow: view → action → `reduce` → new state, plus wor
 
 ## Testing
 - Swift Testing throughout. Test names start with the acceptance criterion they cover, e.g. `@Test("AC-1.5 no match shows empty state")`. Tests of the shared architecture types cover no story, so their names carry no AC.
-- No test touches the network: repository tests use `FakeGraphQLClient` with JSON fixtures, the cache tests run a real `ApolloClient` over `StubURLSession`, and view-model tests use `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository`. Test doubles live in test targets.
+- No test touches the network, and each layer is tested against doubles of the one below it: use cases over `MockCountriesRepository`; the repository over `FakeCountriesRemoteDataSource` and real caches; the remote data source over `FakeGraphQLClient` with JSON fixtures; and the view models over real use cases, with `MockCountriesRepository`, `SuspendingCountriesRepository` and `SuspendingDetailsRepository` underneath. The Apollo client tests, and two repository tests of the whole data stack, run a real `ApolloClient` over `StubURLSession`. Test doubles live in test targets.
 - No test waits out a timer. A suite whose view models use time adds the `.testTime` trait, which gives each test its own `TestScheduler` and `TestClock` as `MVITime.current`. The test moves them through `TestTime.scheduler` and `TestTime.clock`; nothing else moves them.
 - Snapshot tests render each screen state on every device preset in light and dark, and placeholder states on iPhone 17 Pro in light ([UI guidelines](UI_GUIDELINES.md#snapshot-tests)). They live in `AtlasUISnapshotTests`, a test target hosted by the app, because capturing Liquid Glass needs a window scene, which only a host app provides.
 - `Atlas.xctestplan` runs every test target from one command ([development guide](DEVELOPMENT.md#commands)).
 
 ## Logging
-`os.Logger`, with a `network` category in AtlasData, called from the Apollo adapter's error mapping. User input such as search terms is logged as `.private`. `print` is banned by lint.
+`os.Logger`, with a `network` category in AtlasData, called wherever a request fails: the Apollo adapter's error mapping, the remote data source and the repository. User input such as search terms is logged as `.private`. `print` is banned by lint.
