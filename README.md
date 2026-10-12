@@ -17,7 +17,7 @@ These are the snapshot tests' reference images, so CI fails when a screen no lon
 
 ## Build and run
 - **Xcode:** 26.0.1 or later. CI builds on 26.0.1 and 27.1; I developed on 27.1 (27A9269).
-- **Deployment target:** iOS 17.0, the first release with the Observation framework.
+- **Deployment target:** iOS 17.0, the first release with the Observation framework. I ran the tests, all but the snapshots, on an iPhone 15 Pro simulator with iOS 17.0 locally; CI can't, because GitHub's macOS images don't have the iOS 17.0 simulator.
 - **Simulator:** iPhone 17 Pro, iOS 27.0.
 
 Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. To see the other states, search "zzz" for the empty state, open Antarctica for "None" values, or go offline for the error states. ⌘U runs the tests, and the other commands are in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
