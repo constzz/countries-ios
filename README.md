@@ -34,7 +34,7 @@ Both use cases call one [`CountriesRepository`](Packages/AtlasDomain/Sources/Atl
 ### Clean architecture
 ```
                        Atlas
-           │             │              │
+           ┌─────────────┼──────────────┐
            ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
            │

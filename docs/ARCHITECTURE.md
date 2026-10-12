@@ -7,7 +7,7 @@ This document describes the target shape of the app. Each story builds its own s
 ```
                        Atlas
   (@main AppLauncher, AtlasApp, AppContainer: composition root)
-           │             │              │
+           ┌─────────────┼──────────────┐
            ▼             ▼              ▼
         AtlasUI ──► AtlasDomain ◄── AtlasData ──► Apollo iOS
            │
