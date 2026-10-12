@@ -28,6 +28,7 @@ How this repo is built, tested and changed. Read it together with [ARCHITECTURE.
 - **Xcode 26.0.1 is the floor** (Swift 6.2, iOS 26 SDK): no Swift features newer than 6.2, and no iOS 27 SDK APIs, even behind `#available`. iOS 18 and iOS 26 APIs need an `#available` check with an iOS 17 fallback. The project file stays in the "Xcode 16.0" format (`objectVersion = 77` in `project.pbxproj`; Project → File inspector → Project Format), because Xcode 26.0.1 knows no format newer than "Xcode 16.3". Check it after every project-file change.
 - **Concurrency:** async/await everywhere. Combine only in the search input pipeline.
 - **Logging:** `os.Logger`, never `print`.
+- **Naming:** a stored dependency and its parameter end with its role: `remoteDataSource`, `summariesCache`, `getCountriesUseCase`, `graphQLClient`.
 - **UI:** every user-facing string is a String Catalog key, used through the symbol Xcode generates for it, layouts use leading/trailing only, and every UI change ships snapshot tests ([UI guidelines](UI_GUIDELINES.md)).
 - **Dependencies:** Apollo iOS is the only third-party library, pinned to an exact version. Tests use no third-party packages.
 
