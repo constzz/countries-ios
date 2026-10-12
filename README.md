@@ -23,19 +23,7 @@ These are the snapshot tests' reference images, so CI fails when a screen no lon
 Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. To see the other states, search "zzz" for the empty state, open Antarctica for "None" values, or go offline for the error states. ⌘U runs the tests, and the other commands are in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
 
 ## CI
-CI runs on every pull request and every push to `main`, so a change can't merge if it adds a warning on either Xcode, breaks a test or changes a screen by accident. Each check builds from clean and fails on any warning.
-
-| Check | What it runs |
-|---|---|
-| Lint, build and test (Xcode 26.0.1, iOS 26.0) | SwiftFormat and SwiftLint, a check that codegen reproduces the committed Apollo files, then the tests without snapshots |
-| Build and test (Xcode 27.1, iOS 27.0) | the tests without snapshots |
-| Snapshots (Xcode 27.1, iOS 27.0) | the snapshot tests against the reference images |
-
-The snapshots were recorded on Xcode 27.1 with the iPhone 17 Pro simulator on iOS 27.0 and are skipped on any other simulator. To run them locally, pick that simulator and run the `AtlasUISnapshotTests` target from the Test navigator, or:
-```sh
-xcodebuild test -scheme Atlas -testPlan Atlas -only-testing:AtlasUISnapshotTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
-```
-Recording new reference images is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#snapshot-tests).
+On every pull request, [ci.yml](.github/workflows/ci.yml) runs [lint](scripts/lint.sh), the [codegen check](scripts/check-codegen.sh) and the tests on Xcode 26.0.1 and 27.1, and [snapshots.yml](.github/workflows/snapshots.yml) compares the snapshots on Xcode 27.1. Any warning fails the build. The snapshots run only on the iPhone 17 Pro simulator with iOS 27.0, so pick it and press ⌘U to run them locally.
 
 ## Code walkthrough
 | | Country list | Country detail |
