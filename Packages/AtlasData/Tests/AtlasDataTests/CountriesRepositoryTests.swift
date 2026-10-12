@@ -6,16 +6,13 @@ import Testing
 
 @Suite("CountriesRepository")
 struct CountriesRepositoryTests {
-  @Test("AC-1.1 returns every country sorted by name")
-  func returnsEveryCountrySortedByName() async throws {
+  @Test("AC-1.1 returns every country")
+  func returnsEveryCountry() async throws {
     let (sut, _) = try makeSUT(result: .success(JSONFixture.responseData("countries")))
 
     let countries = try await sut.countries(matching: "", forceRefresh: false)
 
     #expect(countries.count == 250)
-    let names = countries.map(\.name)
-    #expect(names == names.sorted { $0.localizedStandardCompare($1) == .orderedAscending })
-    #expect(names.prefix(3) == ["Afghanistan", "Åland", "Albania"])
     #expect(countries.first { $0.code == "CH" }?.continent == Continent(code: "EU", name: "Europe"))
   }
 

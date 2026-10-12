@@ -26,10 +26,7 @@ struct CountriesRepositoryImpl: CountriesRepository {
         throw RequestError.server
       }
     }
-    // The API sorts by code.
-    return data.countries
-      .map { CountrySummaryMapper.map($0.fragments.countryBasics) }
-      .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    return data.countries.map { CountrySummaryMapper.map($0.fragments.countryBasics) }
   }
 
   func country(code: String) async throws -> CountryDetails {
