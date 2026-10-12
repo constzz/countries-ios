@@ -17,10 +17,25 @@ These are the snapshot tests' reference images, so CI fails when a screen no lon
 
 ## Build and run
 - **Xcode:** 26.0.1 or later. CI builds on 26.0.1 and 27.1; I developed on 27.1 (27A9269).
-- **Deployment target:** iOS 17.0, the first release with the Observation framework. I ran the tests, all but the snapshots, on an iPhone 15 Pro simulator with iOS 17.0 locally; CI can't, because GitHub's macOS images don't have the iOS 17.0 simulator.
-- **Simulator:** iPhone 17 Pro, iOS 27.0.
+- **Deployment target:** iOS 17.0, the first release with the Observation framework.
+- **Simulator:** any iPhone or iPad with iOS 17.0 or later. I used the iPhone 17 Pro with iOS 27.0, the only one the [snapshots](#ci) run on.
 
 Open `Atlas.xcodeproj` and press ⌘R; there's nothing to install. To see the other states, search "zzz" for the empty state, open Antarctica for "None" values, or go offline for the error states. ⌘U runs the tests, and the other commands are in [DEVELOPMENT.md](docs/DEVELOPMENT.md#commands).
+
+## CI
+CI runs on every pull request and every push to `main`, so a change can't merge if it adds a warning on either Xcode, breaks a test or changes a screen by accident. Each check builds from clean and fails on any warning.
+
+| Check | What it runs |
+|---|---|
+| Lint, build and test (Xcode 26.0.1, iOS 26.0) | SwiftFormat and SwiftLint, a check that codegen reproduces the committed Apollo files, then the tests without snapshots |
+| Build and test (Xcode 27.1, iOS 27.0) | the tests without snapshots |
+| Snapshots (Xcode 27.1, iOS 27.0) | the snapshot tests against the reference images |
+
+The snapshots were recorded on Xcode 27.1 with the iPhone 17 Pro simulator on iOS 27.0 and are skipped on any other simulator. To run them locally, pick that simulator and run the `AtlasUISnapshotTests` target from the Test navigator, or:
+```sh
+xcodebuild test -scheme Atlas -testPlan Atlas -only-testing:AtlasUISnapshotTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0' -collect-test-diagnostics never
+```
+Recording new reference images is in [DEVELOPMENT.md](docs/DEVELOPMENT.md#snapshot-tests).
 
 ## Code walkthrough
 | | Country list | Country detail |
@@ -55,7 +70,6 @@ AtlasDomain holds the models, the use cases and the repository protocol, and imp
 
 ## Key decisions
 - **Search runs on the server.** The app sends the term to the API's `name` filter 300 ms after typing stops. Matching then happens in one place for every client and can grow, for example to ignore accents, without repeating the logic in each app. Filtering a downloaded list on the device would also leave no queries to debounce, and the brief asks for debounced queries.
-- **The repository has its own cache, and Apollo's is off.** It keeps only successful results, in memory until the app quits; pull-to-refresh skips it, and Try Again always reaches the network. Apollo's cache also stored responses with GraphQL errors, so a country that failed once read back as "not found".
 - **MVI on a small shared base.** A screen's state changes only in `reduce`, so even an old search answering after a newer one is [a plain test](Packages/AtlasUI/Tests/AtlasUITests/CountryListViewModelTests.swift#L260): send actions, check the state. The base is my own [`MVIViewModel`](Packages/AtlasMVI/Sources/AtlasMVI/MVIViewModel.swift), 120 lines, not a framework like TCA.
 - **One request at a time.** A new load, search, refresh or retry cancels the running request, and a cancelled request never changes the screen.
 - **View models go through use cases.** Rules about the data stay out of the view models: `GetCountriesUseCase` sorts by name, because the API sorts by code. `GetCountryDetailsUseCase` only forwards the call, but I kept it so both screens get their data the same way.
