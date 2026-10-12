@@ -13,6 +13,18 @@ struct ApolloClientTests {
     #expect(sut.defaultRequestConfiguration.requestTimeout == 15)
   }
 
+  @Test("AC-1.8 Apollo's store stays empty, so the repository's cache is the only one")
+  func storeStaysEmpty() async throws {
+    let endpoint = try #require(URL(string: "https://countries.example/graphql"))
+    let session = try StubURLSession(bodies: [JSONFixture.responseBody("country-CH")])
+    let sut = makeApolloClient(endpoint: endpoint, session: session)
+    let query = CountriesAPI.CountryQuery(code: "CH")
+
+    _ = try await sut.fetch(query: query, cachePolicy: .networkOnly)
+
+    #expect(try await sut.store.load(query) == nil)
+  }
+
   @Test("AC-1.8 every fetch reaches the network")
   func everyFetchReachesTheNetwork() async throws {
     let (sut, session) = try makeSUT(responseBodies: [JSONFixture.responseBody("country-CH")])
