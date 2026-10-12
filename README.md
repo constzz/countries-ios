@@ -76,12 +76,11 @@ A view holds its view model as `MVIViewModelProtocol`, which has only `state`, `
 - **Combine:** only for the search field's 300 ms debounce. No API returns a publisher.
 
 ### Apollo iOS
-Only AtlasData uses Apollo. The repository maps generated types to domain types, so the UI never sees them.
+Only AtlasData uses Apollo, so the UI never sees generated types.
 
 - **Codegen:** [`apollo-codegen-config.json`](apollo-codegen-config.json) generates `internal` Swift into AtlasData. Both queries share the [`CountryBasics`](Packages/AtlasData/Sources/AtlasData/GraphQL/CountryBasics.graphql) fragment. CI runs [`check-codegen.sh`](scripts/check-codegen.sh) against the committed output.
 - **Client:** [`makeApolloClient`](Packages/AtlasData/Sources/AtlasData/ApolloClientFactory.swift) sets a 15 s timeout and turns Apollo's cache off with [`NoCacheInterceptor`](Packages/AtlasData/Sources/AtlasData/Interceptors/NoCacheInterceptor.swift).
 - **Fetching:** [`ApolloGraphQLClient`](Packages/AtlasData/Sources/AtlasData/ApolloGraphQLClient.swift) fetches with `.networkOnly` and maps every failure to a `RequestError`.
-- **Why the cache is off:** Apollo stored the data of responses with GraphQL errors, so a country that failed once read back as "not found". The repository now caches only mapped successes ([tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift)).
 
 ### Testing
 124 Swift Testing tests. None touches the network.
@@ -94,7 +93,7 @@ Only AtlasData uses Apollo. The repository maps generated types to domain types,
 
 ## Key decisions
 - **Search runs on the server.** The app sends the search term to the API's `name` filter, 300 ms after the user stops typing. That filter is a case-sensitive regex, so `SearchPattern` turns `fr` into `[fF][rR]` to match "France", and escapes characters such as `(` that would break the regex. I didn't download all countries and filter them on the device: the brief asks to debounce queries, and with local filtering there would be no queries to debounce.
-- **The repository caches results itself, and Apollo's cache is off.** The repository keeps successful results in memory and returns them on the next request. Pull-to-refresh skips the cache, and failures are never cached, so Try Again always reaches the network. I turned Apollo's cache off because it also stored the data of failed responses.
+- **The repository caches results itself, and Apollo's cache is off.** The repository keeps successful results in memory and returns them on the next request. Pull-to-refresh skips the cache, and failures are never cached, so Try Again always reaches the network ([tests](Packages/AtlasData/Tests/AtlasDataTests/CountriesRepositoryTests.swift)). I turned Apollo's cache off because it also stored the data of responses with GraphQL errors, so a country that failed once read back as "not found".
 - **Each screen is MVI on a shared base.** The view sends actions, and one `reduce` function on the view model is the only place the screen's state changes. The tricky bugs here are about order, like an old search answering after a newer one, or Try Again during a refresh. With one `reduce`, each of them is a test that sends actions and checks the state. I didn't use a separate reducer type that returns side effects as values: each screen would be split across two types.
 - **One request at a time.** When a new load, search, refresh or retry starts, the request still running is cancelled, and a cancelled request never changes the screen. So a slow old search can't replace newer results.
 - **Every layer is there, even when it only passes the call on.** View models call use cases, use cases call the repository, and the repository calls the data sources. `GetCountryDetailsUseCase` only forwards the call, but both screens get their data the same way, and a future rule about the data goes into a use case instead of a view model. I added use cases and data sources in [PR #17](https://github.com/constzz/countries-ios/pull/17).
